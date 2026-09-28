@@ -2421,3 +2421,258 @@ Totals and the decision register are in §20 at the end of this file.
 | D-628 | Pilot hotel's enabled amenities. | GM | Pool and gym simple timed access only; spa/golf/beach/retail specified, tested on fixtures, disabled. |
 | D-629 | Legality of storing spa intake health answers per market. | DPO + counsel | Verbal screening only; no stored answers. |
 | D-630 | Commission/tip treatment for practitioners. | Financial Controller + HR | Employee commissions via payroll; contractors via AP; tips pass-through. |
+
+---
+
+## M59 — Local transport, fleet and dispatch
+
+| Field | Value |
+|---|---|
+| Purpose | Dispatch hotel shuttle/driver/vehicle trips and external taxi assignments for airport/port pickups and local transfers, linked to flight/ship ETA, with manifests, accessibility, handover proof, permits/insurance validity, tariffs, settlement and trip cost. |
+| Phases | 3 concierge dispatch (external taxi via M45/M46 providers, manual hotel shuttle); 4 owned fleet controls, cost and settlement. |
+| Release flag | R1. |
+| Bounded context | `transport` |
+| SoR entities (owned) | `transport_trip`, `trip_leg`, `trip_manifest`, `trip_status_event`, `trip_handover`, `transport_tariff`, `fleet_vehicle_profile` (operational attributes; physical asset in M26), `driver_eligibility`, `trip_cost_line`. |
+| Referenced (not owned) | M45 `travel_request` (guest consent, external provider transaction — see D-633); M46 taxi/transfer providers and credentials; M26 vehicle asset and maintenance; M27 drivers (employees), roster and time; M05 reservation/arrival; M08 folio; M20 AP settlement; M42 incidents; M68 insurance; M02 consent; M09 vehicle slots. |
+| Dependencies | M02, M05, M08, M09, M20, M26, M27, M42, M45, M46, M68; INT-flight-status (optional licensed), INT-taxi-partner. |
+
+Additional actor used in this module: `driver` (a hotel `employee` role specialization; external drivers act as `vendor_user`).
+
+### F59.1 Dispatch
+
+```yaml
+- id: M59.F59.1.SF59.1.1
+  name: Hotel shuttle/driver/vehicle or external taxi assignment
+  phase: 3
+  release: R1
+  actors: [concierge, front_desk_agent, driver, vendor_user]
+  screens: [SCR-OPS-transport-dispatch, SCR-STF-driver-trips, SCR-VND-trip-offer]
+  inputs: [trip_type, pickup_time, pickup_location, dropoff_location, passengers, vehicle_class, dispatch_mode, provider_id, idempotency_key]
+  states: [requested, assigned, accepted, en_route, on_site, in_progress, completed, cancelled, failed]
+  api: ["POST /v1/properties/{pid}/transport/trips", "POST /v1/properties/{pid}/transport/trips/{tid}/assign"]
+  events: [TransportTripRequested, TransportTripAssigned, TransportTripCompleted]
+  data: [transport_trip, trip_leg, timed_resource_hold (M09)]
+  rules: ["dispatch_mode is owned_fleet or external_provider.", "Owned-fleet assignment reserves vehicle and driver slots atomically (M09); one vehicle cannot be double-assigned in overlapping windows.", "External taxi trips are created from an M45 travel_request with guest consent and an eligible M46 provider; status 'booked' only on provider confirmation reference.", "Only eligible drivers (SF59.2.1) and vehicles appear in assignment lists."]
+  security: "Dispatch roles; vendor sees only own assigned trips."
+  failure_cases: [no_vehicle_available, provider_no_confirmation, double_assignment_attempt]
+  finance_report_effect: "Trip cost lines per SF59.2.4."
+  i18n_a11y: "Dispatch board bilingual; driver app large controls."
+  acceptance: "AC-SF59.1.1: Assigning a van already on an overlapping trip is rejected; an external taxi shows 'requested' until provider reference arrives (AT-G11.1)."
+  dependency: "M09, M45, M46, M27."
+
+- id: M59.F59.1.SF59.1.2
+  name: Pickup, flight/ship ETA and guest consent
+  phase: 3
+  release: R1
+  actors: [concierge, guest, transport_worker]
+  screens: [SCR-OPS-transport-dispatch, SCR-GST-transfer-request]
+  inputs: [flight_number_or_ship_call, scheduled_arrival, eta_source, consent_ref, pickup_buffer]
+  states: [scheduled, eta_updated, delayed, arrived, cancelled_by_carrier]
+  api: ["POST /v1/properties/{pid}/transport/trips/{tid}/eta-link"]
+  events: [TransportEtaUpdated, TransportCarrierDelay]
+  data: [transport_trip, trip_status_event, consent_record (M02)]
+  rules: ["Flight/ship ETA used only with guest consent for the transfer purpose; source and as-of shown.", "ETA changes beyond threshold re-plan pickup time and notify driver/provider; no automatic cancellation.", "Without a licensed status feed, staff update ETA manually (honesty label)."]
+  security: "Flight numbers stored minimal and purged after trip per M65."
+  failure_cases: [eta_feed_unavailable_manual, carrier_cancellation]
+  finance_report_effect: "Waiting-time charges per tariff."
+  i18n_a11y: "Times in local time zone with label."
+  acceptance: "AC-SF59.1.2: A 90-minute flight delay updates pickup time and notifies the assigned driver once."
+  dependency: "INT-flight-status (D-632), M02."
+
+- id: M59.F59.1.SF59.1.3
+  name: Manifest, luggage and accessible vehicle
+  phase: 3
+  release: R1
+  actors: [concierge, driver]
+  screens: [SCR-OPS-trip-manifest, SCR-STF-driver-manifest]
+  inputs: [passenger_count, passenger_display_names, luggage_count, wheelchair_accessible_required, child_seat_count]
+  states: [draft, final, changed]
+  api: ["PUT /v1/properties/{pid}/transport/trips/{tid}/manifest"]
+  events: [TripManifestFinalized]
+  data: [trip_manifest]
+  rules: ["Vehicle capacity (seats, luggage, wheelchair) must satisfy manifest before assignment.", "Accessible requirement cannot be downgraded without guest confirmation."]
+  security: "Driver sees display name and pickup details only."
+  failure_cases: [capacity_exceeded_split_trip]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessibility need icon plus text."
+  acceptance: "AC-SF59.1.3: A manifest requiring wheelchair access cannot be assigned to a non-accessible vehicle."
+  dependency: "SF59.1.1."
+
+- id: M59.F59.1.SF59.1.4
+  name: Driver acknowledgment/trip live status
+  phase: 3
+  release: R1
+  actors: [driver, vendor_user, concierge, guest]
+  screens: [SCR-STF-driver-trips, SCR-GST-transfer-status]
+  inputs: [trip_id, ack, status, location_ping_optional]
+  states: [awaiting_ack, acknowledged, en_route, on_site, passenger_on_board, completed]
+  api: ["POST /v1/properties/{pid}/transport/trips/{tid}/status"]
+  events: [TripAcknowledged, TripStatusChanged]
+  data: [trip_status_event]
+  rules: ["No acknowledgment within threshold escalates to concierge.", "Location pings only during active trip, not stored beyond trip completion plus retention."]
+  security: "Driver authenticated device (M64)."
+  failure_cases: [driver_app_offline_sms_fallback]
+  finance_report_effect: "None."
+  i18n_a11y: "Guest status accessible."
+  acceptance: "AC-SF59.1.4: A trip without driver acknowledgment 30 minutes before pickup escalates."
+  dependency: "M63, M64."
+
+- id: M59.F59.1.SF59.1.5
+  name: Missed pickup/disruption and rescue
+  phase: 3
+  release: R1
+  actors: [concierge, duty_manager, guest]
+  screens: [SCR-OPS-transport-exceptions]
+  inputs: [trip_id, exception_type, rescue_option, guest_contact]
+  states: [exception_open, rescue_dispatched, resolved, compensated]
+  api: ["POST /v1/properties/{pid}/transport/trips/{tid}/exceptions"]
+  events: [TransportExceptionOpened, TransportRescueDispatched]
+  data: [transport_trip, guest_case (M55)]
+  rules: ["Missed pickup creates an M55 case and a rescue option (backup vehicle/provider) within SLA.", "Guest no-show after carrier arrival is recorded with evidence before charging."]
+  security: "Concierge/duty manager."
+  failure_cases: [no_backup_available]
+  finance_report_effect: "Compensation via M55; provider penalties via M20."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF59.1.5: A missed pickup opens one M55 case and dispatches a backup provider (AT-G11.3)."
+  dependency: "M55, M46."
+
+- id: M59.F59.1.SF59.1.6  # ADDED — Section C 'passenger handover'
+  name: Passenger handover confirmation
+  phase: 3
+  release: R1
+  actors: [driver, vendor_user, front_desk_agent]
+  screens: [SCR-STF-driver-handover]
+  inputs: [trip_id, handover_point, confirmed_by, timestamp]
+  states: [pending, confirmed, disputed]
+  api: ["POST /v1/properties/{pid}/transport/trips/{tid}/handover"]
+  events: [PassengerHandoverConfirmed]
+  data: [trip_handover]
+  rules: ["Trip completion requires handover confirmation at drop-off (front desk or passenger tap/verbal attestation).", "Unaccompanied minors or assisted passengers require named receiving adult/staff."]
+  security: "Minimal data."
+  failure_cases: [recipient_absent]
+  finance_report_effect: "Completion triggers billing."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF59.1.6: A trip cannot be billed as completed without handover confirmation."
+  dependency: "SF59.1.4."
+```
+
+### F59.2 Controls
+
+```yaml
+- id: M59.F59.2.SF59.2.1
+  name: Permit/insurance/vehicle condition/maintenance validity
+  phase: 4
+  release: R1
+  actors: [chief_engineer, hr_officer, concierge]
+  screens: [SCR-ENG-fleet-validity, SCR-OPS-transport-dispatch]
+  inputs: [vehicle_id, registration_expiry, insurance_policy_ref, inspection_due, driver_licence_expiry, driver_training_ref]
+  states: [valid, expiring, invalid_blocked]
+  api: ["GET /v1/properties/{pid}/transport/eligibility"]
+  events: [VehicleIneligible, DriverIneligible]
+  data: [fleet_vehicle_profile, driver_eligibility, asset (M26), insurance_policy (M68), certification_record (M62)]
+  rules: ["Expired registration/insurance/inspection or overdue critical maintenance blocks vehicle assignment.", "Driver licence expiry and required training block driver assignment.", "External providers: validity asserted by M46 credentials; hotel cannot assign an unverified provider."]
+  security: "Licence data restricted to hr_officer."
+  failure_cases: [expiry_during_trip_allow_complete_flag]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF59.2.1: A vehicle with expired insurance disappears from assignment options."
+  dependency: "M26, M46, M62, M68."
+
+- id: M59.F59.2.SF59.2.2
+  name: Route and passenger data minimization
+  phase: 3
+  release: R1
+  actors: [dpo, concierge]
+  screens: [SCR-ADM-transport-privacy]
+  inputs: [retention_days, fields_shared_with_provider]
+  states: [configured]
+  api: ["PUT /v1/properties/{pid}/transport/privacy-settings"]
+  events: [TransportDataPurged]
+  data: [transport_trip, trip_manifest]
+  rules: ["Share with provider only name for sign, pickup point, time, contact number masked where supported.", "Purge location pings and flight numbers after retention; keep trip financial records."]
+  security: "DPO controls."
+  failure_cases: [provider_requires_more_data_escalate_dpo]
+  finance_report_effect: "None."
+  i18n_a11y: "Bilingual."
+  acceptance: "AC-SF59.2.2: Provider payload excludes passport/ID and room number; purge job removes pings after retention."
+  dependency: "M02, M65."
+
+- id: M59.F59.2.SF59.2.3
+  name: Tariff, gratuity and payer
+  phase: 3
+  release: R1
+  actors: [concierge, revenue_manager, guest]
+  screens: [SCR-ADM-transport-tariffs, SCR-GST-transfer-quote]
+  inputs: [tariff_id, zone, vehicle_class, waiting_fee, gratuity_policy, payer_type]
+  states: [quoted, accepted, charged]
+  api: ["PUT /v1/properties/{pid}/transport/tariffs", "POST /v1/properties/{pid}/transport/trips/{tid}/quote"]
+  events: [TransportQuoteAccepted, TransportCharged]
+  data: [transport_tariff, folio_line (M08)]
+  rules: ["payer_type is guest_folio, corporate_account, package or complimentary.", "Quote shows total and payer before booking; tax per M44.", "Gratuity optional and never auto-added unless disclosed."]
+  security: "Tariff by revenue_manager."
+  failure_cases: [external_price_changed_requote]
+  finance_report_effect: "Transport revenue to M08/M19."
+  i18n_a11y: "Prices localized."
+  acceptance: "AC-SF59.2.3: A corporate-paid transfer posts to the corporate account, not the guest folio."
+  dependency: "M08, M10, M44."
+
+- id: M59.F59.2.SF59.2.4
+  name: External vendor settlement vs owned-fleet labor/fuel cost
+  phase: 4
+  release: R1
+  actors: [ap_clerk, finance_clerk, chief_engineer]
+  screens: [SCR-FIN-transport-settlement, SCR-OWN-transport-margin]
+  inputs: [trip_ids, provider_invoice, driver_hours, fuel_receipts, vehicle_depreciation]
+  states: [unmatched, matched, disputed, settled]
+  api: ["GET /v1/properties/{pid}/transport/settlement?period"]
+  events: [TransportSettlementMatched]
+  data: [trip_cost_line, supplier_invoice (M20), time_record (M27)]
+  rules: ["Provider invoices match completed trips with handover; unmatched lines disputed.", "Owned-fleet trip cost = allocated driver labor + fuel + maintenance + depreciation, labelled estimate until period close."]
+  security: "Finance roles."
+  failure_cases: [duplicate_invoice_line]
+  finance_report_effect: "Transport department margin in M32."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF59.2.4: An invoice line for a trip without handover is flagged; margin report shows owned vs external."
+  dependency: "M20, M27, M26, M19."
+
+- id: M59.F59.2.SF59.2.5
+  name: Incident evidence and reimbursement
+  phase: 4
+  release: R1
+  actors: [driver, duty_manager, security_officer, finance_clerk]
+  screens: [SCR-OPS-transport-incident]
+  inputs: [trip_id, incident_type, photos, police_report_ref, third_party_details]
+  states: [reported, under_review, claim_filed, reimbursed, closed]
+  api: ["POST /v1/properties/{pid}/transport/trips/{tid}/incidents"]
+  events: [TransportIncidentReported]
+  data: [incident (M42), insurance_claim (M68)]
+  rules: ["Creates M42 incident; evidence packet available to M68 claim.", "Guest reimbursements via M55 compensation or M08 refund."]
+  security: "Evidence restricted."
+  failure_cases: [evidence_missing]
+  finance_report_effect: "Claims and reimbursements in M19 via M68/M08."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF59.2.5: A vehicle incident produces an M42 incident and an evidence packet usable by M68."
+  dependency: "M42, M68."
+```
+
+### M59 key invariants
+
+1. No vehicle or driver double-assignment; ineligible vehicles/drivers never offered.
+2. External trips never shown as booked without provider confirmation (Section P.3).
+3. Minimal passenger data shared; location pings purged.
+
+### M59 module acceptance
+
+| AC | Section G | Section O question answered |
+|---|---|---|
+| AC-SF59.1.1, AC-SF59.1.5 | AT-G11 (taxi request with confirmed external reference, disruption) | Front desk: "Can I arrange taxi... with guest approval and an actual supplier confirmation?" |
+| AC-SF59.2.1 | AT-G10 (eligible providers only) | Maintenance/security: "Which contractor can work safely?" |
+| AC-SF59.2.4 | AT-G08 | Owner: "Which departments earn or lose money?" |
+
+### M59 open decisions
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-631 | Does the pilot hotel operate its own fleet? | GM | No owned fleet; external taxi via M45/M46 plus manual shuttle records. |
+| D-632 | Flight/ship status data source and licence. | Concierge lead + Procurement | Manual ETA updates. |
+| D-633 | Boundary M45 `travel_request` vs M59 `transport_trip`. | Lead Architect | M45 owns request/consent/provider transaction; M59 owns dispatch execution, manifest, status, handover, cost. |
