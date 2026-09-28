@@ -42,7 +42,8 @@
 | M05 Reservations/stays | F05.1–F05.5 | 30 | 2 |
 | M06 Front desk/housekeeping | F06.1–F06.4 | 23 | 2 |
 | M07 Distribution | F07.1–F07.5 | 26 | 2 |
-| M08 Folio/cashiering | F08.1–F08.6 | 31 | 2 |
+| M08 Folio/cashiering | F08.1–F08.6 | 32 | 2 |
+| **Total** | **41 features** | **222** | |
 
 ---
 
@@ -168,7 +169,7 @@ inputs: [tenant_id, property_id, request_principal]
 states: [pass, fail]
 api: none public; enforced in every repository and by Postgres RLS; GET /v1/ops/isolation-tests/latest
 events: [IsolationTestFailed]
-data: [all property-scoped tables (tenant_id, property_id columns), audit_log]
+data: [all property-scoped tables with tenant_id and property_id columns, audit_log]
 rules:
   - Every property-scoped table carries tenant_id and property_id NOT NULL with RLS policies keyed to session settings set by the API gateway.
   - Object ids are UUIDv7; authorization checks object ownership, never trusts client-supplied property_id alone (OWASP API1 BOLA).
@@ -1184,7 +1185,7 @@ api: GET /v1/properties/{pid}/sod-violations; PUT .../sod-rules/{id}
 events: [SodViolationDetected]
 data: [sod_rule, role_assignment]
 rules:
-  - Default blocks include: same user creating and approving refund; creating payee and releasing payment; editing rate and approving own override.
+  - Default blocking pairs are same user creating and approving refund; creating payee and releasing payment; editing rate and approving own override.
   - Single-person small hotels can set warn mode with compensating review (logged).
 security: rules change needs financial_controller + gm.
 failure_cases: [conflict_via_delegation]
@@ -1414,7 +1415,7 @@ phase: 2
 release: R1
 actors: [compliance_officer, gm]
 screens: [SCR-ADM-legal-holds]
-inputs: [scope (guest, reservation, incident, date range), reason, authority_ref]
+inputs: [scope_type (guest/reservation/incident/date_range), scope_ref, reason, authority_ref]
 states: [active, released]
 api: POST /v1/properties/{pid}/legal-holds; POST .../legal-holds/{id}/release
 events: [LegalHoldPlaced, LegalHoldReleased]
@@ -1695,7 +1696,7 @@ screens: [SCR-GST-search, SCR-FD-availability]
 inputs: [arrival, departure, adults, children_ages, room_count, accessibility_needs, channel]
 states: [none]
 api: GET /v1/properties/{pid}/availability?arrival=&departure=&adults=&children=&rooms=
-events: [AvailabilitySearched (funnel, sampled)]
+events: [FunnelSearchPerformed (sampled)]
 data: [room_type_inventory_night, stop_sell, allotment, room_type]
 rules:
   - A room type is available for a stay only if every night has available >= requested rooms after channel-specific stop-sell and allotment visibility.
@@ -1948,7 +1949,7 @@ phase: 3
 release: R1
 actors: [sales_manager, revenue_manager]
 screens: [SCR-SALES-allotments]
-inputs: [holder_type (channel, corporate, group), holder_id, room_type_id, nights, quantity, release_days]
+inputs: [holder_type (channel/corporate/group), holder_id, room_type_id, nights, quantity, release_days]
 states: [active, partially_released, released, expired]
 api: POST /v1/properties/{pid}/allotments (idem); PATCH .../allotments/{id}
 events: [AllotmentCreated, AllotmentReleased]
@@ -2067,7 +2068,7 @@ phase: 2
 release: R1
 actors: [front_desk_agent, front_office_manager]
 screens: [SCR-FD-reservation]
-inputs: [reservation_room_id, target_room_type_id, upgrade_type (complimentary, paid), reason]
+inputs: [reservation_room_id, target_room_type_id, upgrade_type (complimentary/paid), reason]
 states: [requested, applied, reverted]
 api: POST /v1/properties/{pid}/reservation-rooms/{rrid}/room-type-change (idem)
 events: [RoomTypeChanged, RoomTypeAvailabilityChanged]
@@ -2412,7 +2413,7 @@ phase: 2
 release: R1
 actors: [revenue_manager, fnb_manager]
 screens: [SCR-REV-packages]
-inputs: [package_code, components (breakfast, parking, spa credit), component_price_or_percent, posting_rhythm (per night/per stay/arrival only), outlet_id, revenue_account_ref]
+inputs: [package_code, components (breakfast/parking/spa_credit), component_price_or_percent, posting_rhythm (per night/per stay/arrival only), outlet_id, revenue_account_ref]
 states: [draft, active, retired]
 api: POST /v1/properties/{pid}/packages; PATCH .../packages/{id}
 events: [PackageChanged]
@@ -3072,7 +3073,7 @@ data: [special_request]
 rules:
   - Requests are routed to owning team (HK, engineering, F&B) as tasks with due time before arrival.
   - Accessibility and dietary needs are sensitive; stored with purpose limitation and visible only to teams that need them.
-  - "Not possible" requires guest notification before arrival.
+  - A not-possible outcome requires guest notification before arrival.
 security: sensitive category access limited.
 failure_cases: [request_after_cutoff]
 finance_report_effect: none.
@@ -3282,7 +3283,7 @@ api: POST /v1/properties/{pid}/reservation-rooms/{rrid}/check-in (idem)
 events: [GuestCheckedIn]
 data: [stay, room_assignment, registration_record, folio]
 rules:
-  - Preconditions: business date equals arrival (or early check-in approved), room vacant clean or inspected, registration complete per jurisdiction rule, guarantee/preauth valid.
+  - Preconditions are business date equals arrival (or early check-in approved), room vacant clean or inspected, registration complete per jurisdiction rule, guarantee/preauth valid.
   - Creates stay, opens folio windows per routing (M08), changes room to occupied, emits entitlement events.
   - Offline check-in allowed on on-prem LAN; payment preauth queued with risk flag if PSP unreachable.
 security: front desk scope.
@@ -3904,7 +3905,7 @@ phase: 2
 release: R1
 actors: [housekeeper]
 screens: [SCR-HK-my-rooms, SCR-HK-sync-status]
-inputs: [change (entity, field, new_value, base_version, device_time, device_id)]
+inputs: [change_id, entity, field, new_value, base_version, device_time, device_seq, device_id]
 states: [queued, synced, conflicted]
 api: POST /v1/properties/{pid}/sync/hk (idem per change_id)
 events: [OfflineChangesSynced]
@@ -4790,3 +4791,847 @@ dependency: M31, M51 (metasearch partners `unverified-assumption`).
 | D-130 | Commission accrual trigger and basis per channel contract | Financial Controller | At checkout on net room revenue excluding tax; estimate until invoice match. |
 
 ---
+
+# M08 — Folio/cashiering
+
+| Attribute | Value |
+|---|---|
+| Purpose | Keep an append-only guest and account ledger: charges, taxes, payments, reversals and transfers across multiple windows and payers with routing; deposits and card preauthorizations; invoices, credit notes and receipts per jurisdiction; cashier shifts, cash movements and refunds; night audit that posts room and tax, balances the guest ledger and rolls the business date; controlled reopening; and a finance export to the GL. |
+| Build phase(s) | 2 (all core); 4 GL integration hardening (M19), AR transfer to M20; 5 PSP reconciliation depth (M28), e-invoicing adapters where verified (M38). |
+| Release flag | R1. |
+| Bounded context | `folio` (schema `folio`). |
+| Systems of record owned | `folio`, `folio_window`, `folio_line`, `routing_instruction`, `deposit_ledger_entry`, `payment_authorization_ref` (PSP token/auth ids only), `fiscal_document` (`invoice`, `credit_note`, `receipt`, `pro_forma`), `fiscal_sequence`, `cashier_shift`, `cash_movement`, `night_audit_run`, `night_audit_step`, `guest_ledger_balance` (daily snapshot), `finance_export_batch`, `transaction_code` (charge/payment code catalogue with department, tax category and GL mapping ref). |
+| Upstream dependencies | M01 (business date, audit, outbox), M02 (approvals, SoD, step-up), M04 (quote lines, package schedule), M05 (stays, reservations), M06 (minibar), M07 (channel payments), M13/M15/M17 (outlet charges, Phase 3), M28 (payments), M38 (tax, fiscal numbering/format), M44 (e-invoice gates). |
+| Downstream dependents | M19 (GL journals), M20 (AR city ledger), M30 (points earn/reverse), M31 (referral margin), M32 (revenue KPIs), M60 (cash controls), M54 (voucher liability). |
+| External dependencies | PSP via M28 — `unverified-assumption` until a PSP is `sandbox-tested`/`certified`; e-invoicing/fiscal clearance platforms per market (e.g. Saudi e-invoicing, Portugal certified invoicing software rules) — `unverified-assumption`, **must be validated in docs/07; no compliance claimed**; bank for cash deposits — manual. |
+
+**Guest ledger equation (normative).** For each business date: `opening_balance + charges + taxes − payments − reversals ± transfers_net = closing_balance`, summed over all open folios; transfers between folios net to zero; `closing_balance(D) = opening_balance(D+1)`. Night audit fails if the equation does not hold to the minor unit.
+
+**Folio line types:** `charge`, `tax`, `service_charge`, `payment`, `refund`, `reversal` (references original line), `transfer_out`/`transfer_in` (paired, same amount), `allowance` (adjustment with approval), `deposit_applied`. Lines are never updated or deleted.
+
+## F08.1 Append-only folio ledger
+
+```yaml
+id: M08.F08.1.SF08.1.1
+name: Folio and window creation
+phase: 2
+release: R1
+actors: [system, front_desk_agent]
+screens: [SCR-FD-folio]
+inputs: [owner_type (stay/reservation/master/house/non_guest), owner_id, windows (1..8), payer_party_ids]
+states: [open, settled, closed, reopened]
+api: POST /v1/properties/{pid}/folios (idem); POST .../folios/{fid}/windows
+events: [FolioOpened, FolioWindowAdded]
+data: [folio, folio_window]
+rules:
+  - A stay folio is created at confirmation (for deposits) and becomes active at check-in; window 1 defaults to primary guest, others per routing.
+  - Each window has exactly one payer (guest, company AR account, channel, third party) and currency = property base currency.
+security: window visibility limited to payer-related roles and staff.
+failure_cases: [payer_missing, window_limit_exceeded]
+finance_report_effect: folio is sub-ledger of guest ledger (GL control account via M19).
+i18n_a11y: window labels bilingual.
+acceptance: A stay with company-paid room and guest-paid incidentals has two windows with distinct payers before first posting.
+dependency: M05 SF05.2.1.
+```
+
+```yaml
+id: M08.F08.1.SF08.1.2
+name: Post charge
+phase: 2
+release: R1
+actors: [front_desk_agent, cashier, night_audit_worker, pos_interface_worker]
+screens: [SCR-FD-folio-post]
+inputs: [folio_id, transaction_code, amount, quantity, outlet_id, description, source_ref, business_date, idempotency_key]
+states: [posted]
+api: POST /v1/properties/{pid}/folios/{fid}/lines (idem)
+events: [FolioChargePosted]
+data: [folio_line, transaction_code]
+rules:
+  - Tax and service charge lines are generated by M04/M38 rules at posting and linked to the charge line; manual tax entry forbidden.
+  - Interfaces (POS, parking) must pass source_ref; duplicate (source system, source_ref) rejected.
+  - Routing (SF08.2.1) chooses target window at posting; posting to closed folio is rejected.
+security: manual charges limited by transaction code permissions.
+failure_cases: [duplicate_interface_post, closed_folio, unknown_transaction_code]
+finance_report_effect: revenue by department/outlet/transaction code on business_date.
+i18n_a11y: none.
+acceptance: A POS charge retried 3 times with the same source_ref posts once, with its tax lines, to the routed window.
+dependency: M38 tax port; M13 POS (Phase 3).
+```
+
+```yaml
+id: M08.F08.1.SF08.1.3
+name: Reversal (void and correction)
+phase: 2
+release: R1
+actors: [cashier, front_office_manager]
+screens: [SCR-FD-folio]
+inputs: [original_line_id, reason_code, comment, approval_id]
+states: [reversed]
+api: POST /v1/properties/{pid}/folios/{fid}/lines/{lid}/reverse (idem)
+events: [FolioLineReversed]
+data: [folio_line]
+rules:
+  - A reversal line of equal and opposite amount (including linked tax lines) references the original; the original is never altered.
+  - Same-business-date reversal = void category; prior-date reversal = correction category requiring approval above threshold; both visible in audit reports.
+  - A line can be reversed at most once (partial reversal via allowance).
+security: approval policy and SoD (poster cannot approve own correction above threshold).
+failure_cases: [double_reversal, reversal_on_invoiced_line]
+finance_report_effect: revenue reduced on reversal business date; void/correction reports to M60.
+i18n_a11y: none.
+acceptance: Reversing a line twice returns 409; reversing an invoiced line requires a credit note path (SF08.4.2).
+dependency: M02 F02.4.
+```
+
+```yaml
+id: M08.F08.1.SF08.1.4
+name: Transfer between windows, folios and accounts
+phase: 2
+release: R1
+actors: [cashier, front_desk_agent]
+screens: [SCR-FD-folio-transfer]
+inputs: [source_line_ids, target_folio_window, reason]
+states: [transferred]
+api: POST /v1/properties/{pid}/folios/{fid}/transfers (idem)
+events: [FolioLinesTransferred]
+data: [folio_line]
+rules:
+  - Transfer writes paired transfer_out/transfer_in lines with identical amount and original line reference; revenue attribution stays with the original charge.
+  - Transfer to AR city ledger requires approved direct-bill account and moves balance to M20 on checkout.
+security: target folio must be within property; cross-property later.
+failure_cases: [target_closed, ar_account_on_hold]
+finance_report_effect: no revenue change; ledger balance moves.
+i18n_a11y: none.
+acceptance: Transferring a 50 bar charge from guest window to company window leaves bar revenue unchanged and both window balances updated by 50.
+dependency: M20 AR (Phase 4; manual AR list before).
+```
+
+```yaml
+id: M08.F08.1.SF08.1.5
+name: Allowance and adjustment with approval
+phase: 2
+release: R1
+actors: [front_office_manager, guest_relations]
+screens: [SCR-FD-folio, SCR-GM-approvals-inbox]
+inputs: [folio_id, target_line_id, amount, reason_code, recovery_case_id]
+states: [requested, approved, posted, rejected]
+api: POST /v1/properties/{pid}/folios/{fid}/allowances (idem)
+events: [FolioAllowancePosted]
+data: [folio_line, approval_request]
+rules:
+  - Allowances reference the charge or recovery case (M55); tax adjusted proportionally per M38 rules.
+  - Caps per role; above cap requires approval.
+security: SoD.
+failure_cases: [allowance_exceeds_charge]
+finance_report_effect: allowance account per department; service recovery cost report (M55 SF55.2.5).
+i18n_a11y: none.
+acceptance: An allowance larger than the referenced charge is rejected; an approved allowance links to its recovery case.
+dependency: M55.
+```
+
+```yaml
+id: M08.F08.1.SF08.1.6
+name: Master, house and non-guest folios
+phase: 2
+release: R1
+actors: [cashier, sales_manager]
+screens: [SCR-FD-account-folios]
+inputs: [folio_type (group_master/event_master/house/paymaster/non_guest), owner_ref, credit_limit]
+states: [open, closed]
+api: POST /v1/properties/{pid}/folios (idem)
+events: [FolioOpened]
+data: [folio]
+rules:
+  - Paymaster (non-room) folios for events, day guests, walk-in outlet customers and house accounts; house accounts require cost-center mapping.
+  - Group/event master receives routed charges from member stays (M12).
+security: house account posting restricted.
+failure_cases: [house_account_misuse]
+finance_report_effect: house use to cost center, not revenue.
+i18n_a11y: none.
+acceptance: A charge posted to a house account appears as internal cost for the mapped cost center and not in room/outlet revenue.
+dependency: M12 (Phase 3), M19.
+```
+
+## F08.2 Routing and multiple payers
+
+```yaml
+id: M08.F08.2.SF08.2.1
+name: Routing instructions
+phase: 2
+release: R1
+actors: [front_desk_agent, sales_manager]
+screens: [SCR-FD-routing]
+inputs: [source_folio_or_stay, transaction_code_groups, date_range, target_window_or_folio, limit_amount]
+states: [active, expired, suspended]
+api: POST /v1/properties/{pid}/routing-instructions; PATCH .../routing-instructions/{id}
+events: [RoutingInstructionChanged]
+data: [routing_instruction]
+rules:
+  - Matching precedence - specific transaction code > group > default window; date-bounded; optional amount cap after which charges fall back to guest window.
+  - Routing to another stay's folio requires that stay's payer consent (e.g. parent paying child's room).
+security: none.
+failure_cases: [cap_exceeded, conflicting_routes]
+finance_report_effect: correct payer receivable.
+i18n_a11y: none.
+acceptance: With room and tax routed to company up to 300 per night, a 320 night posts 300 to company and 20 to guest window.
+dependency: none.
+```
+
+```yaml
+id: M08.F08.2.SF08.2.2
+name: Split billing and corporate direct bill
+phase: 3
+release: R1
+actors: [cashier, ar_clerk]
+screens: [SCR-FD-check-out, SCR-FIN-ar-transfer]
+inputs: [window_id, company_account_id, po_number, approval_ref]
+states: [pending_transfer, transferred_to_ar]
+api: POST /v1/properties/{pid}/folios/{fid}/windows/{wid}/transfer-to-ar (idem)
+events: [FolioTransferredToAr]
+data: [folio_window, ar_invoice (M20)]
+rules:
+  - Transfer at checkout creates AR item with invoice issued to the company legal entity; credit limit checked (M20 SF20.2.5).
+security: ar scope.
+failure_cases: [credit_limit_exceeded, po_missing]
+finance_report_effect: AR receivable instead of guest ledger.
+i18n_a11y: none.
+acceptance: A company window of 900 transfers to AR at checkout creating one AR item and an invoice to the company, guest window settled separately.
+dependency: M10, M20.
+```
+
+```yaml
+id: M08.F08.2.SF08.2.3
+name: Mid-stay routing change and re-route
+phase: 2
+release: R1
+actors: [front_desk_agent, front_office_manager]
+screens: [SCR-FD-routing]
+inputs: [routing_instruction_id, new_target, apply_to_existing (bool)]
+states: [applied]
+api: POST /v1/properties/{pid}/routing-instructions/{id}/apply-retroactively (idem)
+events: [FolioLinesTransferred]
+data: [routing_instruction, folio_line]
+rules:
+  - Retroactive application is executed as transfers (SF08.1.4), never as edits.
+security: approval if target is company AR.
+failure_cases: [lines_already_invoiced]
+finance_report_effect: none.
+i18n_a11y: none.
+acceptance: Applying a new route retroactively creates paired transfer lines for each matched past charge.
+dependency: none.
+```
+
+```yaml
+id: M08.F08.2.SF08.2.4
+name: Credit limit and balance monitoring
+phase: 2
+release: R1
+actors: [night_auditor, cashier, front_office_manager]
+screens: [SCR-FD-credit-monitor]
+inputs: [folio_window, authorized_amount, balance]
+states: [within_limit, near_limit, over_limit]
+api: GET /v1/properties/{pid}/credit-monitor
+events: [FolioOverLimit]
+data: [folio_window, payment_authorization_ref]
+rules:
+  - Balance vs preauth or credit limit monitored per window; over-limit triggers incremental authorization request or front desk contact task.
+security: none.
+failure_cases: [incremental_auth_declined]
+finance_report_effect: bad-debt risk.
+i18n_a11y: none.
+acceptance: A window reaching 90% of its preauth raises near_limit and requests incremental authorization via M28.
+dependency: M28.
+```
+
+## F08.3 Deposits, preauthorization, payments and refunds
+
+```yaml
+id: M08.F08.3.SF08.3.1
+name: Deposit request and schedule
+phase: 2
+release: R1
+actors: [system, front_desk_agent, sales_manager]
+screens: [SCR-FD-reservation-guarantee, SCR-FIN-deposits-due]
+inputs: [reservation_id, policy_snapshot_deposit_schedule]
+states: [scheduled, requested, received, overdue, waived]
+api: GET /v1/properties/{pid}/deposits?state=due; POST .../reservations/{rid}/deposit-requests (idem)
+events: [DepositRequested, DepositOverdue]
+data: [deposit_ledger_entry, policy_snapshot]
+rules:
+  - Schedule from snapshot (e.g. 30% at booking, balance 7 days prior); pay-by-link via M28.
+  - Overdue deposit triggers attention item and optional auto-cancel per policy after notice.
+security: none.
+failure_cases: [link_expired, partial_payment]
+finance_report_effect: none until received.
+i18n_a11y: request email/SMS bilingual.
+acceptance: A deposit not paid by due date raises overdue and, if policy says auto-cancel after 48 h notice, cancels only after the notice period.
+dependency: M28 pay-by-link.
+```
+
+```yaml
+id: M08.F08.3.SF08.3.2
+name: Deposit receipt and liability ledger
+phase: 2
+release: R1
+actors: [cashier, finance_clerk]
+screens: [SCR-FIN-deposit-ledger]
+inputs: [reservation_id, payment_ref, amount]
+states: [held, applied, refunded, forfeited]
+api: POST /v1/properties/{pid}/reservations/{rid}/deposits (idem)
+events: [DepositReceived]
+data: [deposit_ledger_entry, fiscal_document]
+rules:
+  - Advance deposits are a liability (not revenue) until applied at check-in or forfeited; receipt issued; tax treatment of advance payments per M38 market rule.
+  - Deposit ledger balance reconciles to GL deposit liability at night audit.
+security: none.
+failure_cases: [deposit_on_cancelled_reservation]
+finance_report_effect: advance deposit liability; tax point per market (M38, `unverified-assumption`).
+i18n_a11y: receipt bilingual.
+acceptance: Deposit ledger total equals the sum of held deposits by reservation and matches the GL control account export.
+dependency: M38 advance payment tax rule.
+```
+
+```yaml
+id: M08.F08.3.SF08.3.3
+name: Card preauthorization and incidental holds
+phase: 2
+release: R1
+actors: [front_desk_agent, system]
+screens: [SCR-FD-check-in, SCR-FD-credit-monitor]
+inputs: [folio_window_id, amount, payment_method_token, terminal_id, idempotency_key]
+states: [requested, authorized, incremented, partially_captured, captured, released, expired, declined]
+api: POST /v1/properties/{pid}/folios/{fid}/windows/{wid}/authorizations (idem)
+events: [PreauthAuthorized, PreauthDeclined, PreauthReleased]
+data: [payment_authorization_ref]
+rules:
+  - Amount = room and tax for stay + incidental allowance per night (D-117); card-present via terminal or token.
+  - Authorization expiry tracked per scheme/PSP; re-auth before expiry for long stays.
+  - Release remaining hold on checkout promptly; guest informed of hold amount.
+security: PSP token only; no PAN/CVV in PMS.
+failure_cases: [declined, psp_timeout_ambiguous, auth_expired]
+finance_report_effect: none until capture.
+i18n_a11y: hold amount explained in plain language.
+acceptance: A PSP timeout during preauth leaves state requested and an inquiry resolves it; no second authorization is sent before the inquiry result.
+dependency: M28 (`unverified-assumption` until PSP chosen).
+```
+
+```yaml
+id: M08.F08.3.SF08.3.4
+name: Payment posting (card, cash, transfer, city ledger)
+phase: 2
+release: R1
+actors: [cashier, front_desk_agent]
+screens: [SCR-FD-folio-payment]
+inputs: [folio_window_id, tender_type, amount, payment_ref, cashier_shift_id, idempotency_key]
+states: [pending, posted, failed]
+api: POST /v1/properties/{pid}/folios/{fid}/windows/{wid}/payments (idem)
+events: [FolioPaymentPosted]
+data: [folio_line, cash_movement, payment_authorization_ref]
+rules:
+  - Card payments post only on PSP success (capture); cash payments require an open cashier shift; bank transfers post on confirmed receipt or as pending with evidence.
+  - Split tender allowed; overpayment creates credit balance requiring refund or transfer.
+security: cashier role; step-up for manual payment references.
+failure_cases: [capture_failed, cash_without_shift, duplicate_callback]
+finance_report_effect: payments by tender; PSP reconciliation in M28.
+i18n_a11y: none.
+acceptance: A duplicated PSP success webhook posts one payment line.
+dependency: M28.
+```
+
+```yaml
+id: M08.F08.3.SF08.3.5
+name: Refunds with approval
+phase: 2
+release: R1
+actors: [cashier, front_office_manager, financial_controller]
+screens: [SCR-FD-folio-refund, SCR-GM-approvals-inbox]
+inputs: [folio_window_id, original_payment_line_id, amount, reason, refund_method]
+states: [requested, approved, submitted, completed, failed, rejected]
+api: POST /v1/properties/{pid}/folios/{fid}/refunds (idem)
+events: [RefundRequested, RefundCompleted, RefundFailed]
+data: [folio_line, approval_request]
+rules:
+  - Refund to original payment method by default; alternative method requires higher approval.
+  - Cumulative refunds cannot exceed original payment; refund lines post only on PSP confirmation (card) or cash out with shift.
+  - Refunds trigger loyalty/referral reversals via events.
+security: SoD (requester ≠ approver); step-up above threshold.
+failure_cases: [refund_exceeds_payment, psp_refund_timeout, double_submit]
+finance_report_effect: refund lines; M30/M31 reversal; M60 duplicate refund detection.
+i18n_a11y: none.
+acceptance: Two concurrent refund requests totaling more than the original payment result in one approval-eligible refund and one rejection; a timed-out PSP refund stays submitted until inquiry.
+dependency: M28 SF28.1.6.
+```
+
+```yaml
+id: M08.F08.3.SF08.3.6
+name: Deposit application and forfeiture
+phase: 2
+release: R1
+actors: [system, night_audit_worker]
+screens: [SCR-FIN-deposit-ledger]
+inputs: [reservation_id, event (check_in/cancel/no_show)]
+states: [applied, forfeited, refund_due]
+api: internal on GuestCheckedIn, ReservationCancelled, ReservationNoShow
+events: [DepositApplied, DepositForfeited]
+data: [deposit_ledger_entry, folio_line]
+rules:
+  - Check-in moves deposit to folio as deposit_applied payment line; cancellation applies fee from snapshot against deposit and refunds excess; forfeiture recognized as revenue per policy.
+security: none.
+failure_cases: [deposit_exceeds_fee_refund_fail]
+finance_report_effect: liability to revenue or refund.
+i18n_a11y: none.
+acceptance: Cancelling with 100 deposit and 60 fee posts 60 cancellation revenue and a 40 refund request.
+dependency: SF05.3.2.
+```
+
+## F08.4 Invoices, credit notes and receipts
+
+```yaml
+id: M08.F08.4.SF08.4.1
+name: Issue invoice
+phase: 2
+release: R1
+actors: [cashier, front_desk_agent, guest]
+screens: [SCR-FIN-invoice-preview, SCR-FD-check-out]
+inputs: [folio_window_id, bill_to (name/legal entity/tax id/address), locale, template_version]
+states: [draft, issued, cancelled_by_credit_note]
+api: POST /v1/properties/{pid}/folios/{fid}/windows/{wid}/invoices (idem)
+events: [InvoiceIssued]
+data: [fiscal_document, fiscal_sequence, folio_line]
+rules:
+  - Number from gap-free sequence per legal entity, document type and series; allocated in the issuing transaction.
+  - Content (mandatory fields, tax breakdown, language, QR/hash where required) from M38 market template; issued invoices immutable and reproducible (SF01.5.5).
+  - Lines included are locked; later changes only via credit note.
+security: bill_to edits before issue only.
+failure_cases: [sequence_gap_on_rollback, missing_buyer_tax_id_required]
+finance_report_effect: revenue documentation; tax reporting feed (M38).
+i18n_a11y: bilingual per market rule; tagged PDF.
+acceptance: 1,000 concurrent invoice issues produce 1,000 consecutive numbers with no gap or duplicate; a rolled-back transaction does not consume a number.
+dependency: M38 invoice rules per market (`unverified-assumption`).
+```
+
+```yaml
+id: M08.F08.4.SF08.4.2
+name: Credit note
+phase: 2
+release: R1
+actors: [cashier, front_office_manager]
+screens: [SCR-FIN-invoice-detail]
+inputs: [invoice_id, lines_or_amount, reason]
+states: [issued]
+api: POST /v1/properties/{pid}/invoices/{iid}/credit-notes (idem)
+events: [CreditNoteIssued]
+data: [fiscal_document, folio_line]
+rules:
+  - References original invoice; cannot exceed original remaining; posts matching reversal lines; own number sequence.
+security: approval above threshold.
+failure_cases: [credit_exceeds_invoice]
+finance_report_effect: revenue and tax reduction on credit note date.
+i18n_a11y: bilingual.
+acceptance: A credit note for a full invoice followed by a corrected invoice yields net revenue equal to the corrected invoice.
+dependency: M38.
+```
+
+```yaml
+id: M08.F08.4.SF08.4.3
+name: Payment receipt
+phase: 2
+release: R1
+actors: [cashier, guest]
+screens: [SCR-FD-folio-payment, SCR-GST-receipts]
+inputs: [payment_line_id]
+states: [issued]
+api: POST /v1/properties/{pid}/payments/{lid}/receipts (idem)
+events: [ReceiptIssued]
+data: [fiscal_document]
+rules:
+  - Receipts for deposits and payments; card data shown masked from PSP data only.
+security: none.
+failure_cases: [receipt_for_failed_payment]
+finance_report_effect: none.
+i18n_a11y: guest can retrieve receipts in app/web.
+acceptance: A guest retrieves all receipts for their stay from the guest portal after checkout.
+dependency: M18 guest app.
+```
+
+```yaml
+id: M08.F08.4.SF08.4.4
+name: Folio preview and pro-forma
+phase: 2
+release: R1
+actors: [guest, front_desk_agent, corporate_booker]
+screens: [SCR-FD-folio, SCR-GST-stay-bill]
+inputs: [folio_window_id]
+states: [preview]
+api: GET /v1/properties/{pid}/folios/{fid}/windows/{wid}/preview
+events: none
+data: [folio_line]
+rules:
+  - Pro-forma clearly labeled not a tax invoice; guests see only windows where they are payer.
+security: payer scope.
+failure_cases: [preview_shows_other_payer_lines]
+finance_report_effect: none.
+i18n_a11y: accessible statement table.
+acceptance: A guest viewing their in-stay bill sees incidental window lines only, not company-routed room charges.
+dependency: none.
+```
+
+```yaml
+id: M08.F08.4.SF08.4.5
+name: E-invoicing and fiscal submission gate
+phase: 4
+release: R1
+actors: [compliance_officer, fiscal_worker]
+screens: [SCR-FIN-fiscal-submissions]
+inputs: [fiscal_document_id, market_route]
+states: [not_required, pending, submitted, accepted, rejected, manual_path]
+api: POST /v1/properties/{pid}/fiscal-documents/{id}/submit (idem)
+events: [FiscalDocumentSubmitted, FiscalDocumentRejected]
+data: [fiscal_document, government_submission_ref]
+rules:
+  - Only markets whose M44 rule pack and M38 connector are verified submit electronically; otherwise manual_path with clear label; never marked accepted without receipt.
+  - Rejections create correction workflow (credit note + reissue) per market rules.
+security: credentials in vault; M38 SF38.3.x controls.
+failure_cases: [route_unverified, platform_outage, rejected_schema]
+finance_report_effect: tax compliance status per document.
+i18n_a11y: none.
+acceptance: In a fixture market whose route is unverified, issuing an invoice sets manual_path and the compliance dashboard counts it as not submitted.
+dependency: M38 F38.3, M44 (`blocked` until verified per market).
+```
+
+## F08.5 Cashier shifts, cash and refunds
+
+```yaml
+id: M08.F08.5.SF08.5.1
+name: Open cashier shift with float
+phase: 2
+release: R1
+actors: [cashier, front_desk_agent]
+screens: [SCR-FIN-cashier-shift]
+inputs: [cashier_id, drawer_id, opening_float_by_denomination, currency]
+states: [open, closing, closed, reconciled]
+api: POST /v1/properties/{pid}/cashier-shifts (idem)
+events: [CashierShiftOpened]
+data: [cashier_shift, cash_movement]
+rules:
+  - One open shift per cashier per drawer; float issued from safe with dual count.
+security: cashier identity via personal login (no shared).
+failure_cases: [second_open_shift, float_mismatch]
+finance_report_effect: cash control (M60 SF60.1.1).
+i18n_a11y: none.
+acceptance: Opening a second shift for the same cashier fails until the first is closed.
+dependency: M60.
+```
+
+```yaml
+id: M08.F08.5.SF08.5.2
+name: Cash movements (paid-out, drop, safe)
+phase: 2
+release: R1
+actors: [cashier, duty_manager]
+screens: [SCR-FIN-cashier-shift]
+inputs: [shift_id, movement_type (paid_out/drop/float_top_up/petty_cash), amount, evidence, approver]
+states: [recorded]
+api: POST /v1/properties/{pid}/cashier-shifts/{sid}/movements (idem)
+events: [CashMovementRecorded]
+data: [cash_movement]
+rules:
+  - Paid-outs require receipt evidence and approval above limit; drops recorded with bag id and witness.
+security: SoD for approval.
+failure_cases: [paid_out_without_evidence]
+finance_report_effect: petty cash expense to cost center; cash in transit.
+i18n_a11y: none.
+acceptance: A paid-out above limit without approval is rejected.
+dependency: M60 SF60.1.2.
+```
+
+```yaml
+id: M08.F08.5.SF08.5.3
+name: Close shift with blind count and variance
+phase: 2
+release: R1
+actors: [cashier, front_office_manager]
+screens: [SCR-FIN-cashier-close]
+inputs: [shift_id, counted_by_tender_and_denomination]
+states: [closed_balanced, closed_with_variance, reviewed]
+api: POST /v1/properties/{pid}/cashier-shifts/{sid}/close (idem)
+events: [CashierShiftClosed, CashVarianceDetected]
+data: [cashier_shift, cash_movement]
+rules:
+  - Blind count - cashier enters counts before seeing expected; variance beyond tolerance requires manager review and reason.
+  - Card totals compared to terminal batch where available.
+security: expected totals hidden until count submitted.
+failure_cases: [variance_over_tolerance, terminal_batch_missing]
+finance_report_effect: over/short to cash variance account.
+i18n_a11y: none.
+acceptance: The close screen does not display expected cash until counts are submitted; a 5.000 shortage over 1.000 tolerance requires manager review.
+dependency: M60.
+```
+
+```yaml
+id: M08.F08.5.SF08.5.4
+name: Foreign-currency cash acceptance (gated)
+phase: 2
+release: R1
+actors: [cashier, financial_controller]
+screens: [SCR-FD-folio-payment]
+inputs: [currency, amount, rate, rate_source]
+states: [disabled, enabled]
+api: POST /v1/properties/{pid}/folios/{fid}/windows/{wid}/payments (tender=fx_cash)
+events: [FolioPaymentPosted]
+data: [folio_line, cash_movement, fx_rate]
+rules:
+  - Disabled by default; if enabled, hotel posts base-currency equivalent at published house rate; change given in base currency only; activation requires M44 gate (currency exchange licensing may apply).
+security: financial_controller sets rates.
+failure_cases: [gate_blocked]
+finance_report_effect: FX gain/loss account.
+i18n_a11y: none.
+acceptance: With the gate blocked, foreign-currency tender is not offered.
+dependency: M44 (`unverified-assumption` licensing per market).
+```
+
+```yaml
+id: M08.F08.5.SF08.5.5
+name: Cash refund limits
+phase: 2
+release: R1
+actors: [cashier, duty_manager]
+screens: [SCR-FD-folio-refund]
+inputs: [refund_request_id, shift_id]
+states: [paid_out, rejected]
+api: POST /v1/properties/{pid}/refunds/{rid}/pay-cash (idem)
+events: [RefundCompleted]
+data: [cash_movement, folio_line]
+rules:
+  - Cash refunds only for cash-originated payments unless approved; per-refund and per-shift caps; guest signature captured.
+security: approval and step-up.
+failure_cases: [cash_refund_for_card_payment]
+finance_report_effect: cash reduction in shift.
+i18n_a11y: e-sign accessible alternative.
+acceptance: A cash refund of a card payment is blocked without financial_controller approval.
+dependency: M41 e-sign (optional).
+```
+
+## F08.6 Night audit, reopening and finance export
+
+```yaml
+id: M08.F08.6.SF08.6.1
+name: Pre-audit checks
+phase: 2
+release: R1
+actors: [night_auditor]
+screens: [SCR-FIN-night-audit]
+inputs: [business_date]
+states: [passed, warnings, blocking_errors]
+api: POST /v1/properties/{pid}/night-audit-runs (idem) then GET .../night-audit-runs/{run}/checks
+events: [NightAuditStarted]
+data: [night_audit_run, night_audit_step]
+rules:
+  - Checks - arrivals not checked in (no-show candidates), departures not checked out, open cashier shifts, unresolved FO/HK discrepancies, pending interface postings (POS queues), inventory integrity job, dead letters affecting postings.
+  - Blocking errors must be resolved or acknowledged by authorized role with reason.
+security: night_auditor.
+failure_cases: [open_shift, pos_queue_backlog]
+finance_report_effect: none.
+i18n_a11y: checklist accessible.
+acceptance: Audit cannot proceed past checks with an open cashier shift unless the front_office_manager force-closes it with reason.
+dependency: M06 SF06.3.5, M13 queues.
+```
+
+```yaml
+id: M08.F08.6.SF08.6.2
+name: Room, package and tax posting run
+phase: 2
+release: R1
+actors: [night_audit_worker]
+screens: [SCR-FIN-night-audit]
+inputs: [business_date, in_house_stays, posting_schedules]
+states: [running, completed, failed]
+api: POST /v1/properties/{pid}/night-audit-runs/{run}/post-room-charges (idem)
+events: [RoomChargesPosted]
+data: [folio_line, reservation_night]
+rules:
+  - For each in-house stay night equal to business date, post room and package components from reservation_night lines with tax; idempotent per (stay, night).
+  - Day-use and complimentary nights post per rules (zero-rated comp with statistic).
+security: service account.
+failure_cases: [partial_failure_resume]
+finance_report_effect: room revenue for the business date; statistics (rooms sold, comp, house).
+i18n_a11y: none.
+acceptance: Re-running the posting step after a crash midway posts only missing nights; each stay night has exactly one room charge.
+dependency: M04 SF04.3.4.
+```
+
+```yaml
+id: M08.F08.6.SF08.6.3
+name: No-show and cancellation fee posting
+phase: 2
+release: R1
+actors: [night_audit_worker, night_auditor]
+screens: [SCR-FIN-night-audit-noshow]
+inputs: [confirmed_no_shows, late_cancellations]
+states: [posted, charge_failed]
+api: POST /v1/properties/{pid}/night-audit-runs/{run}/post-fees (idem)
+events: [NoShowFeePosted]
+data: [folio_line, payment_authorization_ref]
+rules:
+  - Fees per snapshot posted to reservation folio and charged via token or deposit; failure creates AR/collection item.
+security: none.
+failure_cases: [token_declined]
+finance_report_effect: no-show/cancellation revenue.
+i18n_a11y: none.
+acceptance: Each confirmed no-show has exactly one fee posting; declined tokens appear in the collections list.
+dependency: SF05.3.3.
+```
+
+```yaml
+id: M08.F08.6.SF08.6.4
+name: Guest ledger balancing and audit reports
+phase: 2
+release: R1
+actors: [night_auditor, financial_controller, gm]
+screens: [SCR-FIN-night-audit-reports, SCR-GM-daily-flash]
+inputs: [business_date]
+states: [balanced, out_of_balance]
+api: GET /v1/properties/{pid}/night-audit-runs/{run}/reports
+events: [GuestLedgerBalanced, GuestLedgerOutOfBalance]
+data: [guest_ledger_balance, folio_line, deposit_ledger_entry]
+rules:
+  - Verify guest ledger equation, deposit ledger vs liability, AR transfers vs M20, statistics (occupancy, ADR, RevPAR per KPI dictionary).
+  - Out of balance blocks rollover; emits incident.
+  - Reports - trial balance of guest ledger, revenue by department/transaction code, payments by tender, voids/corrections, allowances, overrides, rate variance, in-house list snapshot, cashier summaries.
+security: reports scoped.
+failure_cases: [equation_fails]
+finance_report_effect: daily flash; source for M32 and M19 export.
+i18n_a11y: reports exportable PDF/CSV bilingual headers.
+acceptance: An injected unbalanced line (test only) makes the balance step fail and blocks rollover; a normal day balances to the minor unit.
+dependency: M32 KPI dictionary.
+```
+
+```yaml
+id: M08.F08.6.SF08.6.5
+name: Reopen closed business date
+phase: 2
+release: R1
+actors: [financial_controller, gm]
+screens: [SCR-FIN-business-date-reopen]
+inputs: [business_date, reason, scope]
+states: [requested, approved, reopened, reclosed]
+api: POST /v1/properties/{pid}/business-dates/{date}/reopen (idem)
+events: [BusinessDateReopened, BusinessDateReclosed]
+data: [business_day, night_audit_run]
+rules:
+  - Only the most recent closed date may be reopened, only if its accounting period is not locked and its finance export not yet accepted by GL (else corrections go to current date).
+  - While reopened, only correction postings with reason allowed; reclose reruns balancing and regenerates export batch with version increment.
+  - Operational posting continues on the current open date.
+security: dual approval + step-up; audited.
+failure_cases: [period_locked, export_already_posted]
+finance_report_effect: restated daily reports flagged with version.
+i18n_a11y: none.
+acceptance: Reopening a date whose export was accepted by the GL is refused; reopening the last date allows a correction and a re-export with version 2 replacing version 1.
+dependency: SF01.2.5, M19.
+```
+
+```yaml
+id: M08.F08.6.SF08.6.6
+name: Finance export batch to GL
+phase: 2
+release: R1
+actors: [night_audit_worker, finance_clerk, financial_controller]
+screens: [SCR-FIN-export-batches]
+inputs: [business_date, mapping_version]
+states: [generated, sent, accepted, rejected, superseded]
+api: POST /v1/properties/{pid}/finance-exports (idem); GET .../finance-exports/{id}
+events: [FinanceExportGenerated, FinanceExportAccepted]
+data: [finance_export_batch, transaction_code]
+rules:
+  - Summarized journal by transaction code → GL account/department/tax code; balanced debits/credits; idempotent batch id per business date and version.
+  - Phase 2 exports CSV/JSON to external accounting; Phase 4 posts to M19 internally.
+  - Unmapped codes block export and list missing mappings.
+security: financial_controller approves mapping changes.
+failure_cases: [unmapped_code, external_import_rejected]
+finance_report_effect: GL revenue, tax liability, deposits, AR, cash.
+i18n_a11y: none.
+acceptance: The export for a business date balances (debits = credits), maps every transaction code, and re-sending the same batch id does not duplicate GL entries.
+dependency: M19 (Phase 4); external accounting system format `unverified-assumption` (D-131).
+```
+
+### M08 key invariants
+1. Folio lines are append-only; corrections are reversal/transfer/allowance/credit-note lines referencing originals.
+2. Guest ledger equation holds to the minor unit every business date; rollover is blocked otherwise.
+3. Each external event (POS, PSP webhook, minibar count, room night) posts at most once (idempotency on source reference).
+4. Fiscal documents use gap-free, per-legal-entity sequences, are immutable and reproducible; never marked accepted/submitted without a receipt.
+5. No PAN/CVV in folio tables; payments post on PSP confirmation only; timeouts resolved by inquiry, never blind retry.
+6. Refunds never exceed original payments; requester ≠ approver.
+7. Deposits are liabilities until applied or forfeited.
+8. A closed business date only reopens under dual approval and never after its period is locked or export accepted.
+
+### M08 module-level acceptance
+| Test | Maps to | Statement |
+|---|---|---|
+| AC-M08-1 | AT-G03.2 | Room and parking charges post once each to the correct routed windows. |
+| AC-M08-2 | AT-G06.1 | Guest and corporate payments through the gateway (sandbox) with duplicate webhook produce one payment line. |
+| AC-M08-3 | AT-G07.2 | Refund reverses charge and emits one points reversal. |
+| AC-M08-4 | AT-G08.5 | Night audit balances guest ledger, reports occupancy/ADR/RevPAR and exports a balanced GL batch with drill-through to folio lines. |
+| AC-M08-5 | AT-G02.3 | Corporate composite booking billed via master and individual windows with routing; post-event reconciliation ties to AR. |
+| AC-M08-6 | AT-G09.3 | Five fixture markets produce jurisdiction-specific invoice outputs; unverified submission routes show manual_path. |
+| AC-M08-7 | AT-G20.8 | Duplicate payment/provider webhook and repeated invoice attempt are surfaced/deduplicated. |
+
+### M08 open decisions
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-111 | Invoice numbering series, mandatory content and e-invoicing route per market | Financial Controller + counsel per market | One series per legal entity and document type; manual_path everywhere until M38 route verified. |
+| D-113 | Night-audit reopen policy (how many days, who approves) | Financial Controller | Only last closed date, dual approval, never after GL acceptance. |
+| D-117 | Preauth amount and incidental allowance per night | Front Office Manager + Financial Controller | Room+tax for stay + incidental allowance per night set per property currency. |
+| D-131 | External accounting system and export format before M19 exists | Financial Controller | Generic balanced CSV/JSON journal; format adapter per system later. |
+| D-132 | Foreign-currency cash acceptance | Financial Controller + counsel | Disabled; base currency cash only. |
+| D-133 | Late-charge window after checkout and card-on-file consent wording | Front Office Manager + DPO | 72 h window; charge only with explicit card-on-file consent. |
+
+---
+
+## Cross-module assumptions for other catalogue writers
+
+1. **Entity names** in §0.1 are canonical; do not create parallel `booking`, `guest`, `invoice`, `stock_night` or `charge` tables. Outlet modules post to `folio_line` through the M08 posting API with `source_ref` idempotency; they never write folio tables directly.
+2. **Business date:** every operational/financial record carries `business_date` from `business_day`; modules must not derive it from wall-clock time. Offline devices keep their original business date if still open, else post late (SF01.2.3).
+3. **Inventory:** only M03 decides saleability of rooms (`room_type_inventory_night`); M09 owns timed non-room resources with the same hold/expiry pattern and a composite-hold saga orchestrated by M12 (Phase 3).
+4. **Tax:** M04/M08 call M38 `TaxPort.compute` and render fiscal documents with M38 templates; no module hard-codes rates.
+5. **Payments:** all money movement via M28 ports; M08 stores only `payment_authorization_ref`. Timeouts resolved by inquiry.
+6. **Consent:** marketing/communication/ID-processing purposes are checked via M02 `consent_record`; service messages are not marketing.
+7. **Approvals:** use M02 `approval_request`/`approval_policy`; do not build module-specific approval tables.
+8. **Events** named here (e.g. `ReservationConfirmed`, `GuestCheckedIn`, `GuestCheckedOut`, `StayCompleted` semantics carried by `GuestCheckedOut`, `FolioChargePosted`, `FolioLineReversed`, `RefundCompleted`, `RoomTypeAvailabilityChanged`, `BusinessDateRolled`, `DeviceEntitlementGranted/Revoked`) are the contract for M17, M30, M31, M32, M34–M36, M52, M55.
+9. **Honesty:** channel manager, PSP, e-invoicing routes, guest-registration routes, lock systems, FX source and SMS/WhatsApp providers are all `unverified-assumption` in this file.
+
+## Decision register for this file (D-101..D-133)
+
+| ID | Module | Short title | Owner |
+|---|---|---|---|
+| D-101 | M01 | Night-audit rollover mode and deadline | Front Office Manager |
+| D-102 | M01 | On-prem hardware/support model | IT Admin + MetriSys Ops |
+| D-103 | M02 | Staff MFA factors and terminal PIN policy | IT Admin + GM |
+| D-104 | M01 | RPO/RTO and offsite backup provider | GM + IT Admin |
+| D-105 | M03 | Default overbooking limits | Revenue Manager |
+| D-106 | M03 | Hold TTL defaults | Front Office Manager + Revenue Manager |
+| D-107 | M04 | Firm quote validity and extension pricing | Revenue Manager + Sales Manager |
+| D-108 | M04 | Tax-inclusive display per market | Compliance Officer + counsel |
+| D-109 | M07 | Channel manager partner and certification | Revenue Manager + Integration Admin |
+| D-110 | M05 | Cancellation/no-show defaults | Revenue Manager + GM |
+| D-111 | M08 | Invoice series and e-invoicing per market | Financial Controller + counsel |
+| D-112 | M04 | FX source and multi-currency | Financial Controller |
+| D-113 | M08 | Business-date reopen policy | Financial Controller |
+| D-114 | M06 | Offline conflict precedence | Housekeeping Supervisor + Front Office Manager |
+| D-115 | M02 | Guest authentication method per market | Product Owner + DPO |
+| D-116 | M01 | SaaS region and data residency | Compliance Officer + counsel |
+| D-117 | M08 | Preauth/incidental amounts | Front Office Manager + Financial Controller |
+| D-118 | M02 | Retention periods (ID, registration, fiscal) | DPO + counsel |
+| D-119 | M05 | Walk policy and partner hotels | GM |
+| D-120 | M07 | Own booking engine vs partner | Product Owner |
+| D-121 | M01 | Digit shaping and Hijri display | Product Owner |
+| D-122 | M04 | Child age bands | Revenue Manager |
+| D-123 | M02 | Small-hotel SoD warn mode | Financial Controller |
+| D-124 | M03 | Occupancy treatment of OOO/comp/house | Financial Controller |
+| D-125 | M05 | Guest registration reporting routes | Compliance Officer + counsel |
+| D-126 | M05 | Door-lock system | IT Admin + Chief Engineer |
+| D-127 | M06 | Inspection policy/self-inspection | Housekeeping Supervisor |
+| D-128 | M06 | DND welfare-check threshold | GM + Security |
+| D-129 | M07 | Attribution precedence/lookback | Marketing Manager + Referral Program Admin |
+| D-130 | M07 | Commission accrual trigger/basis | Financial Controller |
+| D-131 | M08 | Pre-M19 accounting export format | Financial Controller |
+| D-132 | M08 | Foreign-currency cash acceptance | Financial Controller + counsel |
+| D-133 | M08 | Late-charge window and card-on-file consent | Front Office Manager + DPO |

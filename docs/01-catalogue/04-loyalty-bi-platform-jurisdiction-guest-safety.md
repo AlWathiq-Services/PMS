@@ -28,7 +28,7 @@
 
 Each subfeature below is a Section-L block (README §3.4) in compact YAML flow style with all 18 fields. `acceptance` is the unit-level `AC-<SF id>`; module acceptance maps to integrated scenario tests `AT-Gnn.k` owned by `docs/09`. Open decisions for this group use **D-401..D-499**; they are summarised again in §16 for the decision log in `docs/13`.
 
-Screen prefixes used here: `SCR-GUEST-*` (guest web/app), `SCR-HUB-*` (MetriStay Partner Hub), `SCR-FD-*` (front desk), `SCR-FIN-*` (finance), `SCR-MGMT-*` (owner/GM/BI), `SCR-HR-*`, `SCR-COMP-*` (compliance/jurisdiction), `SCR-ADMIN-*` (property/integration admin), `SCR-DEV-*` (developer platform), `SCR-CONTENT-*` (media), `SCR-SAFETY-*` (incident/lost-found), `SCR-STAFF-*` (staff mobile), `SCR-POS-*` (outlet POS), `SCR-MKT-*` (marketplace, Later), `SCR-SUP-*` (marketplace supplier, Later).
+Screen prefixes used here: `SCR-GUEST-*` (guest web/app), `SCR-HUB-*` (MetriStay Partner Hub), `SCR-FD-*` (front desk), `SCR-FIN-*` (finance), `SCR-MGMT-*` (owner/GM/BI), `SCR-HR-*`, `SCR-COMP-*` (compliance/jurisdiction), `SCR-ADMIN-*` (property/integration admin), `SCR-DEV-*` (developer platform), `SCR-CONTENT-*` (media), `SCR-SAFETY-*` (incident/lost-found), `SCR-STAFF-*` (staff mobile), `SCR-POS-*` (outlet POS), `SCR-CORP-*` (corporate portal), `SCR-TV-*` (in-room TV, Later), `SCR-MKT-*` (marketplace, Later), `SCR-SUP-*` (marketplace supplier, Later).
 
 ---
 
@@ -4012,3 +4012,52 @@ M37 invariants: no self-custody of funds; no multi-level payouts; AI never takes
 | D-450 | Retroactive adjustment policy for closed periods | Financial Controller | Adjust in current period with reference; no reopen without controller approval |
 
 ---
+
+## 16. Cross-module summary for `docs/13` (decision log, traceability) and `docs/03` (ERD)
+
+### 16.1 Open decisions in this group (D-401..D-450; D-451..D-499 reserved)
+| Range | Module | Decisions |
+|---|---|---|
+| D-401..D-404 | M30 | Points accounting/breakage; earn/tier/expiry policy; cash-wallet go/no-go and PSP; consumer-law terms per market |
+| D-405..D-412 | M31 | Rate and deductions; **Oman legal + tax opinion**; referrer categories; attribution window/cookies; refund window/calc date; payout channel; other-four-market review; commission rounding |
+| D-413..D-416 | M32 | KPI/statement layout; allocation drivers and GL vs memo; BI tooling; net-income sources |
+| D-417..D-419 | M33 | Public developer portal; deprecation window; webhook signing |
+| D-420..D-421 | M34 | PBX vendor/protocol; emergency-calling obligations |
+| D-422 | M35 | HSIA vendor and network-log retention |
+| D-423 | M36 | IPTV vendor and content licensing |
+| D-424..D-425 | M37 | Marketplace merchant-of-record/licensing; AI automation scope |
+| D-426..D-431 | M38 | **"NIS" terminology**; Canadian payroll engine vs provider; advisers/signoff; filing routes; Québec parameter source; tax rounding |
+| D-432..D-434 | M39 | Enhancement model licence; GPU hardware; CDN/syndication |
+| D-435..D-437 | M40 | LLM provider/data terms; messaging channels/BSP; transcript retention |
+| D-438..D-441 | M41 | ID lawful basis/fields/retention/OCR; biometric enablement; e-signature level; SMS/WhatsApp providers |
+| D-442..D-444 | M42 | Fire/BMS/camera interfaces; emergency numbers/procedures; CCTV access policy |
+| D-445..D-446 | M43 | Found-property retention/disposal; courier/prohibited items |
+| D-447..D-450 | M44 | Counsel per country/category; launch sequence; confidence method; retroactive adjustment |
+
+### 16.2 Canonical entity names defined here (bounded context → entities)
+- `loyalty` (M30): `loyalty_program`, `loyalty_account`, `loyalty_tier`, `points_campaign_version`, `points_ledger_entry`, `points_lot`, `points_redemption`, `points_hold`, `points_dispute`, `loyalty_fraud_review`, `loyalty_liability_snapshot`, `loyalty_terms_version`, `external_wallet_link` (gated).
+- `referral` (M31): `referral_program_policy`, `referrer`, `referral_agreement`, `referral_code`, `referral_touch`, `referral_attribution`, `referral_dispute`, `margin_formula_version`, `booking_margin_calculation`, `commission_ledger_entry`, `commission_payout`, `referrer_tax_profile`. (No referrer-to-referrer entity exists by design.)
+- `analytics` (M32): `kpi_definition`, `report_definition`, `report_version`, `report_run`, `report_schedule`, `allocation_policy_version`, `allocation_run`, `budget_version`, `budget_line`, `data_freshness_status`, `restatement_record`, `fact_room_night`, `fact_revenue_line`, `fact_cost_line`, `fact_labor_cost`, `fact_utility_usage`.
+- `integration-platform` (M33): `api_contract_version`, `api_client`, `api_scope_grant`, `api_rate_limit_policy`, `event_schema_version`, `webhook_subscription`, `webhook_delivery`, `dead_letter_item`, `event_replay_request`, `sandbox_tenant`, `sdk_release`, `certification_run`, `partner_access_review`, `deprecation_notice`.
+- `uc` (M34, Later): `pbx_system`, `pbx_extension`, `extension_room_map`, `wake_up_call`, `wake_up_attempt`, `call_charge_record`, `uc_sync_log`. `hsia` (M35, Later): `hsia_plan`, `hsia_entitlement`, `hsia_session`, `hsia_usage_record`, `hsia_voucher`. `iptv` (M36, Later): `iptv_device`, `iptv_pairing`, `content_licence_ref`, `iptv_purchase`, `iptv_reset_log`. `marketplace`/`ai-governance` (M37, Later): `marketplace_listing`, `marketplace_supplier`, `marketplace_order`, `merchant_of_record_decision`, `supplier_payout`, `marketplace_dispute`, `ai_tool_grant`, `ai_action_approval`, `ai_eval_run`, `partner_incentive_agreement`.
+- `tax-compliance` (M38): `property_legal_entity`, `tax_code`, `tax_rule_version`, `tax_exemption_evidence`, `tax_determination`, `tax_invoice_document`, `filing_obligation`, `filing_calendar_entry`, `tax_return_workpaper`, `remittance`, `adviser_signoff`, `employee_sin_record`, `payroll_statutory_parameter_set`, `payroll_statutory_deduction_line`, `tax_slip`, `government_connector`, `government_credential_ref`, `government_submission`, `submission_receipt`.
+- `jurisdiction` (M44): `jurisdiction_node`, `jurisdiction_profile`, `classification_decision`, `rule_pack`, `rule_pack_version`, `obligation`, `evidence_source`, `rule_test_fixture`, `feature_activation_gate`, `compliance_exception`, `rule_change_alert`.
+- `media` (M39): `media_asset`, `media_original`, `media_version`, `media_derivative`, `media_rights_record`, `media_subject_link`, `media_caption`, `media_publication`, `syndication_status`, `media_enhancement_job`, `enhancement_preset_version`, `enhancement_model_registry`, `media_takedown`, `media_access_log`.
+- `guest-assistant` (M40): `kb_article`, `kb_article_version`, `kb_source_chunk`, `assistant_conversation`, `assistant_message`, `assistant_tool_call`, `assistant_tool_grant`, `handoff_case`, `assistant_eval_run`, `assistant_cost_record`, `assistant_channel_config`.
+- `identity-verification` (M41): `id_document_capture`, `id_document_image`, `ocr_extraction`, `ocr_field_confirmation`, `identity_verification_check`, `biometric_consent`, `signature_envelope`, `signature_evidence`, `otp_challenge`, `qr_handoff_token`, `verification_delivery_attempt`.
+- `safety` (M42): `incident`, `incident_signal`, `incident_classification`, `incident_timeline_entry`, `playbook_version`, `playbook_step_execution`, `dispatch_page`, `incident_evidence_ref`, `guest_welfare_record`, `post_incident_review`, `drill`, `corrective_action`, `life_safety_system_record`.
+- `lost-found` (M43): `lost_item`, `lost_item_photo`, `custody_transfer`, `storage_location`, `owner_inquiry`, `item_match`, `item_claim`, `item_release`, `disposal_record`, `lost_item_dispute`.
+
+Entities referenced but owned elsewhere (must match sibling catalogue files): `guest_profile`, `reservation`, `reservation_draft`, `stay`, `quote`, `policy_snapshot`, `folio`, `folio_line`, `payment`, `disbursement`, `gl_journal`, `supplier_invoice`, `work_order`, `stock_ledger_entry`, `consent_record`, `guest_identity`, `case`, `service_request`, `room_block`, `parking_session`.
+
+### 16.3 Section G coverage by this group
+| Section G scenario | Covered by |
+|---|---|
+| G07 points earn/redeem/refund; referral Oman gate | M30 F30.1–F30.2; M31 F31.1–F31.2 (AT-G07.1–G07.12) |
+| G08 night audit/month-end KPIs, allocation, incomplete estimate | M32 F32.1–F32.4 |
+| G09 five-market classifier | M44 F44.1–F44.2; M38 F38.1, F38.3 |
+| G12 Canadian tax, SIN payroll, T4, government adapter/outage | M38 F38.1–F38.3; M44 |
+| G13 media publish/enhance; guest AI; ID OCR, e-sign, OTP, payment-gated confirmation | M39, M40, M41 |
+| G14 incident detection/escalation/chronology/outage; lost item match/release | M42, M43 (M40 SF40.2.6 emergency routing) |
+| G19 drill-through and acquisition cost | M32 SF32.1.3, SF32.2.6, SF32.3.5 |
+| G20 duplicate webhook, OCR error, outage | M33 SF33.2.3; M30 SF30.1.5; M41 SF41.1.5; M40 SF40.2.7 |
