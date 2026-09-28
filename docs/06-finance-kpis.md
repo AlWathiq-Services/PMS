@@ -4,7 +4,7 @@
 
 > **Status of this document.** Everything here is a specification/design target. The chart of accounts is a **configurable template inspired by the structure of the Uniform System of Accounts for the Lodging Industry (USALI)** — it is *not* a licensed copy of USALI, not an endorsement by its publishers, and not a statutory chart for any of the five markets. Each property's financial controller adopts, renames or extends it. **No tax, levy, payroll-contribution or withholding rate in this document is a legal value.** Every rate shown in a posting example is an arithmetic placeholder labelled `TEST-ONLY`; real rates come only from a jurisdiction rule pack in status `counsel-reviewed` or better (see `docs/07`, M38/M44).
 
-Decision ids in this document use the range **D-601…D-699** (proposed; consolidated into the decision log in `docs/13`).
+Decision ids in this document use the range **D-801…D-899** (proposed; consolidated into the decision log in `docs/13`).
 
 ---
 
@@ -41,16 +41,16 @@ Decision ids in this document use the range **D-601…D-699** (proposed; consoli
 |---|---|---|---|---|
 | `RMS` | Rooms | Operated | Yes | Includes front office, housekeeping, laundry (if in-house, else sub-dept `RMS-LDY`), reservations, guest-facing concierge. |
 | `FNB-<outlet>` | Food & beverage outlets (restaurant, room service, minibar, bar) | Operated | Yes | One code per outlet, e.g. `FNB-REST`, `FNB-IRD`, `FNB-MINI`. |
-| `BAR` | Bar (if managed as its own department) | Operated | Yes | Property can instead map bar as `FNB-BAR`; D-601 chooses. |
+| `BAR` | Bar (if managed as its own department) | Operated | Yes | Property can instead map bar as `FNB-BAR`; D-801 chooses. |
 | `CLB` | Club (lounge/nightlife/pool/fitness venue, M15) | Operated | Yes | Admission, membership, minimum spend, hosted bar. |
 | `CAT` | Catering / Banquets & conference (M12/M16) | Operated | Yes | Venue hire, AV, catering food/beverage, off-site catering, setup labor fees. |
 | `PRK` | Parking (M17) | Operated | Yes | May be "minor operated" in small hotels. |
 | `OOD-<code>` | Other operated departments (spa, retail, transport fleet, guest laundry, day-pass, concierge travel fees) | Operated | Yes | Created only when M58/M59/M45 activated for the property. |
 | `MIS` | Miscellaneous income | Revenue only | Yes | Cancellation/attrition fees, breakage, commissions received. |
 | `AGN` | Administrative & General | Undistributed | No | Finance, purchasing office, PSP fees, bad debt, audit, licences. |
-| `SMK` | Sales & Marketing | Undistributed | No | Channel commissions (policy D-602), referral commissions, loyalty program cost, campaigns, website. |
+| `SMK` | Sales & Marketing | Undistributed | No | Channel commissions (policy D-802), referral commissions, loyalty program cost, campaigns, website. |
 | `POM` | Property Operation & Maintenance / Engineering | Undistributed | No | Engineering labor, maintenance contracts, materials, grounds, cylinder losses (policy). |
-| `UTL` | Utilities | Undistributed | No | Electricity, water/sewage, pipeline gas, cylinder gas not charged to outlets (policy D-603). |
+| `UTL` | Utilities | Undistributed | No | Electricity, water/sewage, pipeline gas, cylinder gas not charged to outlets (policy D-803). |
 | `ITC` | Information & Telecommunications systems | Undistributed | No | Software/SaaS, hardware maintenance, connectivity. |
 | `HRM` | Human Resources | Undistributed | No | Recruitment, training (M62), staff welfare. |
 | `NOP` | Non-operating (fixed charges) | Below GOP | No | Management/franchise fees, rent, property insurance, property taxes, depreciation, interest, income tax. |
@@ -80,7 +80,7 @@ Decision ids in this document use the range **D-601…D-699** (proposed; consoli
 | 1200 | Inventory – food (per store) | Dr | Stock ledger (M14/M50) | Lot-level valuation. |
 | 1210 | Inventory – beverage | Dr | Stock ledger | |
 | 1220 | Inventory – club/bar supplies | Dr | Stock ledger | |
-| 1230 | Inventory – housekeeping, linen in store, amenities | Dr | Stock ledger (M56) | Linen in circulation per policy D-604. |
+| 1230 | Inventory – housekeeping, linen in store, amenities | Dr | Stock ledger (M56) | Linen in circulation per policy D-804. |
 | 1240 | Inventory – engineering spares | Dr | Stock ledger (M26) | |
 | 1250 | Inventory – gas in cylinders (full cylinders) | Dr | Cylinder ledger (M25) | Gas content only; shells are supplier property. |
 | 1260 | Inventory – quarantine (non-sellable, pending decision) | Dr | Quarantine ledger | Never available for issue (SF50.3.5). |
@@ -101,11 +101,11 @@ Decision ids in this document use the range **D-601…D-699** (proposed; consoli
 | 2107 | Deferred revenue – club memberships/passes | Cr | Membership (M15) | Recognized over entitlement period. |
 | 2110 | Guest ledger credit balances | Cr | Folio | Reclass at close if folios in credit. |
 | 2120 | **Gift voucher liability** | Cr | Voucher ledger (M54) | Issued − redeemed − breakage recognized. |
-| 2130 | **Loyalty points liability** (deferred revenue or cost accrual per D-605) | Cr | Points ledger (M30) | Reconciles to Σ outstanding points × valuation version. |
+| 2130 | **Loyalty points liability** (deferred revenue or cost accrual per D-805) | Cr | Points ledger (M30) | Reconciles to Σ outstanding points × valuation version. |
 | 2140 | **Referral commission accrual (pending)** | Cr | Referral commission ledger (M31) | Pending = earned per formula, not yet approved. |
 | 2145 | Referral commission payable (approved) | Cr | Referral commission ledger | |
-| 2150 | Tips payable to staff | Cr | POS tips (M13) | Pass-through; paid via payroll or cash-out per D-606. |
-| 2155 | Service charge distribution payable | Cr | POS / folio | Only when service charge is distributed (D-606). |
+| 2150 | Tips payable to staff | Cr | POS tips (M13) | Pass-through; paid via payroll or cash-out per D-806. |
+| 2155 | Service charge distribution payable | Cr | POS / folio | Only when service charge is distributed (D-806). |
 | 2160 | Travel supplier payable (concierge orders as agent) | Cr | Travel order (M45) | Only where hotel collects on behalf. |
 | 2200 | **Net salaries payable** | Cr | Payroll run (M27) | Cleared only by bank/WPS confirmation. |
 | 2210.`<jur>` | Employee statutory withholdings payable (income tax, social insurance, CPP/QPP/EI/QPIP where applicable) | Cr | Payroll | Per jurisdiction/program. |
@@ -141,26 +141,26 @@ Decision ids in this document use the range **D-601…D-699** (proposed; consoli
 | 4100 | Food revenue | FNB-`<outlet>` | |
 | 4110 | Beverage revenue | FNB-`<outlet>` / BAR | |
 | 4120 | In-room dining revenue | FNB-IRD | |
-| 4130 | Minibar revenue | FNB-MINI or RMS (D-607) | |
-| 4150 | Service charge retained (only when policy = retained revenue) | Outlet | D-606. |
+| 4130 | Minibar revenue | FNB-MINI or RMS (D-807) | |
+| 4150 | Service charge retained (only when policy = retained revenue) | Outlet | D-806. |
 | 4190 | F&B allowances (contra) | Outlet | |
 | 4300 | Club admission revenue | CLB | |
 | 4310 | Club membership revenue (released from 2107) | CLB | |
 | 4320 | Club minimum-spend shortfall revenue | CLB | |
-| 4330 | Club beverage/food revenue | CLB | Or FNB account with outlet=CLB (D-601). |
+| 4330 | Club beverage/food revenue | CLB | Or FNB account with outlet=CLB (D-801). |
 | 4400 | Catering/banquet food revenue | CAT | |
 | 4410 | Catering/banquet beverage revenue (incl. hosted bar) | CAT | |
 | 4420 | Venue/room hire | CAT | |
 | 4430 | AV & equipment rental | CAT | |
 | 4440 | Setup/labor/service fees (not service charge) | CAT | |
 | 4450 | Off-site catering revenue | CAT | |
-| 4460 | Attrition / cancellation fees (events) | CAT or MIS (D-608) | |
+| 4460 | Attrition / cancellation fees (events) | CAT or MIS (D-808) | |
 | 4500 | Parking revenue – transient | PRK | |
 | 4510 | Parking revenue – permits/passes | PRK | |
 | 4600 | Other operated revenue | OOD-`<code>` | Spa, retail, transport, guest laundry. |
 | 4610 | Concierge travel service fees / commissions (agent model) | OOD-TRV | Only where licensed model (M45 gate). |
 | 4700 | Gift voucher breakage | MIS | Only where rule pack permits (unclaimed-property rules). |
-| 4710 | Points breakage (expiry) | MIS or contra-SMK (D-605) | |
+| 4710 | Points breakage (expiry) | MIS or contra-SMK (D-805) | |
 | 4720 | Commissions received | MIS | |
 | 4790 | Other miscellaneous income | MIS | |
 
@@ -185,8 +185,8 @@ Decision ids in this document use the range **D-601…D-699** (proposed; consoli
 | 6130 | Cleaning supplies | RMS, FNB |
 | 6140 | Decorations, menus, printing | FNB, CAT |
 | 6150 | Cylinder gas consumed (outlet-charged policy) | FNB, CAT, CLB, RMS-LDY |
-| 6160 | Cylinder losses & deposit forfeits | POM or consuming outlet (D-603) |
-| 6200 | Commissions – OTA/channel/travel agent | RMS (USALI-style) or SMK (D-602) |
+| 6160 | Cylinder losses & deposit forfeits | POM or consuming outlet (D-803) |
+| 6200 | Commissions – OTA/channel/travel agent | RMS (USALI-style) or SMK (D-802) |
 | 6210 | Referral commission expense (MetriStay Network, marketing expense) | SMK |
 | 6220 | Loyalty program cost (cost-accrual model only) | SMK |
 | 6230 | PSP / card processing fees and chargeback fees | AGN |
@@ -226,7 +226,7 @@ Decision ids in this document use the range **D-601…D-699** (proposed; consoli
 | 7700 | Income tax expense | NOP |
 | 7800 | Gain/loss on asset disposal | NOP |
 
-**Configurable policy decisions (owner: `financial_controller`, all logged D-601…D-610):** bar as own department vs F&B outlet (D-601); channel commission in Rooms vs S&M (D-602); cylinder gas charged to outlet vs undistributed utilities (D-603); linen in circulation capitalized vs expensed (D-604); loyalty accounting model — *deferred revenue* (relative standalone-selling-price allocation to points, default assumption) vs *cost accrual* (D-605, requires auditor/counsel sign-off per legal entity); tips and service charge — pass-through liability vs retained revenue, per jurisdiction rule pack and employment contracts (D-606); minibar under Rooms vs F&B (D-607); event attrition fees in CAT vs MIS (D-608); GL-posted allocation vs management-layer allocation (D-609, default management layer); voucher breakage recognition method — proportional to redemption vs at expiry, subject to unclaimed-property rules (D-610).
+**Configurable policy decisions (owner: `financial_controller`, all logged D-801…D-810):** bar as own department vs F&B outlet (D-801); channel commission in Rooms vs S&M (D-802); cylinder gas charged to outlet vs undistributed utilities (D-803); linen in circulation capitalized vs expensed (D-804); loyalty accounting model — *deferred revenue* (relative standalone-selling-price allocation to points, default assumption) vs *cost accrual* (D-805, requires auditor/counsel sign-off per legal entity); tips and service charge — pass-through liability vs retained revenue, per jurisdiction rule pack and employment contracts (D-806); minibar under Rooms vs F&B (D-807); event attrition fees in CAT vs MIS (D-808); GL-posted allocation vs management-layer allocation (D-809, default management layer); voucher breakage recognition method — proportional to redemption vs at expiry, subject to unclaimed-property rules (D-810).
 
 ---
 
@@ -249,7 +249,7 @@ Legend: **Dr/Cr** show the default template; department in brackets. "GL: none" 
 | # | Event (domain event) | Trigger / source | Debit | Credit | Timing & reversal |
 |---|---|---|---|---|---|
 | EV-01 | Room & tax posting (`RoomChargePosted`) | Night audit per occupied stay-night, or on day-use check-out | 1100 Guest ledger | 4000/4010/4020/4030 [RMS] net; 2300.`<jur>` Tx; 2310.`<jur>` Lv | Business date of the stay night. Correction = `FolioChargeReversed` (mirror) + re-post. |
-| EV-02 | Package allocation (`PackageChargePosted`) | Package rate night | 1100 | Components by allocation version (rooms 4000, food 4100 [FNB-outlet], parking 4510 [PRK], etc.) + tax per component | Allocation by relative standalone selling price (default) or fixed component amount (D-611); allocation version stored per line. |
+| EV-02 | Package allocation (`PackageChargePosted`) | Package rate night | 1100 | Components by allocation version (rooms 4000, food 4100 [FNB-outlet], parking 4510 [PRK], etc.) + tax per component | Allocation by relative standalone selling price (default) or fixed component amount (D-811); allocation version stored per line. |
 | EV-03 | Ancillary folio charge (`FolioChargePosted`) | Upsell, minibar, laundry, AV, misc | 1100 | Revenue by product class + Tx | Reversal mirror with reason code & approval above threshold. |
 | EV-04 | Folio allowance / rebate (`FolioAllowancePosted`) | Service recovery (M55), rate adjustment | 4090/4190 contra [dept] + 2300 Tx (reduction, if rule pack allows) | 1100 | Approval per cap (SF55.2.3). |
 | EV-05 | Folio transfer (`FolioTransferred`) | Routing between windows/folios/master | 1100 (target) | 1100 (source) | Net zero in GL; sub-ledger audit only. |
@@ -279,8 +279,8 @@ Legend: **Dr/Cr** show the default template; department in brackets. "GL: none" 
 | EV-24 | POS sale settled (`PosCheckClosed`) | Check closed (tender cash/card/room/corporate/event) | 1000 / 1040 / 1100 (room charge) / 1110 (direct bill) | 4100/4110 [outlet] net; 2300 Tx; 2155 service charge (pass-through) **or** 4150 (retained); 2150 tips | Business date = outlet business date. |
 | EV-25 | POS void (`PosItemVoided`) | Before check close | GL: none (audit + void report, SF60.2.2) | — | |
 | EV-26 | POS post-close correction (`PosCheckReversed`) | After close; approval | Mirror of EV-24 | Mirror | Reason code; outlet manager approval. |
-| EV-27 | POS comp/discount (`PosDiscountApplied`) | Approved comp | 4190 contra (discount) or 5030 (comp, cost-based) | 4100/4110 or inventory | Policy D-612. |
-| EV-28 | Tips paid out (`TipsDistributed`) | Payroll or cash-out | 2150 | 2200 (via payroll) or 1000 | Distribution rules per D-606. |
+| EV-27 | POS comp/discount (`PosDiscountApplied`) | Approved comp | 4190 contra (discount) or 5030 (comp, cost-based) | 4100/4110 or inventory | Policy D-812. |
+| EV-28 | Tips paid out (`TipsDistributed`) | Payroll or cash-out | 2150 | 2200 (via payroll) or 1000 | Distribution rules per D-806. |
 | EV-29 | Club admission (`ClubAdmissionCharged`) | Entry scan/sale | 1100/1040/1000 | 4300 [CLB] + Tx | Capacity check precedes sale (no charge if denied). |
 | EV-30 | Club membership sold (`MembershipSold`) | Membership sale | 1040/1110 | 2107 deferred + Tx at invoice point per rule pack | Released monthly EV-31. |
 | EV-31 | Membership revenue release (`MembershipRevenueRecognized`) | Period job | 2107 | 4310 [CLB] | Straight-line over entitlement. |
@@ -302,7 +302,7 @@ Legend: **Dr/Cr** show the default template; department in brackets. "GL: none" 
 | EV-51 | Points become available (`PointsReleased`) | After stay/refund window | GL: none | — | Status change only. |
 | EV-52 | Points redeemed (`PointsRedeemed`) | Tender on eligible purchase | 2130 | 1100 / POS tender clearing | Tax on redemption per rule pack. |
 | EV-53 | Points expired (`PointsExpired`) | Expiry job | 2130 | 4710 [MIS] (deferred-revenue model) or 6220 contra (cost model) | If breakage is estimated up front, only true-up posts. |
-| EV-54 | Points reversed (`PointsReversed`) | Refund/chargeback/cancellation of source | 2130 | Source revenue account (restores allocation) | Exactly once per `(source_txn_id, reversal_reason)`; if points already redeemed → negative balance handling D-613. |
+| EV-54 | Points reversed (`PointsReversed`) | Refund/chargeback/cancellation of source | 2130 | Source revenue account (restores allocation) | Exactly once per `(source_txn_id, reversal_reason)`; if points already redeemed → negative balance handling D-813. |
 | EV-55 | Points valuation change (`PointsValuationRevised`) | Approved new valuation version | 2130 or source contra | 4710 / 6220 | Prospective; restatement report shows effect. |
 | EV-60 | Referral commission accrued (`ReferralCommissionAccrued`) | After checkout + cleared payment + refund window; margin formula version | 6210 [SMK] | 2140 | Commission = max(0, eligible margin) × contract rate. Zero margin → no entry (statement line "0 – not eligible"). |
 | EV-61 | Referral commission approved (`ReferralCommissionApproved`) | Finance + compliance approval; jurisdiction gate `open` | 2140 | 2145 (net) + 2320.`<jur>` withholding if verified rule applies | Blocked if jurisdiction/referrer category gate is closed. |
@@ -323,7 +323,7 @@ Legend: **Dr/Cr** show the default template; department in brackets. "GL: none" 
 | EV-76 | Supplier credit note (`SupplierCreditNoteApproved`) | Short/damaged/return | 2000 | 12xx / GRNI / expense; 1330 reversal | |
 | EV-77 | Return to vendor (`GoodsReturnedToVendor`) | Rejected/quarantined goods | 2020 (if not invoiced) or 1118/2000 | 1260/12xx | |
 | EV-78 | Payment approved (`PayablePaymentApproved`) | AP approval | GL: none (payment proposal state) | — | Separation: approver ≠ releaser. |
-| EV-79 | Payment released to bank (`PaymentBatchReleased`) | Payment releaser | GL: none or 2000 → 1060 in-transit (policy D-614) | — | |
+| EV-79 | Payment released to bank (`PaymentBatchReleased`) | Payment releaser | GL: none or 2000 → 1060 in-transit (policy D-814) | — | |
 | EV-80 | Payment confirmed by bank (`SupplierPaymentConfirmed`) | Bank statement / confirmation | 2000/2010 | 1020 (or 1060) | Partially paid invoices remain open for remainder. |
 | EV-81 | Bank rejection (`SupplierPaymentRejected`) | Bank return | 1060 reversal (if used) | — | Invoice returns to `approved-unpaid`. |
 | EV-82 | Utility accrual – estimate (`UtilityAccrualPosted`) | Period close, meter/estimate | 6300/6310/6320 [UTL] | 2030 | `evidence_status=estimate` or `incomplete-estimate` (§11). |
@@ -336,7 +336,7 @@ Legend: **Dr/Cr** show the default template; department in brackets. "GL: none" 
 | EV-89 | New cylinder deposit paid (`CylinderDepositPaid`) | First issue of shell | 1310 | 2020/2000 | |
 | EV-90 | Empty returned in exchange (`CylinderReturned`) | Exchange | GL: none (custody count; deposit carried) | — | |
 | EV-91 | Deposit refunded (`CylinderDepositRefunded`) | Shell returned without replacement | 1020/2000 offset | 1310 | |
-| EV-92 | Cylinder lost/damaged (`CylinderLost`) | Custody variance | 6160 [dept per D-603] | 1310 | Incident link if safety-related. |
+| EV-92 | Cylinder lost/damaged (`CylinderLost`) | Custody variance | 6160 [dept per D-803] | 1310 | Incident link if safety-related. |
 | EV-93 | Cylinder consumption issue (`CylinderIssued`) | Connected to outlet/event | 6150 [outlet] or 6330 [UTL] | 1250 | |
 | EV-94 | Pipeline gas bill (`UtilityBillApproved` type gas) | as EV-83 | as EV-83 with 6320 | 2010 | Standing/variable components kept as lines for allocation. |
 
@@ -345,7 +345,7 @@ Legend: **Dr/Cr** show the default template; department in brackets. "GL: none" 
 | # | Event | Trigger | Debit | Credit | Notes |
 |---|---|---|---|---|---|
 | EV-100 | Store transfer (`StockTransferred`) | Store → store | 12xx [dest store] | 12xx [source store] | Same valuation; GL: none if same account & dept (dimension move only). |
-| EV-101 | Issue to consuming outlet (`StockIssued`) | Issue to kitchen/bar/BEO/housekeeping | 5000/5010 [dept/outlet/event] or 6100/6410 | 12xx | Default "cost at issue" model (D-615). Alternative "periodic COGS" model: issues are location moves; COGS = opening + purchases − closing at stocktake. |
+| EV-101 | Issue to consuming outlet (`StockIssued`) | Issue to kitchen/bar/BEO/housekeeping | 5000/5010 [dept/outlet/event] or 6100/6410 | 12xx | Default "cost at issue" model (D-815). Alternative "periodic COGS" model: issues are location moves; COGS = opening + purchases − closing at stocktake. |
 | EV-102 | Intact return to store (`StockReturnedIntact`) | Inspector-approved return with original lot/expiry | 12xx | 5000/5010 [dept] | Only intact items; never waste. |
 | EV-103 | Waste/spoilage recorded (`StockWasted`) | Approved waste transaction (reason/photo/lot) | 6700 [dept] | 12xx or 1260 | Quantity moves to waste bin, never back to available. |
 | EV-104 | Quarantine (`StockQuarantined`) | Receipt/issue exception | 1260 | 12xx | Status change; no P&L. |
@@ -446,7 +446,7 @@ Folio F-1001 closes at zero (56 − 30 − 26). 1040 clears to zero after step f
 
 ### Ex.4 — Refund reverses the charge and the points exactly once (EV-24/EV-50/EV-15/EV-54) — Section G.7
 
-Dinner charged to room: net 40.000, TT 4.000. MetriStay Rewards earns 10 pts per OMR 1 net = 400 pts. Points valuation version `PTS-VAL-2026-Q4` = 0.005 OMR/pt (standalone selling price × expected redemption; deferred-revenue model D-605) → 2.000 allocated to points.
+Dinner charged to room: net 40.000, TT 4.000. MetriStay Rewards earns 10 pts per OMR 1 net = 400 pts. Points valuation version `PTS-VAL-2026-Q4` = 0.005 OMR/pt (standalone selling price × expected redemption; deferred-revenue model D-805) → 2.000 allocated to points.
 
 | Step | Event | Account | Dr | Cr |
 |---|---|---|---:|---:|
@@ -468,7 +468,7 @@ Dinner charged to room: net 40.000, TT 4.000. MetriStay Rewards earns 10 pts per
 | h | Operator retries refund from UI with same idempotency key | *returns original result — no posting* | — | — |
 | | **Check (a–f)** | | **180.000** | **180.000** |
 
-Net effect after f: 4100 = 0, 2300 = 0, 2130 = 0, 1100 = 0, 1040 = 0 (the refund is netted in the next PSP settlement). Points ledger shows +400 pending then −400 reversed, available balance unchanged. **Edge rule D-613:** if the 400 pts had already been redeemed, the reversal still posts once; the account goes negative in `points_debt` status, future earn offsets it first, and no cash is demanded from the guest unless the program terms (legal-reviewed) say so.
+Net effect after f: 4100 = 0, 2300 = 0, 2130 = 0, 1100 = 0, 1040 = 0 (the refund is netted in the next PSP settlement). Points ledger shows +400 pending then −400 reversed, available balance unchanged. **Edge rule D-813:** if the 400 pts had already been redeemed, the reversal still posts once; the account goes negative in `points_debt` status, future earn offsets it first, and no cash is demanded from the guest unless the program terms (legal-reviewed) say so.
 
 ### Ex.5 — Points redemption and expiry (EV-52/EV-53)
 
@@ -487,7 +487,7 @@ Guest holds 1,000 available pts (carried at 5.000). Lunch net 20.000, TT 2.000 (
 | | 4710 Points breakage [MIS] | | 3.000 |
 | **Check** | | **47.000** | **47.000** |
 
-No points are earned on the redeemed portion (campaign rule `EARN-EXCL-REDEEM`). If the program estimates breakage up front (D-605 variant), step d posts only the true-up versus the estimate.
+No points are earned on the redeemed portion (campaign rule `EARN-EXCL-REDEEM`). If the program estimates breakage up front (D-805 variant), step d posts only the true-up versus the estimate.
 
 ### Ex.6 — Section E referral: OMR 100 / 70 / 30 → commission OMR 6 (EV-60/61/63, EV-62/64)
 
@@ -552,7 +552,7 @@ If the rule pack flags unclaimed-property remittance, step e credits `2040 Esche
 
 ### Ex.8 — Bar POS: service charge, tip, void, COGS (EV-24/25/101)
 
-Service charge policy D-606 = **pass-through to staff pool at 10 % (TEST-ONLY policy value)**; TT applies to drinks + service charge in the TEST-ONLY pack.
+Service charge policy D-806 = **pass-through to staff pool at 10 % (TEST-ONLY policy value)**; TT applies to drinks + service charge in the TEST-ONLY pack.
 
 | Step | Account | Dr | Cr |
 |---|---|---:|---:|
@@ -562,7 +562,7 @@ Service charge policy D-606 = **pass-through to staff pool at 10 % (TEST-ONLY po
 | | 2155 Service charge distribution payable | | 2.000 |
 | | 2300.TEST.TT | | 2.200 |
 | | 2150 Tips payable | | 3.000 |
-| c Bar par replenishment issued from store (cost-at-issue model D-615) | 5010 Cost of beverage [BAR] | 5.600 | |
+| c Bar par replenishment issued from store (cost-at-issue model D-815) | 5010 Cost of beverage [BAR] | 5.600 | |
 | | 1210 Inventory – beverage | | 5.600 |
 | d Tips and SC distributed via payroll | 2150 | 3.000 | |
 | | 2155 | 2.000 | |
@@ -658,7 +658,7 @@ Opening custody for cylinder type `CYL-L` (placeholder size): 6 deposit-paid she
 | c Issue: 3 connected in main kitchen, 1 in catering kitchen | 6150 Cylinder gas [FNB-KIT] | 36.000 | |
 | | 6150 Cylinder gas [CAT] | 12.000 | |
 | | 1250 | | 48.000 |
-| d Month-end count finds 1 shell missing → deposit forfeited (D-603: POM) | 6160 Cylinder losses [POM] | 20.000 | |
+| d Month-end count finds 1 shell missing → deposit forfeited (D-803: POM) | 6160 Cylinder losses [POM] | 20.000 | |
 | | 1310 Cylinder deposits paid | | 20.000 |
 | **Check** | | **234.000** | **234.000** |
 
@@ -829,8 +829,8 @@ No tax line: in `RP-TEST-GENERIC-v1` cancellation compensation is out of scope �
 ### 7.1 Model
 
 - **Allocation run** `ALLOC-<pool>-<period>-v<n>`: pool (source cost), driver, driver source, driver values per receiving department, method, `evidence_status` of the pool cost **and** of the driver, approver, created_at, supersedes.
-- **States:** `draft → estimate → actual → superseded`. A run is `actual` only when the pool cost is `reconciled` (bill/payroll/invoice posted) **and** the driver data coverage ≥ the configured threshold (default assumption 95 %; D-616). Otherwise it is `estimate` or `incomplete-estimate` (§11).
-- **Default posting policy (D-609):** allocations are computed in the **management reporting layer** (departmental P&L, profit bridge); USALI-style undistributed accounts remain unchanged in the GL. Optional policy: post allocation journals to 6900/6901 in the open period only.
+- **States:** `draft → estimate → actual → superseded`. A run is `actual` only when the pool cost is `reconciled` (bill/payroll/invoice posted) **and** the driver data coverage ≥ the configured threshold (default assumption 95 %; D-816). Otherwise it is `estimate` or `incomplete-estimate` (§11).
+- **Default posting policy (D-809):** allocations are computed in the **management reporting layer** (departmental P&L, profit bridge); USALI-style undistributed accounts remain unchanged in the GL. Optional policy: post allocation journals to 6900/6901 in the open period only.
 - **Restatement:** when an `actual` run supersedes an `estimate` for a closed period, the management view restates that period (versioned; old version retained, reproducible, SF65.2.2) and the variance is shown; GL-posted allocations adjust in the current open period.
 
 ### 7.2 Drivers
@@ -892,7 +892,7 @@ Driver evidence: sub-meters RMS/FNB-KIT/CLB 100 % intervals; PRK and laundry sub
 
 ### 8.3 Inference protection
 
-- **Minimum cell size k = 3 (assumption D-617):** any generic report cell derived from pay (average pay, cost per head, sub-cost-center labor, event labor with < 3 people) is suppressed or rolled up to the next level ("combined"). Department P&L totals are always shown because statutory/management P&L requires them; the UI states "contains fewer than 3 employees".
+- **Minimum cell size k = 3 (assumption D-817):** any generic report cell derived from pay (average pay, cost per head, sub-cost-center labor, event labor with < 3 people) is suppressed or rolled up to the next level ("combined"). Department P&L totals are always shown because statutory/management P&L requires them; the UI states "contains fewer than 3 employees".
 - **Differencing guard:** consecutive-period or filter-combination queries that would isolate one employee (e.g. total minus total-excluding-one) are blocked in pivots/custom reports (SF32.4.8) by applying the same k rule to every filter intersection.
 - **Exports:** payroll-derived columns excluded from generic exports; payroll exports require payroll role, watermark with requester and time, and are logged.
 - **Emergency chef / external labor** is AP spend (vendor invoice), visible to procurement/finance per contract — it is not salary.
@@ -905,7 +905,7 @@ Driver evidence: sub-meters RMS/FNB-KIT/CLB 100 % intervals; PRK and laundry sub
 | Level | Definition | Includes | Excludes |
 |---|---|---|---|
 | **Total operating revenue** | Σ revenue accounts 4000–4790 net of allowances (4090/4190) | Rooms, F&B outlets, bar, club, catering, parking, other operated, misc income | Taxes/levies collected (liabilities), tips and pass-through service charge, deposits not yet earned, voucher/points liabilities, travel supplier pass-through (agent model) |
-| **Departmental expenses** | Cost of sales (5xxx) + payroll & related (6000–6050) + other direct expenses charged to operated departments | Direct costs only, including channel commission if D-602 = Rooms | Undistributed and non-operating costs |
+| **Departmental expenses** | Cost of sales (5xxx) + payroll & related (6000–6050) + other direct expenses charged to operated departments | Direct costs only, including channel commission if D-802 = Rooms | Undistributed and non-operating costs |
 | **Departmental profit** (per operated dept) | Dept revenue − dept expenses | | Allocated shared costs (shown separately as "after allocation" view) |
 | **Total departmental profit** | Σ departmental profit | | |
 | **Undistributed operating expenses** | AGN + SMK + POM + UTL + ITC + HRM | PSP fees, referral commission, loyalty cost (cost model), utilities, maintenance, IT | |
@@ -954,7 +954,7 @@ One row per payable/receivable object; the dashboard aggregates by cost category
 ---
 ## 12. KPI dictionary (M32, M65 SF65.1.2, P.6)
 
-Conventions: *available rooms* = physical rooms × nights **minus** rooms out-of-order (OOO) for the whole night (OOS rooms remain available; policy D-618 lets a property exclude long-term OOO per its management-company standard — the rule used is printed on the report). *Occupied rooms* = room-nights sold and occupied or charged, including day-use counted by policy (D-619, default: excluded from occupancy, reported separately), complimentary rooms counted in occupancy **but** excluded from ADR revenue denominator only if flagged `comp` (both variants shown). House-use rooms excluded from both. Targets are **agreed with the pilot hotel** (P.6) and are not set here. Every KPI shows `evidence_status` (§11), period, business-date cutoff and last refresh time.
+Conventions: *available rooms* = physical rooms × nights **minus** rooms out-of-order (OOO) for the whole night (OOS rooms remain available; policy D-818 lets a property exclude long-term OOO per its management-company standard — the rule used is printed on the report). *Occupied rooms* = room-nights sold and occupied or charged, including day-use counted by policy (D-819, default: excluded from occupancy, reported separately), complimentary rooms counted in occupancy **but** excluded from ADR revenue denominator only if flagged `comp` (both variants shown). House-use rooms excluded from both. Targets are **agreed with the pilot hotel** (P.6) and are not set here. Every KPI shows `evidence_status` (§11), period, business-date cutoff and last refresh time.
 
 | ID | KPI | Formula | Numerator: includes / excludes | Denominator: includes / excludes | Source | Freshness | Owner |
 |---|---|---|---|---|---|---|---|
@@ -1034,7 +1034,7 @@ Reopen of a closed business date: `financial_controller` + reason; only reversin
 | MC-10 | Bank reconciliation for every account; 2500 suspense aged and explained | finance_clerk | Yes |
 | MC-11 | Bill-provider orders: no `pending-unknown`; 1050 cleared or explained | finance_clerk | Yes |
 | MC-12 | Points liability reconciles to points ledger × valuation; breakage run | financial_controller | Yes |
-| MC-13 | Voucher liability reconciles; breakage per D-610 | financial_controller | Yes |
+| MC-13 | Voucher liability reconciles; breakage per D-810 | financial_controller | Yes |
 | MC-14 | Referral: pending accruals reviewed; gate status per jurisdiction; no payout while gate closed | referral_program_admin + compliance_officer | Yes |
 | MC-15 | Channel/OTA commission statements matched (SF60.2.3) | revenue_manager | Yes (for net RevPAR `reconciled`) |
 | MC-16 | Prepayments amortized; accruals posted; depreciation run | financial_controller | Yes |
@@ -1066,24 +1066,24 @@ Additional regulated outputs (per jurisdiction rule pack, M38): tax invoices/cre
 
 | Id | Decision / assumption | Default in this document | Owner |
 |---|---|---|---|
-| D-601 | Bar as own department vs F&B outlet | `BAR` own dept for acceptance hotel | financial_controller |
-| D-602 | Channel commission: Rooms vs S&M | Rooms (direct cost) | financial_controller |
-| D-603 | Cylinder gas & losses: outlet vs UTL/POM | Outlet consumption; losses POM | financial_controller + chief_engineer |
-| D-604 | Linen in circulation | Expensed on issue to circulation | financial_controller |
-| D-605 | Loyalty accounting model | Deferred revenue (relative SSP) — requires auditor confirmation per legal entity | financial_controller |
-| D-606 | Tips & service charge treatment | Pass-through liabilities; per rule pack & contracts | financial_controller + hr_officer + counsel |
-| D-607 | Minibar department | FNB-MINI | financial_controller |
-| D-608 | Event attrition fees | CAT | financial_controller |
-| D-609 | Allocation GL-posted vs management layer | Management layer | financial_controller |
-| D-610 | Voucher breakage method | At expiry, subject to unclaimed-property rule | financial_controller + counsel |
-| D-611 | Package allocation method | Relative SSP | revenue_manager + financial_controller |
-| D-612 | Comps: discount vs cost reclass | Cost reclass for comps, contra for discounts | fnb_manager |
-| D-613 | Points reversal after redemption | Negative `points_debt`, offset future earn | referral_program_admin + counsel |
-| D-614 | Payments in transit account | Not used unless bank debit lags | financial_controller |
-| D-615 | Inventory COGS model | Cost at issue | financial_controller |
-| D-616 | Driver coverage threshold for `actual` | 95 % | financial_controller |
-| D-617 | Salary suppression k | 3 | hr_officer + dpo |
-| D-618 | Long-term OOO in availability | Excluded (reported) | revenue_manager |
-| D-619 | Day-use in occupancy | Excluded, reported separately | revenue_manager |
+| D-801 | Bar as own department vs F&B outlet | `BAR` own dept for acceptance hotel | financial_controller |
+| D-802 | Channel commission: Rooms vs S&M | Rooms (direct cost) | financial_controller |
+| D-803 | Cylinder gas & losses: outlet vs UTL/POM | Outlet consumption; losses POM | financial_controller + chief_engineer |
+| D-804 | Linen in circulation | Expensed on issue to circulation | financial_controller |
+| D-805 | Loyalty accounting model | Deferred revenue (relative SSP) — requires auditor confirmation per legal entity | financial_controller |
+| D-806 | Tips & service charge treatment | Pass-through liabilities; per rule pack & contracts | financial_controller + hr_officer + counsel |
+| D-807 | Minibar department | FNB-MINI | financial_controller |
+| D-808 | Event attrition fees | CAT | financial_controller |
+| D-809 | Allocation GL-posted vs management layer | Management layer | financial_controller |
+| D-810 | Voucher breakage method | At expiry, subject to unclaimed-property rule | financial_controller + counsel |
+| D-811 | Package allocation method | Relative SSP | revenue_manager + financial_controller |
+| D-812 | Comps: discount vs cost reclass | Cost reclass for comps, contra for discounts | fnb_manager |
+| D-813 | Points reversal after redemption | Negative `points_debt`, offset future earn | referral_program_admin + counsel |
+| D-814 | Payments in transit account | Not used unless bank debit lags | financial_controller |
+| D-815 | Inventory COGS model | Cost at issue | financial_controller |
+| D-816 | Driver coverage threshold for `actual` | 95 % | financial_controller |
+| D-817 | Salary suppression k | 3 | hr_officer + dpo |
+| D-818 | Long-term OOO in availability | Excluded (reported) | revenue_manager |
+| D-819 | Day-use in occupancy | Excluded, reported separately | revenue_manager |
 
 **Traceability:** F19.1/F19.2 → §1–§4, §13–§14; F20.1–F20.3 → §4.1, §4.4, §10; F22.2/F23.1/F24.1/F25.1 → §4.4, Ex.10, Ex.12, §7; F27.3/F27.4 → §4.6, Ex.11, §8; F28.1/F28.2 → Ex.3, Ex.4, Ex.16; F29.1 → Ex.10; F30.1 → Ex.4, Ex.5; F31.1/F31.2 → Ex.6; F32.1–F32.4 → §9, §11, §12, §15; F54.2 → Ex.7; F60.1/F60.2 → §13; Section D → §10; Section G.8 → §11, `AT-G08.*`. Acceptance tests for this document: `AT-G07.*`, `AT-G08.*`, `AT-REF.*`, `AT-G05.*`, `AT-G04.*` in `docs/09`.

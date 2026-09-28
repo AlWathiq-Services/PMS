@@ -404,14 +404,14 @@ Housekeeping turnaround and room-ready-by-arrival; inspection pass rate; linen l
 
 | ID | Decision | Owner | Interim assumption |
 |---|---|---|---|
-| D-121 | Confirm shift pattern and all SLA defaults in §4 | GM of pilot hotel | Values in this file |
-| D-122 | RTO/RPO per tier and budget for standby/secondary link | Owner + IT Admin | §7 values |
-| D-123 | Food-safety plan owner and plan values per outlet | Executive Chef + Compliance Officer | Hotel plan required before Phase 4 food controls go live |
-| D-124 | Food rule-pack authorities and validation for pilot jurisdiction | Compliance Officer | `unverified-assumption` |
-| D-125 | Laundry model (in-house vs outsourced) and tolerance | Housekeeping lead | Outsourced, 2% tolerance |
-| D-126 | Fleet ownership (owned shuttle vs taxi only) | GM | Taxi via approved providers; owned fleet only if pilot operates one |
-| D-127 | Life-safety interface (panel model, approval, certification) | Chief Engineer | No interface; manual incident logging |
-| D-128 | IR retainer, cyber insurance, breach-notification counsel | Owner + DPO | To procure before Phase 6 |
-| D-129 | Lost-and-found retention/disposal per market | Compliance Officer | Hotel policy flagged "unverified" |
+| D-721 | Confirm shift pattern and all SLA defaults in §4 | GM of pilot hotel | Values in this file |
+| D-722 | RTO/RPO per tier and budget for standby/secondary link | Owner + IT Admin | §7 values |
+| D-723 | Food-safety plan owner and plan values per outlet | Executive Chef + Compliance Officer | Hotel plan required before Phase 4 food controls go live |
+| D-724 | Food rule-pack authorities and validation for pilot jurisdiction | Compliance Officer | `unverified-assumption` |
+| D-725 | Laundry model (in-house vs outsourced) and tolerance | Housekeeping lead | Outsourced, 2% tolerance |
+| D-726 | Fleet ownership (owned shuttle vs taxi only) | GM | Taxi via approved providers; owned fleet only if pilot operates one |
+| D-727 | Life-safety interface (panel model, approval, certification) | Chief Engineer | No interface; manual incident logging |
+| D-728 | IR retainer, cyber insurance, breach-notification counsel | Owner + DPO | To procure before Phase 6 |
+| D-729 | Lost-and-found retention/disposal per market | Compliance Officer | Hotel policy flagged "unverified" |
 
-Decision ids D-121–D-139 are reserved for this file; `docs/13` is authoritative.
+Decision ids D-721–D-739 are reserved for this file; `docs/13` is authoritative.

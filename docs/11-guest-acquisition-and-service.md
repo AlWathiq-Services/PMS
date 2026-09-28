@@ -384,18 +384,18 @@ Negative checks bundled with G19: hold expiry during payment (no capture); PSP t
 
 ## 11. KPI set for the journey
 
-Quote-to-book conversion; abandonment by step and reason; share of bookings with known source; net acquisition cost per completed stay by source; net contribution per room night by source; ARI ack latency; payment success; pre-arrival completion; room-ready by arrival; request resolution time; complaint-to-closure time; recovery closure rate and cost; survey response; review response time; repeat rate; opt-out rate; assistant containment and handoff wait; accessibility defect count. Definitions and denominators live in the `docs/06` KPI dictionary (SF65.1.2). Targets: agreed with pilot hotel (D-111).
+Quote-to-book conversion; abandonment by step and reason; share of bookings with known source; net acquisition cost per completed stay by source; net contribution per room night by source; ARI ack latency; payment success; pre-arrival completion; room-ready by arrival; request resolution time; complaint-to-closure time; recovery closure rate and cost; survey response; review response time; repeat rate; opt-out rate; assistant containment and handoff wait; accessibility defect count. Definitions and denominators live in the `docs/06` KPI dictionary (SF65.1.2). Targets: agreed with pilot hotel (D-711).
 
 ## 12. Open decisions
 
 | ID | Decision | Owner | Interim assumption |
 |---|---|---|---|
-| D-111 | Pilot KPI baselines/targets | Pilot GM | Measure 30-day baseline |
-| D-112 | Attribution window and precedence | Marketing Manager | 30 days, precedence in S02 |
-| D-113 | Compensation cap values (`L1_cap` … `refund_L3`) | GM + Financial Controller | Placeholders in §9.2 |
-| D-114 | Hold/quote timers | Revenue Manager | 20 min quote, 15 min hold, one 10 min extension |
-| D-115 | Messaging providers and WhatsApp templates per market | Integration Admin | Email + SMS; WhatsApp gated |
-| D-116 | Review sources with approved API access | Guest Relations | Manual ingestion |
-| D-117 | AI provider/local model and cost caps | IT Admin + DPO | Pluggable port; caps set before pilot |
+| D-711 | Pilot KPI baselines/targets | Pilot GM | Measure 30-day baseline |
+| D-712 | Attribution window and precedence | Marketing Manager | 30 days, precedence in S02 |
+| D-713 | Compensation cap values (`L1_cap` … `refund_L3`) | GM + Financial Controller | Placeholders in §9.2 |
+| D-714 | Hold/quote timers | Revenue Manager | 20 min quote, 15 min hold, one 10 min extension |
+| D-715 | Messaging providers and WhatsApp templates per market | Integration Admin | Email + SMS; WhatsApp gated |
+| D-716 | Review sources with approved API access | Guest Relations | Manual ingestion |
+| D-717 | AI provider/local model and cost caps | IT Admin + DPO | Pluggable port; caps set before pilot |
 
-Decision ids D-111–D-119 are reserved for this file; `docs/13` is authoritative.
+Decision ids D-711–D-719 are reserved for this file; `docs/13` is authoritative.

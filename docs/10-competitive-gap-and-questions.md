@@ -44,7 +44,7 @@ Visit date for every row: **2026-09-28**. Retrieval was attempted first with the
 | SRC-C03 | Mews | https://www.mews.com/en/products | **Retrieved** | WebFetch: HTTP 200. Product list: PMS, reservation and channel management, booking engine, guest intelligence, online check-in, self check-in kiosks, digital keys, guest self check-out, RMS/dynamic pricing/demand forecasting and controls, upsells, housekeeping, POS/ePOS, embedded payments, tokenization, multicurrency, payment terminals, automated reconciliation, accounting and billing, accounts receivable, financing partnership, BI/data and reporting, Mews Marketplace ("1,000+ integrations"), open API, Mews AI. |
 | SRC-C04 | Cloudbeds | https://www.cloudbeds.com/hospitality-platform/ | **Retrieved** | WebFetch: HTTP 200. Product list: PMS, channel manager, booking engine, payments, guest experience (communication and digital check-in), RMS, guest marketing CRM, digital marketing, websites, reputation management, insights and reporting, "Signals" (AI foundation model); claims unified data model, multi-property, "450+" integration partners, PCI-DSS Level 1, SSO. |
 | SRC-C05 | SiteMinder | https://www.siteminder.com/ | **Not retrieved directly** | WebFetch: HTTP 403. curl: HTTP 403 ("Sorry, you have been blocked" — bot-protection page). |
-| SRC-C05a | SiteMinder (indirect) | Search-engine result snippets of official siteminder.com pages: `/channel-manager/`, `/hotel-booking-engine/`, `/integrations/`, `/hotel-software/`, `/find-the-right-guests/`, `/groupsandchains/`, `/pricing/` | **Indirect only** | WebSearch restricted to `siteminder.com` returned titles/snippets: "world's largest open hotel commerce platform"; channel manager connecting to "over 450 distribution channels, including the GDS"; booking engine integrated with own website or SiteMinder website builder; metasearch (Google Hotel Ads, Trivago, Tripadvisor) with a managed bidding team; GDS connectivity; website builder; payments. **Snippets are secondary evidence**; re-verify from a normal browser before any external use (action on D-101). |
+| SRC-C05a | SiteMinder (indirect) | Search-engine result snippets of official siteminder.com pages: `/channel-manager/`, `/hotel-booking-engine/`, `/integrations/`, `/hotel-software/`, `/find-the-right-guests/`, `/groupsandchains/`, `/pricing/` | **Indirect only** | WebSearch restricted to `siteminder.com` returned titles/snippets: "world's largest open hotel commerce platform"; channel manager connecting to "over 450 distribution channels, including the GDS"; booking engine integrated with own website or SiteMinder website builder; metasearch (Google Hotel Ads, Trivago, Tripadvisor) with a managed bidding team; GDS connectivity; website builder; payments. **Snippets are secondary evidence**; re-verify from a normal browser before any external use (action on D-701). |
 
 **Not used as evidence:** analyst rankings, review sites, customer case studies' performance numbers, or any price. Customer-success headlines on SRC-C01 were seen but are not relied on.
 
@@ -160,16 +160,16 @@ Listed because the master prompt requires it; each item must still prove itself 
 
 | Competitor capability (vendor claim) | Decision | Reason | Revisit trigger / owner |
 |---|---|---|---|
-| Self check-in kiosks, digital keys (Mews, OPERA kiosk) | **Deferred — Phase 7** (`M55` key/kiosk; `M34–M36` connected room) | Requires certified lock/kiosk vendor adapters and hardware pilots; R1 keeps staffed + mobile pre-arrival path | Pilot hotel requests lock integration → D-102 (owner: Product Owner) |
+| Self check-in kiosks, digital keys (Mews, OPERA kiosk) | **Deferred — Phase 7** (`M55` key/kiosk; `M34–M36` connected room) | Requires certified lock/kiosk vendor adapters and hardware pilots; R1 keeps staffed + mobile pre-arrival path | Pilot hotel requests lock integration → D-702 (owner: Product Owner) |
 | Casino/gaming, cruise-ship operations (Oracle sectors) | **Excluded** | Not hotel PMS scope; cruise appears only as a guest travel request (M45) | None planned |
 | Centralized multi-property/chain ("central functions", Cloudbeds multi-property, SiteMinder groups & chains) | **Deferred — Phase 7** | Section B: single-hotel R1; data model is tenant/property-scoped so it can extend | Phase 7 gate |
-| Managed metasearch bidding service (SiteMinder, indirect) | **Excluded as a service; substitute partner** | MetriStay is software, not an ad agency; integrate an approved metasearch/channel partner for bidding | D-103 (owner: Marketing Manager) |
-| Direct GDS connectivity | **Via channel-manager partner** | GDS access requires commercial agreements/certification; build one certified channel adapter (M07) | Channel partner selection D-104 |
+| Managed metasearch bidding service (SiteMinder, indirect) | **Excluded as a service; substitute partner** | MetriStay is software, not an ad agency; integrate an approved metasearch/channel partner for bidding | D-703 (owner: Marketing Manager) |
+| Direct GDS connectivity | **Via channel-manager partner** | GDS access requires commercial agreements/certification; build one certified channel adapter (M07) | Channel partner selection D-704 |
 | Embedded payments as merchant/PSP (Mews "embedded payments", "financing partnership") | **Excluded** | MetriStay orchestrates a certified PSP; it does not hold funds, underwrite or lend (Section E, P.4) | Never without licensing decision |
 | Proprietary AI foundation model (Cloudbeds "Signals") | **Excluded** | Pluggable LLM/provider port and local option (README §3.7); bounded tools only | ADR in `docs/03` |
 | Marketplace with 1,000+/450+ integrations | **Deferred — M33 matures in Phases 5–7; M37 marketplace Phase 8** | R1 needs a small set of certified adapters with honest capability flags, not breadth | Integration demand log |
 | Autonomous dynamic pricing without approval | **Deferred — Phase 7 advanced automation** | Section Q SF53.2.2 requires human approval/guardrails in R1 | Backtest evidence SF53.2.6 |
-| Loyalty cash/stored-value wallet | **Gated** (SF30.2.6) | Requires licensed bank/PSP; CBO policy | Legal opinion D-105 |
+| Loyalty cash/stored-value wallet | **Gated** (SF30.2.6) | Requires licensed bank/PSP; CBO policy | Legal opinion D-705 |
 | Multi-level/network referral schemes | **Excluded permanently from this plan** | Oman Decision 105/2021; Section A/E | n/a |
 | UC/wake-up, HSIA, IPTV | **Deferred — Phase 7** (M34–M36) | Section B | Pilot demand |
 | Biometric liveness as default | **Excluded as default; optional gated** | SF41.1.6 lawful basis per market | Counsel per market |
@@ -182,9 +182,9 @@ Honesty label for every row today: `unverified-assumption` (no partner is contra
 
 | Capability | MetriStay builds | Partner provides (category) | Example candidates to evaluate | Contract/certification gate | Manual route if absent |
 |---|---|---|---|---|---|
-| OTA/GDS distribution | M07 adapter, mapping, ARI queue, reconciliation | Certified channel manager | SiteMinder, Cloudbeds channel manager, others offering a PMS-connectivity programme | Partner certification of M07 adapter (D-104) | Extranet updates by revenue manager with dual-entry checklist; stop-sell on uncertainty |
+| OTA/GDS distribution | M07 adapter, mapping, ARI queue, reconciliation | Certified channel manager | SiteMinder, Cloudbeds channel manager, others offering a PMS-connectivity programme | Partner certification of M07 adapter (D-704) | Extranet updates by revenue manager with dual-entry checklist; stop-sell on uncertainty |
 | Metasearch/search ads | Offer feed, attribution tags (SF51.2.3) | Metasearch connectivity/bidding partner | Via channel partner or direct hotel-ads programmes | Commercial access | Organic listing only |
-| Card payments | M28 orchestration, token refs, reconciliation | Certified PSP/acquirer + terminals | Pilot-market PSPs (D-106) | PSP certification; PCI scope assessment | Standalone terminal + manual folio posting with reference |
+| Card payments | M28 orchestration, token refs, reconciliation | Certified PSP/acquirer + terminals | Pilot-market PSPs (D-706) | PSP certification; PCI scope assessment | Standalone terminal + manual folio posting with reference |
 | Competitive rate data | Input slot SF53.1.4 | Licensed rate-shopping provider | TBD | Licence terms | Forecast without compset; flag lower confidence |
 | Review ingestion | M52 queue | Review platform APIs/aggregator | TBD | API terms | Manual copy of public review into case with link |
 | SMS/WhatsApp | M41/M52 templates | Messaging provider/BSP | TBD per market | Template approval | Email/in-person verification (SF41.2.7) |
@@ -217,7 +217,7 @@ No prices are stated or implied. "Driver" means a cost the hotel should expect t
 
 | Cost driver | Typical SaaS PMS stack (benchmarks) | MetriStay SaaS profile | MetriStay on-prem single-hotel profile | Notes / evidence needed |
 |---|---|---|---|---|
-| Software subscription | Per room/property subscriptions, add-on modules priced separately | One suite; hotel enables only owned outlets | Licence + support | Pricing model is a Metrikingdom decision (D-107) |
+| Software subscription | Per room/property subscriptions, add-on modules priced separately | One suite; hotel enables only owned outlets | Licence + support | Pricing model is a Metrikingdom decision (D-707) |
 | Channel/OTA commission | Charged by OTAs; unchanged by PMS | Unchanged; M53/M51 measure net contribution to shift mix | Same | Savings only if direct mix improves — measure, don't assume |
 | Payment fees | PSP fees; embedded-payment vendors may bundle | PSP fees paid to certified PSP | Same | Reconciliation labour reduced only if SF28.1.7 works |
 | Integrations | Marketplace connectors, sometimes per-connector fees | Fewer third-party modules needed (ERP, procurement, utilities in-suite) | Same | Each certified adapter still has partner cost |
@@ -492,18 +492,18 @@ Generated from the Module column of §9 and the benchmark sections. Every module
 
 ## 12. Proof gaps, open decisions and owners
 
-Decision ids D-101–D-109 are reserved for this file (docs/11 uses D-111–D-119, docs/12 uses D-121–D-139); the `docs/13` decision log is authoritative and may renumber on collision.
+Decision ids D-701–D-709 are reserved for this file (docs/11 uses D-711–D-719, docs/12 uses D-721–D-739); the `docs/13` decision log is authoritative and may renumber on collision.
 
 | ID | Gap / decision | Why it matters | Owner | Interim assumption | Gate |
 |---|---|---|---|---|---|
-| D-101 | SiteMinder pages not retrievable directly (bot protection); only search snippets used | Benchmark for distribution relies on secondary evidence | Product Owner | Treat SiteMinder claims as `unverified-assumption` until re-read in a browser | Before any external use of §3 |
-| D-102 | Digital key / kiosk demand at pilot hotel | Deferred to Phase 7 in this plan | Product Owner | Staffed + mobile pre-arrival path | Pilot hotel profile (Section J) |
-| D-103 | Metasearch partner model | We will not run bidding ourselves | Marketing Manager | Partner-provided | Commercial agreement |
-| D-104 | Channel-manager partner selection and certification | Required for OTA/GDS reach in R1 | Revenue Manager + Integration Admin | One certified adapter; manual extranet path documented | M07 certification before go-live |
-| D-105 | Cash/stored-value wallet | Licensing | Legal/Payments workstream | Not offered | Legal opinion |
-| D-106 | PSP for pilot market | Payment certification | Finance + Integration Admin | Mock PSP adapter in Phases 2–4 | PSP certification |
-| D-107 | MetriStay commercial pricing model | Needed for §8 business case | Metrikingdom commercial lead | Not modelled | `docs/00` business case |
-| D-108 | Feature ids for M01–M18 and M33–M37 | This file cites `Mnn⟨phrase⟩` | Catalogue editor (`docs/01`) | Reconcile at `docs/13` consistency check | Planning gate |
-| D-109 | Pilot-hotel KPI baselines and targets (Section P.6) | KPIs in §9 have no targets | GM of pilot hotel | Measure baseline in first 30 days of pilot | Phase 6 exit |
+| D-701 | SiteMinder pages not retrievable directly (bot protection); only search snippets used | Benchmark for distribution relies on secondary evidence | Product Owner | Treat SiteMinder claims as `unverified-assumption` until re-read in a browser | Before any external use of §3 |
+| D-702 | Digital key / kiosk demand at pilot hotel | Deferred to Phase 7 in this plan | Product Owner | Staffed + mobile pre-arrival path | Pilot hotel profile (Section J) |
+| D-703 | Metasearch partner model | We will not run bidding ourselves | Marketing Manager | Partner-provided | Commercial agreement |
+| D-704 | Channel-manager partner selection and certification | Required for OTA/GDS reach in R1 | Revenue Manager + Integration Admin | One certified adapter; manual extranet path documented | M07 certification before go-live |
+| D-705 | Cash/stored-value wallet | Licensing | Legal/Payments workstream | Not offered | Legal opinion |
+| D-706 | PSP for pilot market | Payment certification | Finance + Integration Admin | Mock PSP adapter in Phases 2–4 | PSP certification |
+| D-707 | MetriStay commercial pricing model | Needed for §8 business case | Metrikingdom commercial lead | Not modelled | `docs/00` business case |
+| D-708 | Feature ids for M01–M18 and M33–M37 | This file cites `Mnn⟨phrase⟩` | Catalogue editor (`docs/01`) | Reconcile at `docs/13` consistency check | Planning gate |
+| D-709 | Pilot-hotel KPI baselines and targets (Section P.6) | KPIs in §9 have no targets | GM of pilot hotel | Measure baseline in first 30 days of pilot | Phase 6 exit |
 
 **Claims discipline:** no row in this document may be quoted as "MetriStay matches/exceeds X" until the cited acceptance tests pass on a working build and the competitor capability has been observed in a real evaluation, not only a marketing page.
