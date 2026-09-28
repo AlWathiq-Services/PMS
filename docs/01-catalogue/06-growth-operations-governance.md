@@ -2676,3 +2676,276 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
 | D-631 | Does the pilot hotel operate its own fleet? | GM | No owned fleet; external taxi via M45/M46 plus manual shuttle records. |
 | D-632 | Flight/ship status data source and licence. | Concierge lead + Procurement | Manual ETA updates. |
 | D-633 | Boundary M45 `travel_request` vs M59 `transport_trip`. | Lead Architect | M45 owns request/consent/provider transaction; M59 owns dispatch execution, manifest, status, handover, cost. |
+
+---
+
+## M60 — Revenue protection and control
+
+| Field | Value |
+|---|---|
+| Purpose | Control framework over money-handling and revenue integrity: till/float/drops/safe, approval limits for refunds/voids/comps/discounts, night-audit difference queue, immutable corrections, anomaly detection (duplicates, outliers, commission mismatch, purchasing conflicts), and privacy-respecting investigations. |
+| Phases | 2 core cash/night audit; 3 POS limits; 4–5 integrity analytics and cases. |
+| Release flag | R1. |
+| Bounded context | `revenue-control` |
+| SoR entities (owned) | `control_limit_policy`, `till_session_control`, `cash_drop`, `safe_movement`, `audit_difference_item`, `control_approval`, `anomaly_rule`, `anomaly_alert`, `investigation_case`, `investigation_evidence`, `alert_feedback`. |
+| Referenced (not owned) | M08 cashier shifts, folio, receipts, night audit run; M13 POS voids/discounts; M05 reservations; M07 commissions; M20 invoices/payments; M28 payments/refunds; M49 POs/awards; M46 vendor conflict declarations; M27 employees; M19 journals (corrections); M02 privileged audit. |
+| Dependencies | M02, M05, M07, M08, M13, M19, M20, M28, M46, M49, M63. |
+
+### F60.1 Shift and close
+
+```yaml
+- id: M60.F60.1.SF60.1.1
+  name: Till opening/float
+  phase: 2
+  release: R1
+  actors: [cashier, front_office_manager]
+  screens: [SCR-FIN-till-open, SCR-STF-cashier-shift]
+  inputs: [cashier_shift_id, till_id, float_amount_by_denomination, currency, witness_id]
+  states: [not_opened, opened, float_disputed]
+  api: ["POST /v1/properties/{pid}/tills/{till_id}/open"]
+  events: [TillOpened, FloatDisputed]
+  data: [till_session_control, cashier_shift (M08)]
+  rules: ["A cashier can hold one open till at a time; float counted and signed by cashier and witness/issuer.", "Multi-currency tills count per currency."]
+  security: "Cashier authenticated; witness distinct user."
+  failure_cases: [float_mismatch, till_already_open]
+  finance_report_effect: "Float is a transfer between safe and till (M19 cash sub-accounts)."
+  i18n_a11y: "Denomination entry accessible; OMR 3 decimals."
+  acceptance: "AC-SF60.1.1: Opening a second till for the same cashier is rejected; a float mismatch is recorded, not overwritten."
+  dependency: "M08 cashier shift."
+
+- id: M60.F60.1.SF60.1.2
+  name: Cash drop/refund/comp approval
+  phase: 2
+  release: R1
+  actors: [cashier, front_office_manager, duty_manager, fnb_manager]
+  screens: [SCR-FIN-cash-drop, SCR-OPS-approval-queue]
+  inputs: [amount, reason_code, related_folio_or_check, approver_id, idempotency_key]
+  states: [requested, approved, rejected, executed]
+  api: ["POST /v1/properties/{pid}/control-approvals", "POST /v1/properties/{pid}/cash-drops"]
+  events: [ControlApprovalGranted, CashDropRecorded]
+  data: [control_approval, cash_drop]
+  rules: ["Refunds, comps and allowances above role limit (SF60.2.7) need an approver distinct from the requester.", "Cash refunds only up to till balance and only for cash-origin payments unless approved.", "Drops sealed and logged with bag ID; two-person verification where configured."]
+  security: "Step-up MFA for high-value approvals."
+  failure_cases: [approver_unavailable, duplicate_submission]
+  finance_report_effect: "Drops move cash from till to safe; refunds reverse revenue via M08."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF60.1.2: A cashier cannot approve own refund above limit; duplicate drop submission records once."
+  dependency: "M08, M28."
+
+- id: M60.F60.1.SF60.1.3
+  name: Shift closing and safe/bank movement
+  phase: 2
+  release: R1
+  actors: [cashier, front_office_manager, finance_clerk]
+  screens: [SCR-FIN-shift-close, SCR-FIN-safe-register]
+  inputs: [counted_by_denomination, expected_by_tender, variance, explanation, bank_deposit_ref]
+  states: [counting, balanced, variance_pending, closed, deposited]
+  api: ["POST /v1/properties/{pid}/tills/{till_id}/close", "POST /v1/properties/{pid}/safe-movements"]
+  events: [ShiftClosed, CashVarianceRecorded, BankDepositRecorded]
+  data: [till_session_control, safe_movement]
+  rules: ["Blind count: cashier enters count before seeing expected amount.", "Variance beyond tolerance requires manager review and explanation; variance posts to over/short account.", "Bank deposit matched later in M20 bank reconciliation."]
+  security: "Expected totals hidden until count submitted."
+  failure_cases: [unclosed_shift_at_night_audit, deposit_not_matched]
+  finance_report_effect: "Cash over/short to M19; deposits to bank clearing."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF60.1.3: Expected total not revealed before count; a variance above tolerance blocks closure until reviewed."
+  dependency: "M08, M20 bank reconciliation."
+
+- id: M60.F60.1.SF60.1.4
+  name: Night audit with difference queue
+  phase: 2
+  release: R1
+  actors: [night_auditor, front_office_manager, finance_clerk, night_audit_worker]
+  screens: [SCR-FIN-night-audit, SCR-OPS-audit-differences]
+  inputs: [business_date, room_status_vs_folio_checks, unposted_charges, open_shifts, rate_variances]
+  states: [pre_checks, differences_open, differences_resolved, audit_closed, reopened]
+  api: ["GET /v1/properties/{pid}/night-audit/{date}/differences", "POST /v1/properties/{pid}/night-audit/{date}/differences/{did}/resolve"]
+  events: [AuditDifferenceOpened, AuditDifferenceResolved]
+  data: [audit_difference_item, night_audit_run (M08)]
+  rules: ["Checks: occupied room without room charge, charge on vacant room, rate differing from reservation without override record, open shifts, unposted POS checks.", "Critical differences block business-date roll unless overridden by front_office_manager with reason (M08 run owns the roll).", "Unresolved items carry to next day with age."]
+  security: "night_auditor; overrides audited."
+  failure_cases: [pos_interface_down_manual_post]
+  finance_report_effect: "Ensures room revenue integrity for M32 occupancy/ADR."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF60.1.4: An occupied room without room charge appears as a critical difference and blocks the roll until resolved or overridden (AT-G08.2)."
+  dependency: "M08 night audit, M13."
+
+- id: M60.F60.1.SF60.1.5
+  name: Immutable financial correction
+  phase: 2
+  release: R1
+  actors: [front_office_manager, financial_controller, auditor]
+  screens: [SCR-FIN-corrections]
+  inputs: [original_entry_ref, correction_type, reason, approver_id]
+  states: [requested, approved, posted]
+  api: ["POST /v1/properties/{pid}/corrections"]
+  events: [FinancialCorrectionPosted]
+  data: [control_approval, folio_line (M08), journal_entry (M19)]
+  rules: ["No update/delete on posted folio lines or journals; corrections are reversing plus new entries linked to the original.", "Closed-period corrections post in current period with reference unless period reopened per M19."]
+  security: "Database role denies update/delete on ledger tables."
+  failure_cases: [period_locked]
+  finance_report_effect: "Reversal and repost visible in audit trail."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF60.1.5: A direct UPDATE on a posted folio line fails at DB level; correction shows original, reversal and new line linked."
+  dependency: "M08, M19 SF19.2.2."
+```
+
+### F60.2 Integrity
+
+```yaml
+- id: M60.F60.2.SF60.2.1
+  name: Duplicate booking/invoice/payment detection
+  phase: 4
+  release: R1
+  actors: [finance_clerk, ap_clerk, front_office_manager, control_worker]
+  screens: [SCR-OPS-anomaly-queue]
+  inputs: [match_keys, window, entity_type]
+  states: [detected, confirmed_duplicate, not_duplicate, resolved]
+  api: ["GET /v1/properties/{pid}/anomalies?type=duplicate"]
+  events: [DuplicateSuspected, DuplicateResolved]
+  data: [anomaly_alert, anomaly_rule]
+  rules: ["Detect same guest/dates/room type reservations, same supplier invoice key/amount, same card/amount/time payments and duplicate refunds.", "Detection raises alerts; preventive idempotency remains in M05/M20/M28.", "Confirmed duplicates corrected via owning module reversal."]
+  security: "Finance/front office scope."
+  failure_cases: [legit_repeat_booking_false_positive]
+  finance_report_effect: "Prevents double revenue/expense."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF60.2.1: A repeated supplier invoice and a duplicate refund attempt are both alerted (AT-G20.6)."
+  dependency: "M05, M20, M28."
+
+- id: M60.F60.2.SF60.2.2
+  name: POS void/discount outlier
+  phase: 4
+  release: R1
+  actors: [fnb_manager, financial_controller, control_worker]
+  screens: [SCR-OPS-anomaly-queue]
+  inputs: [pos_events, baseline_window, threshold]
+  states: [detected, reviewed, explained, escalated]
+  api: ["GET /v1/properties/{pid}/anomalies?type=pos_outlier"]
+  events: [PosOutlierDetected]
+  data: [anomaly_alert, pos_check (M13)]
+  rules: ["Outliers computed per outlet/shift role against peer baseline; alert shows transactions, not a guilt score.", "Review by manager before any HR action; no automated sanction."]
+  security: "Employee identities visible to managers with investigation scope only."
+  failure_cases: [small_sample]
+  finance_report_effect: "Void/discount cost reporting."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF60.2.2: A fixture server with voids 5x peer median is alerted with underlying checks listed."
+  dependency: "M13."
+
+- id: M60.F60.2.SF60.2.3
+  name: Channel commission and payout match
+  phase: 5
+  release: R1
+  actors: [finance_clerk, revenue_manager]
+  screens: [SCR-FIN-commission-match]
+  inputs: [channel_statement, reservation_ids, commission_rates, virtual_card_payouts]
+  states: [imported, matched, mismatch, disputed, settled]
+  api: ["POST /v1/properties/{pid}/channel-statements", "GET /v1/properties/{pid}/channel-statements/{sid}/matches"]
+  events: [CommissionMismatchDetected]
+  data: [anomaly_alert, commission_statement_line (M07)]
+  rules: ["Commission billed only on completed stays at contracted rate; cancellations/no-shows per contract.", "Mismatches open disputes with evidence."]
+  security: "Finance."
+  failure_cases: [statement_format_change]
+  finance_report_effect: "Commission expense accuracy to M19; channel net contribution."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF60.2.3: Commission billed on a cancelled booking is flagged as mismatch."
+  dependency: "M07, M20."
+
+- id: M60.F60.2.SF60.2.4
+  name: Purchasing conflict or split-order alert
+  phase: 4
+  release: R1
+  actors: [procurement_approver, financial_controller, compliance_officer]
+  screens: [SCR-OPS-anomaly-queue]
+  inputs: [requisition_ids, po_ids, vendor_bank_detail_hash, employee_bank_detail_hash, conflict_declarations]
+  states: [detected, reviewed, cleared, escalated]
+  api: ["GET /v1/properties/{pid}/anomalies?type=procurement"]
+  events: [ProcurementConflictSuspected, SplitOrderSuspected]
+  data: [anomaly_alert, purchase_order (M49), vendor (M46)]
+  rules: ["Flag multiple POs to same vendor just under approval threshold within a window, requester-vendor declared relationships, and vendor bank account matching an employee (hash compare only).", "Alerts route to independent reviewer outside the requester's line."]
+  security: "Hash comparison; no raw bank data exposed."
+  failure_cases: [legit_recurring_orders]
+  finance_report_effect: "None directly."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF60.2.4: Three POs of 990 against a 1000 threshold within a week are flagged as split orders."
+  dependency: "M49, M46, M27."
+
+- id: M60.F60.2.SF60.2.5
+  name: Authorized investigation case/evidence and employee privacy
+  phase: 4
+  release: R1
+  actors: [financial_controller, gm, hr_officer, compliance_officer]
+  screens: [SCR-OPS-investigations]
+  inputs: [alert_ids, case_scope, authorized_by, evidence_items]
+  states: [opened, authorized, evidence_collected, concluded, closed]
+  api: ["POST /v1/properties/{pid}/investigations", "POST /v1/properties/{pid}/investigations/{iid}/evidence"]
+  events: [InvestigationOpened, InvestigationConcluded]
+  data: [investigation_case, investigation_evidence]
+  rules: ["Case needs authorization by two roles (e.g. financial_controller + hr_officer); scope limits which records can be viewed.", "Evidence is hashed and chain-of-custody logged; employees' rights per M44 labor/privacy rules.", "Outcome recorded; no automatic disciplinary action."]
+  security: "Case access restricted to named members; access log reviewed."
+  failure_cases: [scope_creep_blocked]
+  finance_report_effect: "Losses/recoveries recorded via M19."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF60.2.5: A case member cannot open records outside authorized scope; evidence hashes verify."
+  dependency: "M02, M44, D-635."
+
+- id: M60.F60.2.SF60.2.6
+  name: False-positive feedback and access log
+  phase: 4
+  release: R1
+  actors: [financial_controller, auditor]
+  screens: [SCR-OPS-anomaly-feedback, SCR-ADM-audit-log]
+  inputs: [alert_id, feedback_label, note]
+  states: [labelled]
+  api: ["POST /v1/properties/{pid}/anomalies/{aid}/feedback"]
+  events: [AnomalyFeedbackRecorded, AnomalyRuleTuned]
+  data: [alert_feedback, anomaly_rule]
+  rules: ["feedback_label is true_positive or false_positive.", "Rule precision reported; thresholds changed only via versioned rule change with approval.", "All views of alerts and cases are logged for auditor review."]
+  security: "Auditor read-only."
+  failure_cases: [label_conflict_between_reviewers]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF60.2.6: Labelled alerts update rule precision metrics; every alert view is in the access log."
+  dependency: "M02 audit."
+
+- id: M60.F60.2.SF60.2.7  # ADDED — Section C 'POS void/comp/discount limits'
+  name: Void/comp/discount/refund limit matrix
+  phase: 3
+  release: R1
+  actors: [financial_controller, gm]
+  screens: [SCR-FIN-control-limits]
+  inputs: [role, transaction_type, per_item_limit, per_shift_limit, currency, effective_from]
+  states: [draft, approved, active, superseded]
+  api: ["PUT /v1/properties/{pid}/control-limits"]
+  events: [ControlLimitPolicyActivated]
+  data: [control_limit_policy]
+  rules: ["Every refund/void/comp/discount/allowance API in M08/M13/M54/M55 checks this matrix server-side.", "Changes require gm approval; history retained."]
+  security: "Step-up MFA."
+  failure_cases: [missing_limit_defaults_to_zero]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF60.2.7: A role without a configured limit cannot void anything without approval."
+  dependency: "M08, M13, M54, M55."
+```
+
+### M60 key invariants
+
+1. Blind counts; variances recorded, never overwritten.
+2. Corrections only by reversing entries (Section P.3).
+3. Anomalies alert humans; no automated sanctions; investigations scoped and logged.
+4. Limit checks enforced server-side for every money-reducing action.
+
+### M60 module acceptance
+
+| AC | Section G | Section O question answered |
+|---|---|---|
+| AC-SF60.1.3, AC-SF60.1.4 | AT-G08 (night audit), AT-G20 | Finance: "Are cash shifts and night audits closed?" |
+| AC-SF60.2.1, AC-SF60.2.3 | AT-G20 (repeated invoice, duplicate webhook) | Finance: "Are all charges, refunds... recognized once?" |
+| AC-SF60.2.4 | AT-G17 (conflict override) | Procurement: "Which weighted bid won and why?" |
+
+### M60 open decisions
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-634 | Cash variance tolerance and blind-count policy. | Financial Controller | Any non-zero variance requires manager review. |
+| D-635 | Lawful employee-monitoring scope per market (anomaly analytics). | DPO + HR + counsel | Transaction-level analytics only; no behavioural monitoring; notices in staff policy. |
+| D-636 | Safe custody and bank deposit process. | Financial Controller | Dual-control safe; daily deposit with bag ID. |
