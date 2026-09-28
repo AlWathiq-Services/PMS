@@ -59,7 +59,7 @@ Times are hotel local defaults (`assumption`). "System" lines are automated M63 
 
 ### 2.3 Stores and receiving (M50, M14)
 
-Daily: ASN review and dock schedule; receiving; issue to departments; returns and quarantine decisions (within 24 h default, `assumption`); duplicate-scan review. Weekly: cycle counts (blind, SF14 count), stock age review. Monthly: full count of high-value/controlled items, shrinkage report.
+Daily: ASN review and dock schedule; receiving; issue to departments; returns and quarantine decisions (within 24 h default, `assumption`); duplicate-scan review. Weekly: cycle counts (blind count, M14), stock age review. Monthly: full count of high-value/controlled items, shrinkage report.
 
 ### 2.4 Engineering and maintenance (M26, feeding M61/M64/M67)
 
@@ -143,7 +143,7 @@ Columns: trigger → first owner and acknowledgment SLA → escalation if not ac
 | Trigger | L1 owner (ack / resolve) | L2 after | L3 after | Evidence |
 |---|---|---|---|---|
 | Arrival room not ready at guest ETA − 60 min | housekeeping_supervisor (10 min / by ETA) | front_office_manager at ETA − 30 | duty_manager at ETA | Room-state history |
-| Inspection failed | housekeeping_supervisor (15 / 45 min reclean) | executive_housekeeper (role: housekeeping_supervisor lead) 60 min | duty_manager 120 min | Inspection photos |
+| Inspection failed | housekeeping_supervisor (15 / 45 min reclean) | housekeeping_supervisor (lead) 60 min | duty_manager 120 min | Inspection photos |
 | DND beyond threshold / no-response | duty_manager (30 min) | security_officer accompanies welfare check | gm | Welfare-check log (two names) |
 | Linen par below arrivals need | housekeeping_supervisor (30 min) | procurement_officer / laundry vendor 2 h | gm 4 h | Par report |
 | Laundry return mismatch > tolerance | laundry_attendant (at receipt) | housekeeping_supervisor same day | procurement_officer vendor claim 48 h | Count/weight record |
