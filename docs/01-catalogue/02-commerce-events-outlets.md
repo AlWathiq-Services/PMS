@@ -392,7 +392,7 @@ Each subfeature is one Section-L YAML block. For density, blocks use YAML flow s
   name: Enforce non-double-sale invariant
   phase: 2
   release: R1
-  actors: [system]
+  actors: [allocation_worker]
   screens: [none]
   inputs: [resource_id, interval, quantity, allocation_state]
   states: [held, confirmed, released, consumed]
@@ -617,7 +617,7 @@ Each subfeature is one Section-L YAML block. For density, blocks use YAML flow s
   name: Rate eligibility rules
   phase: 3
   release: R1
-  actors: [revenue_manager, system]
+  actors: [revenue_manager, eligibility_worker]
   screens: [SCR-SALES-agreement-eligibility]
   inputs: [agreement_version_id, eligible_sites, eligible_user_roles, email_domains, booking_channels, blackout_dates, min_max_los, room_type_list, max_rooms_per_booking]
   states: [active, inactive]
@@ -1000,7 +1000,7 @@ Each subfeature is one Section-L YAML block. For density, blocks use YAML flow s
   name: Web/mobile core-journey parity
   phase: 3
   release: R1
-  actors: [it_admin, product_owner]
+  actors: [it_admin, property_admin]
   screens: [SCR-ADM-parity-matrix]
   inputs: [journey_id, web_status, android_status, ios_status, test_run_id]
   states: [planned, implemented, tested, released]
@@ -1080,7 +1080,7 @@ Each subfeature is one Section-L YAML block. For density, blocks use YAML flow s
   name: Individual traveler booking under agreement
   phase: 3
   release: R1
-  actors: [corporate_booker, traveler]
+  actors: [corporate_booker, guest]
   screens: [SCR-CORP-book-stay, SCR-CAPP-book-stay]
   inputs: [traveler_profile_id, dates, room_type, cost_center, payer(direct_bill|traveler_card)]
   states: [quoted, booked, cancelled]
@@ -1369,7 +1369,7 @@ Each subfeature is one Section-L YAML block. For density, blocks use YAML flow s
   name: Create room block from composite booking
   phase: 3
   release: R1
-  actors: [sales_manager, system]
+  actors: [sales_manager, composite_saga_worker]
   screens: [SCR-EVT-room-block]
   inputs: [composite_hold_id, room_type_nights, group_rate_plan_id, cutoff_date, attrition_percent, comp_policy]
   states: [tentative, definite, released, cancelled, actualized]
@@ -3278,7 +3278,7 @@ Each subfeature is one Section-L YAML block. For density, blocks use YAML flow s
   name: Catering order from BEO
   phase: 3
   release: R1
-  actors: [catering_manager, system]
+  actors: [catering_manager, catering_order_worker]
   screens: [SCR-CAT-order-detail]
   inputs: [beo_version_id, function_id, location(in_hotel|off_site_address), service_time, packages, expected_covers]
   states: [draft, confirmed, in_production, dispatched, served, reconciled, cancelled]
@@ -3476,7 +3476,7 @@ Each subfeature is one Section-L YAML block. For density, blocks use YAML flow s
   name: Dispatch manifest and cold chain
   phase: 3
   release: R1
-  actors: [catering_manager, shift_chef, driver_via_staff_app]
+  actors: [catering_manager, shift_chef, employee]
   screens: [SCR-CAT-dispatch, SCR-STF-dispatch]
   inputs: [items(batch/qty/container), equipment_list, departure_temp_readings, departure_time]
   states: [loading, dispatched, in_transit, delivered]
@@ -4429,7 +4429,7 @@ Each subfeature is one Section-L YAML block. For density, blocks use YAML flow s
 | M13 | 5 | 24 |
 | M14 | 5 | 25 |
 | M15 | 4 | 16 |
-| M16 | 5 | 19 |
+| M16 | 5 | 20 |
 | M17 | 4 | 20 |
 | M18 | 5 | 18 |
 
