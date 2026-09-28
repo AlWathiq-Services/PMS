@@ -2944,12 +2944,12 @@ Variants for J-20 are the injections themselves; **U**: reconciliation dashboard
 
 | Ref | Decision | Assumption used here | Owner |
 |---|---|---|---|
-| D-JS-01 | Sample-image retention start event (RFQ close vs award approval) | configurable per property; default RFQ close | procurement policy owner (Product Owner to log in `docs/13`) |
-| D-JS-02 | Hold TTLs, payment grace, OTP TTL/attempts | defaults stated inline, property-configurable | revenue_manager / it_admin |
-| D-JS-03 | Minimum quotes per category/value | default 3 for food above configured value | procurement_approver |
-| D-JS-04 | Travel operating model per market (referrer vs licensed seller) | `concierge_referrer` until gate verified | compliance_officer |
-| D-JS-05 | Referral payout activation for Oman | `held` until legal+tax opinion documented | compliance_officer / counsel |
-| D-JS-06 | Welfare-check DND threshold | 24 h default | front_office_manager |
+| D-911 | Sample-image retention start event (RFQ close vs award approval) | configurable per property; default RFQ close | procurement policy owner (Product Owner to log in `docs/13`) |
+| D-912 | Hold TTLs, payment grace, OTP TTL/attempts | defaults stated inline, property-configurable | revenue_manager / it_admin |
+| D-913 | Minimum quotes per category/value | default 3 for food above configured value | procurement_approver |
+| D-914 | Travel operating model per market (referrer vs licensed seller) | `concierge_referrer` until gate verified | compliance_officer |
+| D-915 | Referral payout activation for Oman | `held` until legal+tax opinion documented | compliance_officer / counsel |
+| D-916 | Welfare-check DND threshold | 24 h default | front_office_manager |
 
 These must be copied into the decision log in `docs/13` with D-nnn numbers by the pack editor.
 

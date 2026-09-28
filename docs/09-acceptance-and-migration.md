@@ -2,7 +2,7 @@
 
 **Pack:** Phase 1 planning pack v0.1 (draft for review) • **Date:** 2026-09-28 • **Master-prompt sections:** B (phase exits), E (referral non-negotiable tests), G (integrated demonstration 1–20), H.10, M (verification checklist), P (gates and invariants)
 
-> This is a **test plan**, not a test report. No test here has been executed; no partner, hardware or government interface is claimed to exist. A test marked `REAL` cannot be passed with a simulator. Decision ids in this document use **D-901…D-999** (proposed; consolidated in `docs/13`).
+> This is a **test plan**, not a test report. No test here has been executed; no partner, hardware or government interface is claimed to exist. A test marked `REAL` cannot be passed with a simulator. Decision ids in this document use **D-901…D-910** (proposed; consolidated in `docs/13`).
 
 ---
 

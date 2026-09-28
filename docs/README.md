@@ -15,7 +15,7 @@
 | Existing coverage vs M01–M68 | **0 of 68 modules implemented.** Every module is greenfield. |
 | The "two original hospitality blueprints" | **Not supplied** with this session. The master prompt states they end in the OTA section and lack compliance/build-order sections. Requirements in this pack are derived from the master prompt only; blueprint ingestion is open decision **D-001** (owner: Product Owner). When supplied, each blueprint idea must be added to the traceability index (`docs/13` §3) with a module/feature link or an explicit exclusion reason. |
 
-Because the repository is empty, the architecture is chosen fresh (see `docs/03-architecture.md` §2, ADR-001..ADR-012).
+Because the repository is empty, the architecture is chosen fresh (see `docs/03-architecture.md` §2, ADR-001..ADR-021).
 
 ## 2. Documents
 
@@ -34,7 +34,12 @@ Because the repository is empty, the architecture is chosen fresh (see `docs/03-
 | 10 | `10-competitive-gap-and-questions.md` | Benchmark vs OPERA/Mews/Cloudbeds/SiteMinder; owner-question traceability |
 | 11 | `11-guest-acquisition-and-service.md` | Website → booking → stay → recovery → return journey (M51–M55, M18, M40) |
 | 12 | `12-operations-safety-continuity.md` | Operations, food safety, incident, continuity (M42, M47, M56–M68) |
+| 04a | `04a-screen-crosswalk.md` | Resolves every catalogue screen reference to a canonical `docs/04` screen |
 | 13 | `13-simple-experience-and-acceptance.md` | Role home screens, simplicity rules, **traceability index**, consistency check, decision log, planning-gate checklist |
+| 13a | `13a-decision-register.generated.md` | All 427 open decisions (generated) |
+| 13b | `13b-subfeature-index.generated.md` | All 1,150 subfeatures with phase, release, acceptance (generated) |
+
+Tooling: `python3 tools/check_catalogue.py` (Section M checks) and `python3 tools/build_registers.py` (regenerates 13a/13b). Requires PyYAML.
 
 ## 3. Shared conventions (all documents MUST follow)
 

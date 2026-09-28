@@ -4,7 +4,7 @@
 **Governing source:** master prompt v3.0 §§A, C, D, E, H.4, P, Q • **Conventions:** `docs/README.md` §3 (identifiers, API/event style, honesty labels, baseline technology §3.7, money/time §3.8).
 **Status of everything below:** design target. No code, schema, deployment or partner connection exists. Capacity, HA and recovery numbers are **assumptions to confirm** with the pilot hotel and the hosting decision, and each carries a decision id.
 
-> Decision ids in this document use the reserved range **D-301..D-349** (architecture). They are registered in the decision log in `docs/13` §decision-log. Screen ids referenced here are defined in `docs/04-screens-and-design.md`.
+> Decision ids in this document use the reserved range **D-921..D-969** (architecture). They are registered in the decision log in `docs/13` §decision-log. Screen ids referenced here are defined in `docs/04-screens-and-design.md`.
 
 ---
 
@@ -2421,7 +2421,7 @@ Status values: `accepted-for-planning` (baseline, may be revisited at the Phase 
 | ADR-016 | Observability with OpenTelemetry and business SLOs | accepted-for-planning |
 | ADR-017 | Ports and adapters with capability flags and simulators | accepted-for-planning |
 | ADR-018 | API versioning and deprecation policy | accepted-for-planning |
-| ADR-019 | Localization, RTL, ICU messages and Hijri display | proposed (Hijri scope D-318) |
+| ADR-019 | Localization, RTL, ICU messages and Hijri display | proposed (Hijri scope D-938) |
 | ADR-020 | Search: PostgreSQL FTS + trigram first, OpenSearch optional | accepted-for-planning |
 | ADR-021 | Monorepo with pnpm workspaces and Turborepo | accepted-for-planning |
 
@@ -2429,11 +2429,11 @@ Status values: `accepted-for-planning` (baseline, may be revisited at the Phase 
 - **Context.** 68 modules share one guest, room, stock, vendor and finance model (AD-1). Team size in Phases 2–6 is bounded (see `docs/00`). Most invariants (composite holds, folio posting, stock + GL) need ACID across modules. The repository is empty.
 - **Decision.** One deployable codebase organised as bounded-context packages (`contexts/<ctx>`), each with `domain/`, `application/`, `infrastructure/`, `api/` layers. Contexts communicate through published application-service interfaces (sync, downward only, §4.3) and events (async). One Docker image runs in process roles `api`, `worker`, `adapter`, `realtime`. TypeScript strict mode end to end (shared types with web/mobile).
 - **Consequences.** + single transaction for cross-context invariants where the layering allows; + one CI/CD, one on-prem artefact; + extraction path: a context with its own schema, events and API can become a service later. − Discipline required (dependency rules enforced in CI); − a hot context scales with the whole image (mitigated by process roles and replica counts); − Node single-threaded CPU work (media, OCR, AI) is pushed to dedicated workers/services.
-- **Alternatives.** Microservices from day one (rejected: distributed transactions for every booking, heavy ops for on-prem single hotel); Java/Spring or .NET monolith (viable; rejected for shared TS types across web/mobile and hiring pool assumption D-301); Go (weaker ORM/validation ecosystem for heavy CRUD+workflow).
+- **Alternatives.** Microservices from day one (rejected: distributed transactions for every booking, heavy ops for on-prem single hotel); Java/Spring or .NET monolith (viable; rejected for shared TS types across web/mobile and hiring pool assumption D-921); Go (weaker ORM/validation ecosystem for heavy CRUD+workflow).
 
 ### ADR-002 — PostgreSQL 16, schema per context, row-level security
 - **Context.** Need ACID, exclusion constraints (timed resources), ranges, JSONB for rule definitions, strong on-prem story, and defence-in-depth tenant isolation (OWASP API1 BOLA).
-- **Decision.** PostgreSQL 16 is the single system of record. One schema per context; application roles per context have `USAGE` only on their own schema plus read-only `<ctx>_api` views of others. Every tenant table carries `tenant_id` and `property_id`; RLS policies use session settings `app.tenant_id`, `app.property_ids`, `app.principal_id` set by the request middleware in `SET LOCAL` within each transaction (§11.4). Extensions: `btree_gist`, `pg_trgm`, `pgcrypto`, `citext`. Migrations via a versioned SQL-first tool (e.g. `node-pg-migrate`/Atlas; D-302) with expand/contract discipline.
+- **Decision.** PostgreSQL 16 is the single system of record. One schema per context; application roles per context have `USAGE` only on their own schema plus read-only `<ctx>_api` views of others. Every tenant table carries `tenant_id` and `property_id`; RLS policies use session settings `app.tenant_id`, `app.property_ids`, `app.principal_id` set by the request middleware in `SET LOCAL` within each transaction (§11.4). Extensions: `btree_gist`, `pg_trgm`, `pgcrypto`, `citext`. Migrations via a versioned SQL-first tool (e.g. `node-pg-migrate`/Atlas; D-922) with expand/contract discipline.
 - **Consequences.** + invariants in the database, not only in code; + one backup/PITR story. − RLS adds planning overhead (indexes lead with `tenant_id, property_id`); − cross-tenant jobs must run under an explicit `BYPASSRLS` maintenance role with audit; − large SaaS tenants may need partitioning (by `tenant_id` hash or time for ledgers) — designed in from Phase 2 for ledgers and observations.
 - **Alternatives.** Database-per-tenant (strong isolation, heavy ops at SaaS scale; kept as an option for premium tenants — the on-prem profile is effectively this); MySQL (no exclusion constraints/range types); document store (no multi-row invariants).
 
@@ -2457,7 +2457,7 @@ Status values: `accepted-for-planning` (baseline, may be revisited at the Phase 
 
 ### ADR-006 — Job queue and sagas
 - **Context.** Long-running flows: composite event booking, RFQ→award→PO, delivery follow-up, payroll → bank file → ack, bill-pay inquiry, travel orders, chef callout with deadlines, night audit, purges.
-- **Decision.** pg-boss (Postgres-backed) for jobs, schedules, retries with backoff, singleton keys and dead-letter queues. Sagas are **process managers** persisted as state-machine rows (`<ctx>.saga_instance {id, type, state, data, deadline_at, version}`) driven by events and timers; every step is an idempotent command; compensations are explicit (release hold, reverse ledger). State machines are those in `docs/02`. Temporal is re-evaluated at the Phase 3 gate if saga count/complexity warrants (D-303).
+- **Decision.** pg-boss (Postgres-backed) for jobs, schedules, retries with backoff, singleton keys and dead-letter queues. Sagas are **process managers** persisted as state-machine rows (`<ctx>.saga_instance {id, type, state, data, deadline_at, version}`) driven by events and timers; every step is an idempotent command; compensations are explicit (release hold, reverse ledger). State machines are those in `docs/02`. Temporal is re-evaluated at the Phase 3 gate if saga count/complexity warrants (D-923).
 - **Consequences.** + no extra infrastructure for on-prem; + saga state is queryable and joins with domain data; − we write our own saga runtime conventions (timeouts, visibility, admin re-drive screen SCR-ADM-job-monitor).
 - **Alternatives.** Temporal now (excellent durability, extra cluster to run on-prem); BullMQ/Redis (Redis becomes durable-state dependency).
 
@@ -2476,7 +2476,7 @@ Status values: `accepted-for-planning` (baseline, may be revisited at the Phase 
 ### ADR-009 — Mobile framework: React Native (Expo)
 - **Context.** Staff (offline), guest, corporate and vendor apps on Android/iOS; signed downloadable builds; shared TS types; limited team.
 - **Decision.** React Native with Expo (bare workflow allowed for device SDKs such as scanners/printers), EAS Build for signed builds, OTA updates only for JS bundles that do not change native permissions and never for payment/ID flows without store review where store policy requires. SQLite (expo-sqlite) for offline cache/queue with SQLCipher encryption on staff/vendor apps. One shared design system package (`packages/ui-native`) with RTL support (`I18nManager`).
-- **Consequences.** + one codebase per app family, shared validation/contracts; − some native modules (card terminals, camera ML) need native bridges; − app store review timelines are a release dependency (`docs/04` §12).
+- **Consequences.** + one codebase per app family, shared validation/contracts; − some native modules (card terminals, camera ML) need native bridges; − app store review timelines are a release dependency (`docs/04` §11).
 - **Alternatives.** Flutter (strong UI, separate Dart types); native Swift/Kotlin ×4 apps (cost); PWA-only (insufficient for signed distribution, background push, camera/scanner reliability on iOS).
 
 ### ADR-010 — Web: Next.js applications and BFF routes
@@ -2517,7 +2517,7 @@ Status values: `accepted-for-planning` (baseline, may be revisited at the Phase 
 
 ### ADR-016 — Observability
 - **Context.** Many partners, devices and background flows; honest status for users and operators.
-- **Decision.** OpenTelemetry SDK for traces/metrics/logs; `correlation_id` from API edge through outbox/inbox, jobs and adapters; structured JSON logs with PII redaction. Backend: Grafana stack (Loki/Tempo/Prometheus/Mimir) on-prem or managed equivalent in SaaS (D-304). Business SLO metrics: booking commit latency, outbox lag, inbox dead letters, adapter error rates, hold-expiry backlog, night-audit duration, device heartbeat. User-facing status in SCR-ADM-integration-health and SCR-OPS-exception-queue.
+- **Decision.** OpenTelemetry SDK for traces/metrics/logs; `correlation_id` from API edge through outbox/inbox, jobs and adapters; structured JSON logs with PII redaction. Backend: Grafana stack (Loki/Tempo/Prometheus/Mimir) on-prem or managed equivalent in SaaS (D-924). Business SLO metrics: booking commit latency, outbox lag, inbox dead letters, adapter error rates, hold-expiry backlog, night-audit duration, device heartbeat. User-facing status in SCR-ADM-integration-health and SCR-OPS-exception-queue.
 - **Consequences.** + one trace per booking across adapters; − log volume costs; retention per data class.
 - **Alternatives.** Vendor APM (SaaS-only cost/lock-in).
 
@@ -2529,10 +2529,10 @@ Status values: `accepted-for-planning` (baseline, may be revisited at the Phase 
 - **Decision.** URI major version `/v1`; additive changes within a major; breaking changes → `/v2` routes side by side; `Deprecation` and `Sunset` headers; minimum support windows (§13). Webhook/event versions follow ADR-005.
 
 ### ADR-019 — Localization and Hijri display
-- **Decision.** EN and AR (RTL) at launch; ICU MessageFormat; CLDR number/date/currency formats; Gregorian is the **storage and legal** calendar; Hijri (Umm al-Qura) offered as a **display option** per user/property for dates in AR locale and guest-facing documents where configured, never as the stored value; legal documents follow the JUR invoice rules for which calendar must appear (D-318 to confirm with SA/OM counsel). Detail §14.
+- **Decision.** EN and AR (RTL) at launch; ICU MessageFormat; CLDR number/date/currency formats; Gregorian is the **storage and legal** calendar; Hijri (Umm al-Qura) offered as a **display option** per user/property for dates in AR locale and guest-facing documents where configured, never as the stored value; legal documents follow the JUR invoice rules for which calendar must appear (D-938 to confirm with SA/OM counsel). Detail §14.
 
 ### ADR-020 — Search
-- **Decision.** PostgreSQL full-text search (simple/english/arabic configurations with unaccent and Arabic normalisation) plus `pg_trgm` for fuzzy names/plates/SKUs; per-context search views; global search federates per-context queries with permission filters. OpenSearch is an optional adapter for large SaaS tenants (D-305). Search indexes never include restricted fields (ID numbers, salary).
+- **Decision.** PostgreSQL full-text search (simple/english/arabic configurations with unaccent and Arabic normalisation) plus `pg_trgm` for fuzzy names/plates/SKUs; per-context search views; global search federates per-context queries with permission filters. OpenSearch is an optional adapter for large SaaS tenants (D-925). Search indexes never include restricted fields (ID numbers, salary).
 
 ### ADR-021 — Monorepo tooling
 - **Decision.** Single repository, pnpm workspaces + Turborepo task graph, dependency-cruiser rules for context layering, Changesets for package versions of public SDK/contracts, one lint/type/test pipeline. Layout §16.
@@ -2547,7 +2547,7 @@ Status values: `accepted-for-planning` (baseline, may be revisited at the Phase 
 flowchart TB
   U["Users & devices"] --> CDN["CDN + WAF<br/>(guest site, media-public)"]
   U --> LB["Regional load balancer / ingress"]
-  subgraph Region["Primary region (data residency per tenant, D-306)"]
+  subgraph Region["Primary region (data residency per tenant, D-926)"]
     LB --> K8S
     subgraph K8S["Kubernetes cluster (3 AZ)"]
       APIp["api pods (HPA)"]
@@ -2587,7 +2587,7 @@ flowchart LR
     end
     GW["Site gateway<br/>(LPR, gates, BMS, meters,<br/>printers, scales, KDS)"]
     GPU["Optional GPU box<br/>(local AI inference)"]
-    UPS["UPS + generator<br/>(D-310)"]
+    UPS["UPS + generator<br/>(D-930)"]
     STAFFD["Staff PCs, tablets, POS"]
   end
   A1 <--> B1
@@ -2596,23 +2596,23 @@ flowchart LR
   STAFFD --> A1
   A1 -->|"encrypted backups (restic/pgBackRest)<br/>+ WAL archive over outbound HTTPS"| OFF[("Offsite encrypted backup<br/>(MetriSys-managed or hotel-chosen S3)")]
   A1 -->|outbound only| PARTNERS["PSP, channel manager,<br/>SMS/WhatsApp, gov portals"]
-  GUESTNET["Guests (internet)"] --> REVPROXY["Reverse proxy / tunnel<br/>(guest site & apps)<br/>or SaaS-hosted guest edge (D-311)"]
+  GUESTNET["Guests (internet)"] --> REVPROXY["Reverse proxy / tunnel<br/>(guest site & apps)<br/>or SaaS-hosted guest edge (D-931)"]
   REVPROXY --> A1
 ```
 
-Notes: public guest booking for an on-prem hotel either traverses a hardened reverse proxy/tunnel into the hotel, or (recommended, D-311) the guest website and booking API edge run in the SaaS edge with a secure link to the hotel stack. Internet loss on-prem keeps all internal operations running; partner calls queue in the outbox.
+Notes: public guest booking for an on-prem hotel either traverses a hardened reverse proxy/tunnel into the hotel, or (recommended, D-931) the guest website and booking API edge run in the SaaS edge with a secure link to the hotel stack. Internet loss on-prem keeps all internal operations running; partner calls queue in the outbox.
 
 ### 7.3 HA, backup, restore — targets (assumptions to confirm)
 
 | Item | SaaS target | On-prem target | Mechanism | Decision |
 |---|---|---|---|---|
-| Availability (core staff API, monthly) | 99.9 % | 99.5 % with warm standby; 99.0 % single server | multi-AZ; standby promotion runbook | D-307 |
-| RPO — transactional data | ≤ 5 min (cross-region), 0 within region (sync standby) | ≤ 15 min offsite (WAL archive), ≤ 1 min to standby | PITR WAL archiving; streaming replica | D-308 |
-| RTO — core operations | ≤ 1 h regional failover; ≤ 15 min AZ | ≤ 2 h hardware failure with standby; ≤ 8 h rebuild from offsite | runbooks, IaC, rehearsed | D-309 |
-| Object storage RPO | ≤ 15 min (replication) | ≤ 24 h offsite sync (evidence ≤ 1 h) | bucket replication / mirror | D-308 |
-| Backup retention | 35 days PITR; monthly 12 months; yearly per JUR retention | same, capacity-sized | pgBackRest/restic, immutable copies | D-312 |
-| Restore test | monthly automated restore to isolated env + checksum and ledger-balance verification | quarterly site drill + monthly automated offsite restore test | SCR-ADM-backup-restore records evidence | D-313 |
-| Encryption | at rest (KMS), in transit TLS 1.2+ | LUKS disks, TLS, backup encryption keys held offsite (escrow) | — | D-314 |
+| Availability (core staff API, monthly) | 99.9 % | 99.5 % with warm standby; 99.0 % single server | multi-AZ; standby promotion runbook | D-927 |
+| RPO — transactional data | ≤ 5 min (cross-region), 0 within region (sync standby) | ≤ 15 min offsite (WAL archive), ≤ 1 min to standby | PITR WAL archiving; streaming replica | D-928 |
+| RTO — core operations | ≤ 1 h regional failover; ≤ 15 min AZ | ≤ 2 h hardware failure with standby; ≤ 8 h rebuild from offsite | runbooks, IaC, rehearsed | D-929 |
+| Object storage RPO | ≤ 15 min (replication) | ≤ 24 h offsite sync (evidence ≤ 1 h) | bucket replication / mirror | D-928 |
+| Backup retention | 35 days PITR; monthly 12 months; yearly per JUR retention | same, capacity-sized | pgBackRest/restic, immutable copies | D-932 |
+| Restore test | monthly automated restore to isolated env + checksum and ledger-balance verification | quarterly site drill + monthly automated offsite restore test | SCR-ADM-backup-restore records evidence | D-933 |
+| Encryption | at rest (KMS), in transit TLS 1.2+ | LUKS disks, TLS, backup encryption keys held offsite (escrow) | — | D-934 |
 
 **Restore verification** (runs after every test restore): row counts per schema, `fin` trial balance equals pre-backup snapshot, stock balance projection equals ledger replay, outbox relay restarted without duplicate external effects (inbox dedup proves idempotency), RLS isolation probe passes.
 
@@ -2991,13 +2991,13 @@ adapters/sim-payment/  ── implements ─────────┘  (determ
 
 | Aspect | Decision |
 |---|---|
-| Launch languages | English (`en`), Arabic (`ar`, RTL). Jurisdiction language packs planned: French (`fr-CA` — Québec requirements to confirm, D-315), Portuguese (`pt-PT`), Urdu (`ur`, RTL, D-316) — requirements specified in Phase 1, activation per market |
+| Launch languages | English (`en`), Arabic (`ar`, RTL). Jurisdiction language packs planned: French (`fr-CA` — Québec requirements to confirm, D-935), Portuguese (`pt-PT`), Urdu (`ur`, RTL, D-936) — requirements specified in Phase 1, activation per market |
 | Message format | ICU MessageFormat (plural/select/gender), keys namespaced by app/context; no string concatenation; translation memory; pseudo-localisation and RTL pseudo-locale in CI |
 | Content translation | property content, KB articles, menus, room names stored as translatable fields `{en, ar, ...}` with per-language approval status (MED) |
-| Numbers | CLDR per locale; Arabic UI default **Latin digits (0-9)** with user option for Arabic-Indic digits (D-317) — IDs, confirmation numbers, plates, phone numbers, IBAN always Latin digits, `dir="ltr"` isolated |
+| Numbers | CLDR per locale; Arabic UI default **Latin digits (0-9)** with user option for Arabic-Indic digits (D-937) — IDs, confirmation numbers, plates, phone numbers, IBAN always Latin digits, `dir="ltr"` isolated |
 | Currency | CLDR symbol/placement; minor units from ISO 4217 (OMR 3 decimals); amounts in Arabic UI keep currency code where ambiguity exists (e.g. "ر.ع. 12.500" / "OMR 12.500") |
 | Dates/times | CLDR formats; property time zone shown; business date labelled separately; week start per locale |
-| Hijri | Display-only option (Umm al-Qura) alongside Gregorian in AR locale, per property/user; storage and legal calendar Gregorian; invoices show Hijri only where the JUR invoice rule requires/permits (D-318) |
+| Hijri | Display-only option (Umm al-Qura) alongside Gregorian in AR locale, per property/user; storage and legal calendar Gregorian; invoices show Hijri only where the JUR invoice rule requires/permits (D-938) |
 | Names/addresses | free-form + structured by country; Arabic names with optional Latin transliteration field; no forced first/last split |
 | Bidi | `dir` at root, logical CSS properties (`margin-inline-start`), mirrored icons only for directional meaning; Unicode isolates for mixed content |
 | Documents | invoices/registration cards/BEOs rendered per locale and per JUR rule (bilingual invoices where required) |
@@ -3005,7 +3005,7 @@ adapters/sim-payment/  ── implements ─────────┘  (determ
 
 ---
 
-## 15. Performance and capacity assumptions (to confirm, D-319)
+## 15. Performance and capacity assumptions (to confirm, D-939)
 
 | Dimension | Release 1 design point (single hotel) | SaaS planning point |
 |---|---|---|
@@ -3021,7 +3021,7 @@ adapters/sim-payment/  ── implements ─────────┘  (determ
 | Stock | 5 000 SKUs, 3 000 movements/day | — |
 | Payroll | 400 employees; run < 5 min | — |
 | Media | 5 000 assets; enhancement batch 200 images/h on 1 mid GPU (assumption; CPU fallback ~20/h) | GPU pool autoscaled |
-| Guest AI | 200 conversations/day; first token < 2 s (local model sizing D-320) | per-tenant quotas |
+| Guest AI | 200 conversations/day; first token < 2 s (local model sizing D-940) | per-tenant quotas |
 | Night audit | < 10 min for 600 rooms | parallel by property |
 | Hardware (on-prem) | Server A: 16 vCPU, 64 GB RAM, 2×1.92 TB NVMe RAID1; Server B same; optional GPU 24 GB VRAM | — |
 
@@ -3100,23 +3100,23 @@ adapters/sim-payment/  ── implements ─────────┘  (determ
 
 | Id | Decision | Default assumption used in this pack | Owner |
 |---|---|---|---|
-| D-301 | Confirm TypeScript/NestJS stack vs team skills | TS/NestJS per README §3.7 | CTO / lead architect |
-| D-302 | Migration tool | SQL-first (node-pg-migrate or Atlas) | Lead architect |
-| D-303 | Temporal adoption for sagas | re-evaluate at Phase 3 gate | Lead architect |
-| D-304 | Observability backend (self-hosted vs managed) | Grafana stack | Platform lead |
-| D-305 | OpenSearch for large tenants | not in R1 | Platform lead |
-| D-306 | SaaS hosting region(s) and data residency per market (OM/SA/CA/PT/PK) | per-tenant region selection; residency confirmed by counsel | Compliance + CTO |
-| D-307 | Availability targets | 99.9 % SaaS / 99.5 % on-prem with standby | Product owner + pilot hotel |
-| D-308 | RPO targets | §7.3 | Product owner + pilot hotel |
-| D-309 | RTO targets | §7.3 | Product owner + pilot hotel |
-| D-310 | On-prem power/UPS/network profile | UPS ≥ 30 min + generator | Pilot hotel IT |
-| D-311 | On-prem guest-facing edge (tunnel vs SaaS edge) | SaaS-hosted guest edge | CTO |
-| D-312 | Backup retention schedule by market | §7.3 + JUR retention | Compliance |
-| D-313 | Restore drill frequency | monthly automated / quarterly site | Platform lead |
-| D-314 | Backup key escrow holder | MetriSys ops + hotel sealed copy | Security lead |
-| D-315 | French (Canada) language pack scope | spec in Phase 1, build if Québec pilot | Product owner |
-| D-316 | Urdu language pack scope | spec in Phase 1, activation later | Product owner |
-| D-317 | Arabic digits default | Latin digits default, user option | UX lead + pilot hotel |
-| D-318 | Hijri display scope and invoice calendar | display option; legal per JUR | UX lead + counsel (SA/OM) |
-| D-319 | Capacity design point | §15 | Product owner + pilot hotel |
-| D-320 | Local LLM model and GPU sizing (licence review) | open-weight model, 24 GB GPU | AI lead + counsel |
+| D-921 | Confirm TypeScript/NestJS stack vs team skills | TS/NestJS per README §3.7 | CTO / lead architect |
+| D-922 | Migration tool | SQL-first (node-pg-migrate or Atlas) | Lead architect |
+| D-923 | Temporal adoption for sagas | re-evaluate at Phase 3 gate | Lead architect |
+| D-924 | Observability backend (self-hosted vs managed) | Grafana stack | Platform lead |
+| D-925 | OpenSearch for large tenants | not in R1 | Platform lead |
+| D-926 | SaaS hosting region(s) and data residency per market (OM/SA/CA/PT/PK) | per-tenant region selection; residency confirmed by counsel | Compliance + CTO |
+| D-927 | Availability targets | 99.9 % SaaS / 99.5 % on-prem with standby | Product owner + pilot hotel |
+| D-928 | RPO targets | §7.3 | Product owner + pilot hotel |
+| D-929 | RTO targets | §7.3 | Product owner + pilot hotel |
+| D-930 | On-prem power/UPS/network profile | UPS ≥ 30 min + generator | Pilot hotel IT |
+| D-931 | On-prem guest-facing edge (tunnel vs SaaS edge) | SaaS-hosted guest edge | CTO |
+| D-932 | Backup retention schedule by market | §7.3 + JUR retention | Compliance |
+| D-933 | Restore drill frequency | monthly automated / quarterly site | Platform lead |
+| D-934 | Backup key escrow holder | MetriSys ops + hotel sealed copy | Security lead |
+| D-935 | French (Canada) language pack scope | spec in Phase 1, build if Québec pilot | Product owner |
+| D-936 | Urdu language pack scope | spec in Phase 1, activation later | Product owner |
+| D-937 | Arabic digits default | Latin digits default, user option | UX lead + pilot hotel |
+| D-938 | Hijri display scope and invoice calendar | display option; legal per JUR | UX lead + counsel (SA/OM) |
+| D-939 | Capacity design point | §15 | Product owner + pilot hotel |
+| D-940 | Local LLM model and GPU sizing (licence review) | open-weight model, 24 GB GPU | AI lead + counsel |

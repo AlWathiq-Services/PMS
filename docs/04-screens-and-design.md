@@ -4,7 +4,7 @@
 **Governing source:** master prompt v3.0 §F (application families), §P.1 (simplicity, role home, WCAG 2.2 AA, low bandwidth), §E, §G, §K, §Q • **Conventions:** `docs/README.md` §3 (screen id `SCR-<app>-<name>`, actors §3.3, honesty labels §3.6). Architecture references: `docs/03-architecture.md`.
 **Status:** design target. No screen exists. Wireframes are low-fidelity and annotate behaviour, not visual design.
 
-> Decision ids in this document use the reserved range **D-401..D-429** (UX/design), registered in `docs/13`. Catalogue writers (`docs/01`) reference screens by the ids defined here; an id not in this document is a defect to be added here first.
+> Decision ids in this document use the reserved range **D-971..D-999** (UX/design), registered in `docs/13`. Catalogue writers (`docs/01`) reference screens by the ids defined here; an id not in this document is a defect to be added here first.
 
 ---
 
@@ -388,7 +388,7 @@ Finance
 | SCR-FIN-bank-statements | Import bank statements (file/API), view lines | finance_clerk | account, statement date, lines, import source, duplicates | imported, partially_matched, matched | EL-L, EL-C | fin.bank.import | AU-W | N-in import failures | A-grid | ML-D |
 | SCR-FIN-bank-reconciliation | Match bank lines to receipts/disbursements/PSP settlements | finance_clerk, financial_controller | line, candidates, rule, manual match, unmatched age | unmatched, matched, exception | EL-L | fin.recon.match | AU-W | N-in unmatched aged | A-grid | ML-D |
 | SCR-FIN-psp-reconciliation | PSP settlement files vs captures/refunds/fees/chargebacks | finance_clerk | settlement batch, gross, fees, net, per-txn match, missing items | pending, matched, exception | EL-L | fin.recon.psp | AU-W | N-in | A-grid | ML-D |
-| SCR-FIN-chargeback-case | Chargeback evidence and response | finance_clerk, financial_controller | txn, reason code, deadline, evidence (folio, signature, ID-free receipt) | received, evidence_submitted, won, lost | EL-F, A-time | fin.chargeback.respond | AU-E | N-esc deadline | A-form | ML-D |
+| SCR-FIN-chargeback-case | Chargeback evidence and response | finance_clerk, financial_controller | txn, reason code, deadline, evidence (folio, signature, ID-free receipt) | received, evidence_submitted, won, lost | EL-F | fin.chargeback.respond | AU-E | N-esc deadline | A-form, A-time | ML-D |
 | SCR-FIN-cash-forecast | 13-week cash forecast from AR, AP, payroll, taxes | financial_controller | inflows/outflows by week, scenario | draft, published | EL-D | fin.cash_forecast.read | AU-0 | — | A-chart | ML-D |
 | SCR-FIN-cost-reconciliation | Reconciliation dashboard showing planned/accrued/invoiced/approved/paid/settled per cost category (§D) | financial_controller, gm | category, amounts per stage, breaks, evidence coverage | — | EL-D | fin.recon.read | AU-0 | N-in breaks | A-chart, A-grid | ML-D |
 | SCR-FIN-utility-bill-inbox | Utility bills (electricity/water/gas) inbox with meter variance and due dates (critical flow W9) | ap_clerk, chief_engineer | provider, account (masked), period, total, due, kWh/m3 billed vs metered, variance %, tariff version, duplicate flag, status | captured, validated, variance_review, sent_to_ap, approved, paid, settled | EL-L, EL-C | fin.utility_bill.review | AU-E | N-in variance/due soon, N-esc | A-grid | ML-D |
@@ -914,7 +914,7 @@ Admin
 | SCR-ADM-timed-resource-setup | Spaces/partitions, layouts/capacities, buffers, tables, parking zones, kitchen slots, club venues | property_admin | resource, mode (exclusive/pooled), components, capacities per layout, buffers | draft, active | EL-F | inv.resource.configure | AU-W | — | A-form, A-map | ML-D |
 | SCR-ADM-outlet-setup | Outlets, POS terminals, KDS stations, printers, tax categories | property_admin, fnb_manager | outlet, type, devices, service charge, tip rules | draft, active | EL-F | com.outlet.configure | AU-W | — | A-form | ML-D |
 | SCR-ADM-service-taxonomy | Vendor service categories, required credentials per category/jurisdiction, owning department | procurement_approver, property_admin | category tree, credential requirements, default search scope | draft, active | EL-F | vnd.taxonomy.write `+mc` | AU-P | — | A-grid | ML-D |
-| SCR-ADM-rfq-policy | Minimum quotes per category/value/jurisdiction, weight templates, sealed rules, sample retention start event | procurement_approver | thresholds, min quotes, weights, sealed flag, retention start event (D-4xx), approval matrix | draft, active | EL-F | stk.policy.write `+mc` | AU-P | — | A-form | ML-D |
+| SCR-ADM-rfq-policy | Minimum quotes per category/value/jurisdiction, weight templates, sealed rules, sample retention start event | procurement_approver | thresholds, min quotes, weights, sealed flag, retention start event (D-978), approval matrix | draft, active | EL-F | stk.policy.write `+mc` | AU-P | — | A-form | ML-D |
 | SCR-ADM-workflow-templates | Versioned workflow/task templates, triggers, SLAs, escalations (M63) | property_admin, dept heads | template, trigger, steps, owners, SLA, escalation, version | draft, simulated, active, retired | EL-F | plt.workflow.write `+mc` | AU-P | — | A-form | ML-D |
 | SCR-ADM-workflow-simulator | Dry-run a template against sample events before activation (SF63.2.2) | property_admin | template version, sample events, resulting tasks/notifications | run, passed, failed | EL-D | plt.workflow.simulate | AU-W | — | A-grid | ML-D |
 | SCR-ADM-notification-templates | Message templates per channel/language, WhatsApp template approval status | property_admin, marketing_manager | template, channel, languages, variables, BSP approval | draft, submitted, approved, rejected | EL-F | plt.template.write | AU-W | — | A-form | ML-D |
@@ -1032,3 +1032,599 @@ Safety
 | SCR-SAF-claim-file | Claim evidence packet from incidents, adjuster access scope, status, settlement | financial_controller, security manager | claim, incidents, evidence refs, adjuster access, reserve, settlement | draft, submitted, under_review, settled, denied | EL-F | saf.claim.write | AU-E | N-in status | A-form | ML-D |
 | SCR-SAF-continuity-plans | Business impact scenarios, crisis role tree, guest welfare/relocation, supplier backups (F68.2) | gm, security manager | scenario, impact, roles/contacts, manual workflows, recovery target, last drill | draft, approved, tested | EL-F | saf.continuity.write | AU-W | — | A-form | ML-D |
 
+---
+
+## 5. Low-fidelity annotated wireframes — 10 critical flows
+
+Conventions: `[Button]`, `( ) radio`, `[x] checkbox`, `<field>`, `{state/annotation ref}`, `▸` drill link. Numbers ① ② … refer to the annotation list under each frame. Frames are shown LTR; RTL mirrors layout per §6 (numbers, codes and plates stay LTR-isolated).
+
+### W1 — Guest booking checkout (SCR-GST-room-results → extras → guest-details → payment → confirmation)
+
+```
+┌─ SCR-GST-room-results ──────────────────────────────── EN | ع ─ [Help ☎]─┐
+│ Muscat Bay Hotel   12–14 Nov · 2 adults · 1 room   [Change search]          │
+│ Filters: [Accessible room] [Breakfast] [Free cancellation]   Sort: Price ▾ │
+│ ┌──────────────────────────────────────────────────────────────────────────┐│
+│ │ [img: Deluxe King, alt="Deluxe king room with sea-facing balcony"]       ││
+│ │ Deluxe King · 32 m² · sea view · roll-in shower available ①            ││
+│ │  ( ) Room only   Flexible — free cancel until 10 Nov 18:00              ││
+│ │                  OMR 84.000 total for 2 nights ② incl. VAT & fees ▸     ││
+│ │  ( ) Breakfast   Non-refundable     OMR 92.500 total ...                 ││
+│ │                                                  [Select]                ││
+│ └──────────────────────────────────────────────────────────────────────────┘│
+└──────────────────────────────────────────────────────────────────────────────┘
+        │ Select → server creates INVENTORY_HOLD + QUOTE (policy snapshot) ③
+        ▼
+┌─ SCR-GST-extras ─────────────────────────── Held for 14:52 [Need more time?] ④┐
+│ Add to your stay (optional)                                                    │
+│ [ ] Upgrade to Junior Suite +OMR 25.000/night   (2 left)                       │
+│ [ ] Parking, 2 nights  +OMR 6.000                                              │
+│ [ ] Late checkout 15:00 +OMR 10.000  (confirmed on arrival day if clean ready)⑤│
+│                                            Total OMR 84.000   [Continue]       │
+└────────────────────────────────────────────────────────────────────────────────┘
+        ▼
+┌─ SCR-GST-guest-details ────────────────────────────────────────────────────────┐
+│ Booker  <Full name>  <Email>  <Mobile +968 ▾>  <Country ▾>                     │
+│ Guests  [ ] I am staying   <Guest 2 name (optional)>                           │
+│ Arrival time <▾>   Requests <textarea>   Accessibility needs <textarea> ⑥       │
+│ Referral / promo code <      >  (disclosed: referrer may be paid) ⑦            │
+│ [ ] Send me offers by email (optional, unticked) ⑧                             │
+│                                                            [Review & pay]      │
+└────────────────────────────────────────────────────────────────────────────────┘
+        ▼
+┌─ SCR-GST-payment ──────────────────────────────────────────────────────────────┐
+│ Review: Deluxe King · 12–14 Nov · 2 adults                                     │
+│   Room 2 nights ............. OMR 74.000                                       │
+│   VAT ........................ OMR  3.700   (rule: OM VAT v2026-01, verified) ⑨│
+│   Tourism levy / fees ........ OMR  6.300                                      │
+│   Total ...................... OMR 84.000   Pay now: OMR 84.000               │
+│ Policies ▸  [x] I accept the cancellation and hotel policies                   │
+│ ┌ PSP hosted card fields (iframe) ⑩ ┐  or  [Apple Pay] [Pay at hotel*]         │
+│ └───────────────────────────────────┘      *if rate allows                      │
+│ [Pay OMR 84.000]  ← disabled after click; shows "Processing…" ⑪                │
+└────────────────────────────────────────────────────────────────────────────────┘
+        ▼ server: capture/authorize OK + hold→sold conversion OK + policy OK ⑫
+┌─ SCR-GST-confirmation ─────────────────────────────────────────────────────────┐
+│ ✓ Booking confirmed  MS-7K4Q2P                                                 │
+│ Next: [Pre-check-in (2 min)]  [Add to calendar]  [Manage booking]              │
+└────────────────────────────────────────────────────────────────────────────────┘
+```
+① Accessible features come from verified room attributes, never marketing text. ② **Total price including taxes/fees on results** (SF51.2.2); per-night breakdown in drill. ③ Hold created on select, not on page view; bot filtering applies. ④ Countdown announced to screen readers at 5/1 min; "Need more time" extends once if inventory policy allows (A-time). ⑤ Upsells never promise what cleaning capacity cannot deliver (SF54.1.2). ⑥ Accessibility notes are purpose-limited (field:health). ⑦ Referral disclosure shown; attribution only via code/link (`docs/03` §5.8). ⑧ Marketing consent separate and unticked. ⑨ Tax line shows rule version; if JUR rule is `unknown`, the rate is not sellable and the page shows an assisted booking path. ⑩ Card data never touches MetriStay (PCI boundary). ⑪ **EL-M**: timeout → "We're confirming your payment…" with automatic status inquiry; no second charge. ⑫ Confirmation only after inventory + payment + policy checks succeed; if payment succeeded but conversion failed (hold expired and room sold), auto-void/refund and apology with alternatives — tested in `docs/09` G20. Low-bandwidth: every step works without client JS (form posts), budget §9.
+
+### W2 — Check-in with ID OCR + registration signature + OTP (SCR-FO-check-in with SCR-SAF-id-intake, SCR-SAF-ocr-correction, SCR-FO-registration-card, SCR-SAF-otp-qr-verify)
+
+```
+┌─ SCR-FO-check-in · Res MS-7K4Q2P · Ms. A. Al-Harthy · 12–14 Nov ────────────────────────┐
+│ Steps: ①Reservation ✓  ②Room ✓ 1208  ③Guarantee ✓  ④ID ●  ⑤Register ○  ⑥Verify ○  ⑦Keys ○ │
+├───────────────────────────────────────────────────────────────────────────────────────────┤
+│ ④ Identity document  (rule: OM guest registration v3, verified) ⓐ                         │
+│ Document type ( ) Omani ID  (•) Passport  ( ) GCC ID  ( ) Other                            │
+│ ┌──────── Scanner / camera ────────┐   Path: (•) OCR assist  ( ) Manual entry ⓑ            │
+│ │  [ place document ]              │   [ ] Biometric match — not enabled for this property ⓒ│
+│ └──────────────────────────────────┘                                                       │
+│ OCR result (confidence)        Value              Guest confirmed                          │
+│  Surname            0.98   [AL-HARTHY      ]      ✓                                        │
+│  Given names        0.91   [AMAL           ]      ✓                                        │
+│  Document no.       0.62 ⚠ [P1234S67       ]  ← corrected from P1234567 ⓓ                  │
+│  Nationality        0.99   [OMN            ]      ✓                                        │
+│  Expiry             0.97   [2031-04-30     ]      ✓                                        │
+│ [Retake]  [Send to mismatch review]                          [Confirm ID]                  │
+├───────────────────────────────────────────────────────────────────────────────────────────┤
+│ ⑤ Registration card  (guest-facing tablet or guest phone via QR ⓔ)                        │
+│  Fields per rule pack · policy text EN/AR · [x] I confirm the details are correct         │
+│  Signature: [ Draw ]  or  [ Type full name ] ⓕ     Document hash: 9f2c…a1                 │
+├───────────────────────────────────────────────────────────────────────────────────────────┤
+│ ⑥ Verification  Send code via (•) SMS +968 •••• 4412  ( ) WhatsApp (approved template)     │
+│  Code sent 12:03 · expires 12:08 · attempts left 3   [Resend in 0:45]                     │
+│  Guest enters code on tablet/phone → ✓ Verified (bound to this session/device) ⓖ           │
+│  Delivery failed? [Verify in person with staff] (reason required) ⓗ                         │
+├───────────────────────────────────────────────────────────────────────────────────────────┤
+│ Blocked reasons shown here if any: e.g. "Deposit authorisation pending" ⓘ                  │
+│                                                 [Complete check-in] (needs server ack)     │
+└───────────────────────────────────────────────────────────────────────────────────────────┘
+```
+ⓐ Required document types/fields come from the JUR rule version for the property; `unknown` → manual registration path with compliance flag. ⓑ Manual entry is always available (A-cam; lawful non-OCR alternative). ⓒ Biometric match appears only if lawful basis + consent + property activation gate (SF41.1.6). ⓓ Low-confidence fields are highlighted, corrections recorded as `guest_corrected`/staff-corrected (AU-E); ID image stored in restricted bucket with TTL and never used for analytics/AI training. ⓔ QR hand-off resumes the same session on the guest's phone; QR alone is not authentication (SF41.2.6). ⓕ Typed-name + intent checkbox is an equal alternative to drawing (A-sig). ⓖ OTP single-use, bound to session and device fingerprint; anti-replay. ⓗ Manual in-person verification requires reason and is audited. ⓘ Completion requires server ack of room assignment, guarantee, ID/registration rule evaluation — never offline (`docs/03` §8.2).
+
+### W3 — Folio and checkout (SCR-FO-folio / SCR-FO-checkout)
+
+```
+┌─ SCR-FO-checkout · Room 1208 · Al-Harthy · Dep today 12:00 · Business date 14 Nov ───────┐
+│ Windows: [1 Guest] [2 Company: Acme LLC]  [+ Route…]                                        │
+│ ┌ Window 1 — Guest ─────────────────────────────────────────────────────────────────────┐   │
+│ │ Date   BizDate  Code        Description            Amount     Src       ⋯              │   │
+│ │ 12 Nov 12 Nov   ROOM        Deluxe King            37.000     night-aud                │   │
+│ │ 12 Nov 12 Nov   VAT         VAT 5%                  1.850     rule v3                  │   │
+│ │ 13 Nov 13 Nov   BAR         Lobby bar chk 5531     12.400     POS ▸ ⓐ                  │   │
+│ │ 13 Nov 13 Nov   BAR-REV     Reversal of 5531 line 2 −3.200    ↩ link ⓑ                 │   │
+│ │ 13 Nov 13 Nov   PARK        Parking 1 day           3.000     LPR session ▸            │   │
+│ │ 14 Nov 14 Nov   MINIBAR     Count #MB-8812          4.500     HK count ▸ ⓒ             │   │
+│ │ 12 Nov          PAYMENT     Deposit card ••4412   −40.000     PSP ref ▸                │   │
+│ │                                          Balance     15.550 OMR                        │   │
+│ └───────────────────────────────────────────────────────────────────────────────────────┘   │
+│ [Post charge] [Adjust/Reverse…] ⓓ [Transfer to window…]                                     │
+│ Settle window 1:  Tender ( ) Card on file ••4412  (•) Terminal T2  ( ) Cash  ( ) Points ⓔ   │
+│ Invoice to:  (•) Guest  ( ) Company name + tax id <     >   Language [EN+AR ▾] ⓕ            │
+│ Points to earn: 84 pts (pending until stay complete) ⓖ                                      │
+│ [Settle 15.550 OMR]   → then [Check out]   {EL-M}                                           │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+ⓐ Every entry links to its source (POS check, LPR session, HK count) — one posting per source key. ⓑ Corrections are reversal entries with link; no edit/delete. ⓒ Minibar posted once by `count_id`; late counts after checkout go to late-charge review. ⓓ Adjust over limit requires maker-checker. ⓔ Points tender uses hold→capture so failures do not lose points. ⓕ Invoice fields/language/fiscal number follow JUR invoice rules. ⓖ Points pending until the stay is complete and payment cleared; refund reverses points exactly once.
+
+### W4 — Corporate event search / compare / hold (SCR-CORP-event-search → SCR-CORP-event-compare → SCR-CORP-hold-detail)
+
+```
+┌─ SCR-CORP-event-search · Acme LLC (agreement v4, valid to 31 Dec 2026) ──────────────────┐
+│ Dates:  [18 Nov] [19 Nov] [+ add alternative date]   Attendees <80>   Layout [Classroom ▾] │
+│ Rooms   <10> nights <1>   Meals [x] Lunch  [ ] Dinner   Hosted bar [x] 2h                  │
+│ Club visit [x] 20:00–22:00   Parking passes <20>   AV [x] Projector [x] 2 mics             │
+│                                                   [Find feasible options]                  │
+├────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 3 feasible options at your contracted rates ⓐ     (2 others hidden: not feasible ▸ why) ⓑ   │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+        ▼
+┌─ SCR-CORP-event-compare ─────────────────────────────────────────────────────────────────┐
+│                     Option A          Option B          Option C                           │
+│ Date                18 Nov            18 Nov            19 Nov                             │
+│ Space               Ballroom A        Ballroom A+B      Majlis Hall                        │
+│ Classroom capacity  90                150               84                                 │
+│ Rooms (10×Deluxe)   ✓ contracted 45   ✓ 45              ✓ 45                               │
+│ Lunch/bar/club      ✓                 ✓                 ✓ club at 21:00 (20:00 full) ⓒ     │
+│ Parking 20          ✓ Zone B          ✓ Zone B          ✓ Zone A                           │
+│ Total incl. tax     OMR 4,860.000     OMR 5,420.000     OMR 4,790.000                      │
+│ Deposit             30%               30%               30%                                │
+│                     [Hold A]          [Hold B]          [Hold C]                           │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+        ▼  composite hold: rooms + space components + capacity slots in ONE transaction ⓓ
+┌─ SCR-CORP-hold-detail · HOLD-2231 ─────────────── Expires 20 Nov 17:00 (47:59:12) ⓔ ──────┐
+│ Components: Ballroom A 18 Nov 07:00–18:00 (incl. setup/teardown) · 10 rooms · lunch 80 ·   │
+│ bar 2h · club 20 · parking 20 Zone B · AV                                                  │
+│ Approval: required (policy: > OMR 3,000) → Approver: J. Smith  [Request approval] ⓕ       │
+│ Payment: ( ) Deposit by card  (•) PO number <PO-7781>  ( ) Credit account                  │
+│ [Request extension]                               [Confirm booking] (after approval)       │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+ⓐ Only configurations feasible at contracted rates appear (G.1). ⓑ "Why not" explains non-feasible options (capacity, space conflict) without revealing other clients. ⓒ Partial feasibility shows the nearest feasible alternative explicitly. ⓓ Exclusion constraints and capacity slots guarantee no double sale (`docs/03` §5.2). ⓔ Countdown with notifications at 24 h/2 h; expiry releases all components atomically. ⓕ Corporate approval routing per cost center; confirmation needs server ack and deposit/PO/credit check.
+
+### W5 — Parking low-confidence review (SCR-PRK-lane-review)
+
+```
+┌─ SCR-PRK-lane-review · Lane 2 ENTRY · 21:14:07 ── queue: 2 waiting ─── Gate: CLOSED ──────┐
+│ ┌── snapshot (plate crop, privacy-limited) ──┐  Read:  "8 4 2 1 7 ?  A B"  conf 0.61 ⓐ   │
+│ │  [ plate image ]                            │  Region: OM (guess 0.8)                    │
+│ └─────────────────────────────────────────────┘                                            │
+│ Candidates (fuzzy match on active permits):                                                │
+│   (•) 84217 AB  · Guest permit · Room 1208 · valid to 14 Nov 12:00  ⓑ                     │
+│   ( ) 84211 AB  · Staff permit · valid                                                     │
+│   ( ) None of these → type plate <        >                                                │
+│ Decision:  [Open gate (O)]   [Deny (D)]   [Escalate to security (E)] ⓒ                      │
+│ Reason (required for override/none) <▾ select>                                             │
+│ Auto-deny timer 60 s → then route to intercom ⓓ   [Pause timer]                            │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+ⓐ Below threshold (configurable, default 0.85) always goes to a human; AI/LPR never opens on low confidence. ⓑ Candidate shows minimum personal data; selecting corrects the plate on the observation (audit keeps original read). ⓒ Keyboard shortcuts for speed; each decision audited with reason (AU-W); repeated overrides alert supervisor. ⓓ Timer adjustable (A-time); network loss → site gateway local decision for cached permits only; manual gate screen as fallback.
+
+### W6 — RFQ comparison and award (SCR-PRC-rfq-comparison → SCR-PRC-award)
+
+```
+┌─ SCR-PRC-rfq-comparison · RFQ-0912 · 120 KG tomatoes (fresh, grade A) · need 20 Nov 06:00 ─┐
+│ Quotes: 3 of min 3 ✓ ⓐ   Weights v2 (locked at opening 17 Nov 10:00) ⓑ                      │
+│ Normalised to OMR per KG landed (incl. freight, tax) ⓒ                                      │
+│ Vendor        Unit/KG  Landed  Qual/Fresh  Avail  Lead  OTIF(n)    Defects  FoodSafe  Score │
+│ Green Farms   0.420    0.451   4.5 [📷3]   150kg  12h   96%(41)    1.2%     ✓ valid   86.4 │
+│ Oasis Fresh   0.395    0.447   3.8 [📷2]   120kg  18h   81%(9) low-n 3.9%   ✓ valid   78.9 │
+│ Sun Produce   0.380    0.462*  4.0 [📷3]   200kg  24h   — (0) no history ⓓ   ✓        74.2 │
+│ * freight added: vendor quoted ex-works                                                    │
+│ Disqualified: none   [View samples side-by-side ▸ SCR-PRC-sample-gallery]                   │
+│ AI summary (assistive, not a decision) ⓔ: "Oasis cheapest landed by 0.004; Green Farms     │
+│   higher OTIF with larger sample…" [sources]                                               │
+│ Recommendation: Green Farms (highest score)          [Proceed to award]                    │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+        ▼
+┌─ SCR-PRC-award ────────────────────────────────────────────────────────────────────────────┐
+│ Selected: ( ) Recommended Green Farms  (•) Other: Oasis Fresh  → Override reason required ⓕ│
+│ Reason <▾ price priority for banquet> <details…>                                            │
+│ Split award? [ ] 80 KG Green / 40 KG Oasis                                                 │
+│ Budget: F&B Kitchen CC-410 · encumber OMR 53.640 · remaining 1,204.000                      │
+│ Conflict declarations: evaluators ✓ none   SoD: requester ≠ approver ✓                      │
+│ [Sign award] (step-up) → PO v1 generated → vendor acknowledgment required ⓖ                 │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+ⓐ If fewer than minimum eligible responsive quotes: banner + waiver path (SCR-PRC-rfq-waiver), award blocked. ⓑ Weight version locked at opening; changing weights after opening is impossible (SF49.2.3). ⓒ Normalisation to canonical UOM and landed cost prevents apples-to-oranges. ⓓ History shown with sample size/confidence; no-history is neutral per policy, not penalised silently. ⓔ AI summary labelled, cites evidence, cannot change weights or award (SF49.2.6). ⓕ Override requires reason + higher approver where policy says; recorded (SF49.2.7). ⓖ Not-awarded vendors receive limited notice; samples retained until `retention_until` (90 days).
+
+### W7 — Receiving with quarantine (SCR-PRC-receiving → SCR-PRC-receiving-verify → SCR-PRC-quarantine)
+
+```
+┌─ SCR-PRC-receiving · Dock 1 · PO-5530 v2 / ASN GF-778 · Green Farms · arrived 05:42 ───────┐
+│ Scan: [📷 PO/ASN QR] ✓   Vehicle temp log ✓ 3.9 °C  ⓐ                                      │
+│ Line  Item              Expected   Scanned/Weighed   Lot     Expiry   Temp   Result        │
+│ 1     Tomatoes fresh A  80 KG      78.6 KG (scale S1) L-1102 22 Nov   6.8°C  ⚠ temp > 5°C ⓑ│
+│ 2     Tomatoes fresh A  40 KG      40.2 KG            L-1103 22 Nov   4.1°C  ✓ within tol  │
+│ 3     Basil 100 g pk    10 pk      8 pk (barcode)     L-88   19 Nov   —      ⚠ short 2     │
+│ Packing slip OCR: matches ASN ✓ (raw image kept) ⓒ                                          │
+│ Risk class: FOOD (high) → physical verification required ⓓ                                 │
+│ [Verify lines ▸]      Draft GRN (not posted)     Offline: queued draft ● ⓔ                  │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+        ▼
+┌─ SCR-PRC-receiving-verify · Line 1 ──────────────────────────────────────────────────────┐
+│ Checks: Temperature 6.8 °C (limit 5 °C) ✗   Condition ✓   Packaging ✓   Photo [📷 2]       │
+│ Decision: ( ) Accept  (•) Quarantine  ( ) Reject/return now                               │
+│ Accountable receiver: R. Das (attest) [Sign]                                              │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+        ▼ [Post GRN] (server) → line 2 accepted 40.2 KG → STOCK_LEDGER receipt (available) ×1 ⓕ
+                               line 1 78.6 KG → STOCK_LEDGER receipt (quarantine) ×1
+                               line 3 8 pk accepted; short 2 → vendor claim
+┌─ SCR-PRC-quarantine ─────────────────────────────────────────────────────────────────────┐
+│ L-1102 Tomatoes 78.6 KG · reason temp breach · photos · vendor notified                   │
+│ Disposition: ( ) Return to vendor → credit memo  ( ) Destroy (waste)  [Concession ✗ not    │
+│ allowed for food-safety failure] ⓖ           [Submit for approval]                         │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+ⓐ Cold-chain evidence captured from ASN/vehicle where supplied. ⓑ Tolerance and temperature rules from PO spec + JUR food rule pack. ⓒ Raw evidence immutable (AU-E). ⓓ Low-risk items may be straight-through with attestation; food/high-value/discrepancy require physical verification (SF50.2.5). ⓔ Draft can be captured offline; **posting requires server** and is idempotent — duplicate scans create one movement. ⓕ Accepted quantity creates exactly one stock movement and one payable match input. ⓖ Quarantined/waste stock never becomes available (`docs/03` §5.3).
+
+### W8 — Chef callout (SCR-FNB-chef-callout)
+
+```
+┌─ SCR-FNB-chef-callout · Dinner service · Main kitchen · 14 Nov 17:00–23:00 ── UNCOVERED ──┐
+│ Primary: Chef K. Rao — sick call 13:10 ✗     Backup: Chef M. Ali — no answer (2 tries) ✗ ⓐ │
+│ Cutoff to cover: 15:30 (1:48:22 left)                                                     │
+│ Callout sequence (eligible only ⓑ)                         Channel     Sent   Reply  Due    │
+│ 1 S. Nair (emergency roster) 4.8 km · 25 min · cert ✓     push+SMS    13:42  —      13:57  │
+│ 2 FreshChef Staffing (vendor) · 40 min · contract ✓       push+WA     13:42  —      13:57  │
+│ 3 J. Costa (off-duty staff) · OT rules ✓                   SMS+voice  queued               │
+│ Live: 13:49 S. Nair ACCEPTED ✓ (first valid acceptance; others notified "filled") ⓒ         │
+│ Assignment: needs manager approval (paid external)   [Approve assignment] (F&B mgr) ⓓ      │
+│ Handover pack: BEO #EV-311 (80 covers, 6 nut-free, 2 coeliac), menu, allergen matrix       │
+│  → shared until 23:30, access logged [Share] ⓔ                                             │
+│ If no acceptance by 15:00 → escalate GM + contingency menu approval ⓕ                      │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+ⓐ Primary/backup statuses from roster/attendance; no-show thresholds configurable. ⓑ Only candidates with valid food-safety credentials, availability and no overlapping assignment are contacted (SF47.1.6). ⓒ Atomic accept (unique constraint): simultaneous acceptances resolve to one; others see "filled by another" (G.15). ⓓ Paid external chef requires manager approval (SF47.2.4). ⓔ BEO/allergen access limited to assignment window (SF47.2.5). ⓕ Escalation and contingency when nobody accepts (SF47.2.6); all attempts logged for response KPI.
+
+### W9 — Utility bill inbox (SCR-FIN-utility-bill-inbox → SCR-FIN-utility-bill-detail → SCR-FIN-bill-payment-detail)
+
+```
+┌─ SCR-FIN-utility-bill-inbox ─────────── Filters: [Electricity][Water][Gas] Due ≤ 14 d ▾ ──┐
+│ Provider         Account   Period     Billed kWh/m³  Metered   Var %  Amount     Due   St.  │
+│ Nama Electricity ••2291    Oct 2026   182,400 kWh    176,950   +3.1   OMR 4,120  02 Dec VAL│
+│ Nama Water       ••1180    Oct 2026   5,210 m³       3,960     +31.6⚠ OMR 1,030  28 Nov REV│ⓐ
+│ City Gas Co.     ••7712    Oct 2026   —              —(no meter) n/a  OMR   640  05 Dec CAP│ⓑ
+│ (duplicate suspected) Nama Water ••1180 Oct 2026 · same no. as above  [Review] ⓒ          │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+        ▼
+┌─ SCR-FIN-utility-bill-detail · Nama Water ••1180 · Oct 2026 ─────────────────────────────┐
+│ Lines: supply 3,870 · wastewater 1,000 · standing 160   Tariff v2026-07 (source ▸)          │
+│ Meter reconciliation: master WM-01 3,960 m³ (actual) · gap 03–05 Oct (estimated) ⓓ          │
+│ Variance +31.6 % > 10 % tolerance → [Open leak work order ▸ ENG] [Dispute with provider]   │
+│ Allocation preview (driver: submeters v3): Rooms 62% · Laundry 24% · Kitchen 11% · Pool 3% │
+│ Status: variance_review  → [Approve to AP] (after resolution, finance_approver)             │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+        ▼ payable approved → pay
+┌─ SCR-FIN-bill-payment-detail ────────────────────────────────────────────────────────────┐
+│ Route: (•) Bank transfer (manual evidence)  ( ) Khedmah adapter — BLOCKED: no contract ⓔ  │
+│ Amount OMR 1,030.000 · due 28 Nov · idempotency billpay:PAY-8812:1                         │
+│ Status: submitted → pending … [Check status] (inquiry) ⓕ                                    │
+│ Evidence: bank ref <     > [Upload receipt]      Marked paid only with evidence            │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+ⓐ Variance beyond tolerance forces review. ⓑ No meter → bill-only evidence labelled `estimate` in allocation. ⓒ Duplicate detection on provider+account+period+number (unique dup_key). ⓓ Missed intervals shown as gaps/estimated (SF22.1.4). ⓔ Adapter honesty label shown; blocked capabilities are unavailable, manual path offered (§E). ⓕ Timeout → pending until inquiry/reconciliation proves status; no blind retry (cross-utility guard).
+
+### W10 — GM flash drill-down (SCR-GM-flash → SCR-GM-flash-drilldown)
+
+```
+┌─ SCR-GM-flash · Business date 14 Nov 2026 · CLOSED 02:41 ── vs Budget ▾ vs LY ▾ ─────────┐
+│ Occupancy 78.4% (+2.1 vs bud) reconciled   ADR OMR 71.20   RevPAR 55.82   TRevPAR 92.10     │
+│ GOP month-to-date OMR 212,400  ⚠ Incomplete estimate: gas invoice missing, laundry accrual ⓐ│
+│ Dept contribution: Rooms 68% · F&B 21% · Club 12% · Parking 71% · Catering 18%              │
+│ [Table view] ⓑ                                                                               │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+        ▼ click GOP
+┌─ SCR-GM-flash-drilldown · GOP MTD ───────────────────────────────────────────────────────┐
+│ Definition: GOP v3 (KPI dictionary ▸) · allocation v5 · as of 02:41                        │
+│ Revenue 612,300 ▸  − Dept costs 301,900 ▸  − Undistributed 98,000 ▸  = GOP 212,400          │
+│   Undistributed ▸ Utilities 31,200 (electricity metered ✓, water ✓, gas ESTIMATE ⚠) ▸     │
+│      Gas ▸ accrual 2,100 basis: last 3 bills avg · awaiting invoice from City Gas Co.       │
+│          ▸ source: accrual journal J-2026-11-0412 → evidence: allocation rule v5          │
+│   Dept costs ▸ Labor 142,800 (aggregate by dept — individual salaries not available) ⓒ    │
+│   Channel fees ▸ 18,450 → by channel → booking ▸ commission line ▸ channel statement ⓓ     │
+│ [Export] [Open source ledger ▸]                                                             │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+ⓐ Any missing or estimated source flags the tile **Incomplete estimate**, never certified (G.8). ⓑ Every chart has a table view (A-chart). ⓒ Salary confidentiality: GM sees department aggregates only (F27.4). ⓓ Drill path ends at ledger entries and evidence (SF32.3.5, M65 lineage).
+
+---
+
+## 6. Bilingual and RTL rules
+
+### 6.1 Rules
+1. **Direction:** `dir` set on `<html>` from locale; all layout uses logical properties (`margin-inline-start`, `inset-inline-end`, `text-align: start`); flex/grid order follows direction automatically. No hard-coded left/right in components.
+2. **Mirroring:** mirror directional icons (back/forward, chevrons, progress arrows, send), sliders and steppers; **do not mirror** media controls' play icon, clocks, checkmarks, logos, charts' time axes (time flows left→right in both; D-971 to confirm with Arabic-speaking users), phone keypads, barcode/QR.
+3. **Bidi isolation:** confirmation numbers, room numbers, plates, phone numbers, IBAN, emails, SKUs and codes wrapped in `<bdi>`/`dir="ltr"` spans; mixed-script names isolated. Currency amounts keep their internal order.
+4. **Numerals:** Latin digits default in Arabic UI with a per-user option for Arabic-Indic (D-937 in `docs/03`); identifiers always Latin digits.
+5. **Fonts:** Arabic-capable UI font with matching weights and line height ≥ 1.5 for Arabic; no letter-spacing on Arabic text; no italic for Arabic emphasis (use weight).
+6. **Text expansion/contraction:** allow +35 % EN→AR width variance; no fixed-width buttons; truncation only with tooltip/full text on focus.
+7. **Forms:** labels above fields (avoids alignment issues); input direction auto for free text; email/URL/phone fields `dir="ltr"`; validation messages localised via ICU.
+8. **Dates/calendars:** Gregorian primary; optional Hijri display (ADR-019); date pickers accept typed dates; week start per locale.
+9. **Documents:** invoices, registration cards, BEOs and payslips render bilingual when the JUR rule or property setting requires; PDF generation supports Arabic shaping and RTL tables.
+10. **Content:** each translatable content field has its own approval status; untranslated content falls back to the default language with a visible language tag (`lang` attribute set on the fallback fragment).
+11. **Search:** Arabic normalisation (alef variants, ta marbuta, hamza, diacritics) and transliteration-tolerant guest name search.
+12. **Messages:** SMS/WhatsApp templates exist per language; WhatsApp templates require BSP approval per language before use.
+
+### 6.2 Bilingual/RTL acceptance checklist (per screen)
+- [ ] All user-visible strings come from ICU catalogs; no concatenation; plurals correct for Arabic (zero/one/two/few/many/other).
+- [ ] Screen renders in `ar` with correct `dir="rtl"`, logical layout, mirrored directional icons only.
+- [ ] Identifiers, amounts, plates, phones, emails display correctly in RTL (bidi-isolated).
+- [ ] No truncation/overlap at 200 % zoom in both languages; pseudo-locale (+40 %) passes.
+- [ ] Numbers/currency/date formats follow CLDR for `en` and `ar`; OMR shows 3 decimals.
+- [ ] Hijri display (if enabled) shows alongside Gregorian and never replaces stored/legal date.
+- [ ] Screen reader reads Arabic content with correct language (`lang="ar"`), including mixed fragments.
+- [ ] Generated documents (PDF/email/SMS) verified in both languages.
+- [ ] Keyboard focus order follows visual order in RTL.
+- [ ] Charts: axes/labels readable in RTL; table alternative localised.
+
+---
+
+## 7. Cross-screen interaction rules
+
+1. **One primary action per screen/card**; secondary actions in an overflow menu with the same labels everywhere (e.g. "Reverse", never "Delete", for ledger entries).
+2. **Irreversible or money-moving actions** use a review-and-confirm step (WCAG 3.3.4) that restates amount, currency, target and consequence; the confirm button repeats the amount ("Pay OMR 84.000").
+3. **Maker-checker** flows show both principals and forbid self-approval in the UI and server; the checker sees the maker's evidence and reason.
+4. **Step-up** prompts appear only at the moment of the privileged action and preserve all entered data.
+5. **Bulk actions** (assign rooms, approve invoices, publish media) show a preview count and per-item result list; partial failures are listed, never hidden.
+6. **Undo** is offered only for reversible non-ledger UI actions (e.g. dismiss a task within 10 s); ledger corrections are always explicit reversals.
+7. **Keyboard shortcuts** exist for high-volume desks (front desk, POS, lane review, receiving) and are discoverable (`?`), remappable and disabled by default for single-key shortcuts outside focused panels (WCAG 2.1.4).
+8. **Printing/export**: every list and document supports print-friendly view and CSV/XLSX/PDF export subject to field security; exports with personal data are logged (AU-R).
+9. **Freshness**: every screen that shows externally sourced or projected data shows "as of" time; stale data never silently looks current.
+10. **Scope indicator**: the active property/department and business date are always visible in the staff shell header.
+
+---
+
+## 8. WCAG 2.2 AA acceptance checklist
+
+Applies to every web and native screen (native mapped to platform accessibility APIs). A screen is accepted only when all applicable items pass automated (axe-core / React Native accessibility lint) **and** manual checks (keyboard, NVDA+Firefox/Chrome, VoiceOver iOS/macOS, TalkBack Android) in EN and AR.
+
+| # | Criterion (WCAG 2.2) | Acceptance check |
+|---|---|---|
+| 1 | 1.1.1 Non-text content | all images have EN/AR alt text or are marked decorative; property media alt text required before publish (SCR-MED-approval) |
+| 2 | 1.2.2/1.2.3/1.2.5 Captions, audio description | published videos have captions EN/AR and audio description or text alternative |
+| 3 | 1.3.1 Info and relationships | headings hierarchy, landmarks, tables with headers, form groups with legends |
+| 4 | 1.3.2 Meaningful sequence | DOM order = visual order in LTR and RTL |
+| 5 | 1.3.4 Orientation | no orientation lock except kiosk/POS devices (documented exception) |
+| 6 | 1.3.5 Identify input purpose | `autocomplete` tokens on personal data fields |
+| 7 | 1.4.1 Use of colour | status never colour-only (icons + text) — room board, coverage dashboards, charts |
+| 8 | 1.4.3 / 1.4.11 Contrast | text ≥ 4.5:1 (≥ 3:1 large), UI components/graphics ≥ 3:1 in light and dark themes (tokens §10 validated) |
+| 9 | 1.4.4 / 1.4.10 Resize and reflow | 200 % zoom without loss; reflow at 320 CSS px without horizontal scroll (except data grids with documented 2-D scroll) |
+| 10 | 1.4.12 Text spacing | no clipping with increased line/letter/word spacing |
+| 11 | 1.4.13 Content on hover/focus | tooltips dismissible, hoverable, persistent |
+| 12 | 2.1.1 / 2.1.2 Keyboard, no trap | all functions keyboard operable incl. room rack, function diary, roster (A-drag alternatives); modals return focus |
+| 13 | 2.1.4 Character key shortcuts | single-key shortcuts (PRK lane review) can be turned off/remapped and are only active when focus is in the panel |
+| 14 | 2.2.1 Timing adjustable | holds/OTP/quotes/timers warn and allow extension where business rules allow; else explain and preserve data |
+| 15 | 2.2.2 Pause, stop, hide | auto-updating boards can be paused; carousels paused by default |
+| 16 | 2.3.1 Flashes | no flashing > 3/s (alarm UIs use non-flashing emphasis) |
+| 17 | 2.4.1 Bypass blocks | skip links; landmarks |
+| 18 | 2.4.2 / 2.4.6 Titles, headings, labels | unique page titles incl. record ids; descriptive labels |
+| 19 | 2.4.3 Focus order | logical; wizard steps move focus to step heading |
+| 20 | 2.4.7 / 2.4.11 Focus visible, not obscured | focus ring token ≥ 3:1; sticky headers/footers never cover focused element |
+| 21 | 2.5.3 Label in name | visible label included in accessible name |
+| 22 | 2.5.7 Dragging movements | every drag has a single-pointer alternative |
+| 23 | 2.5.8 Target size (minimum) | ≥ 24×24 CSS px; touch apps ≥ 44×44 pt |
+| 24 | 3.1.1 / 3.1.2 Language | `lang` on page and on mixed-language parts |
+| 25 | 3.2.1/3.2.2 On focus/input | no context change on focus/selection without warning |
+| 26 | 3.2.6 Consistent help | help/assisted contact in same place on all guest steps |
+| 27 | 3.3.1/3.3.3 Error identification/suggestion | errors in text, linked to field, with fix suggestion; summary receives focus |
+| 28 | 3.3.4 Error prevention (legal, financial, data) | review-confirm step and/or reversal for payments, bookings, signatures, awards, releases |
+| 29 | 3.3.7 Redundant entry | data already entered in the flow is prefilled/selectable |
+| 30 | 3.3.8 Accessible authentication (minimum) | no cognitive function test; passkeys, OTP autofill, paste allowed; no puzzle CAPTCHA |
+| 31 | 4.1.2 Name, role, value | custom components expose correct roles/states (grid, tabs, combobox, switch) |
+| 32 | 4.1.3 Status messages | aria-live for async results (payment status, sync, hold timers, KDS/incident alerts) |
+| 33 | Native parity | Dynamic Type/font scale to 200 %, TalkBack/VoiceOver labels, reduce motion honoured |
+| 34 | Documents | generated PDFs tagged (invoices, registration card, BEO, payslip) with reading order and language |
+
+Evidence: automated reports stored per build; manual test scripts in `tests/a11y` (`docs/03` §16); pilot includes users of screen readers in EN and AR (D-972).
+
+---
+
+## 9. Low-bandwidth guest budget (booking website and guest web flows)
+
+Target network: "Slow 4G / 3G" profile (≈ 400 kbps down, 400 ms RTT) and mid-range Android device.
+
+| Metric (per page, p75 field + lab) | Budget |
+|---|---|
+| HTML (compressed) first response | ≤ 50 KB |
+| Critical CSS inline | ≤ 14 KB; total CSS ≤ 40 KB |
+| JavaScript (compressed) on search/results/details | ≤ 70 KB initial; payment step ≤ 120 KB excluding PSP-hosted component |
+| Web fonts | ≤ 2 families, subsetted (Latin + Arabic), `font-display: swap`, ≤ 80 KB total |
+| Images above the fold | ≤ 150 KB total; responsive AVIF/WebP with width descriptors; lazy-load below fold |
+| Total page weight (first view) | ≤ 500 KB home/results; ≤ 350 KB checkout steps |
+| Requests (first view) | ≤ 25 |
+| LCP | ≤ 2.5 s (p75, slow 4G lab ≤ 4 s) |
+| INP | ≤ 200 ms |
+| CLS | ≤ 0.1 |
+| TTFB (server) | ≤ 600 ms p75 |
+| Availability API (server) | p95 ≤ 500 ms |
+
+Rules: SSR HTML works without JS for search → results → select → details → review (form posts; PSP step may require PSP script — offer pay-at-hotel/pay-link alternatives where rate allows); no third-party tags without consent; analytics loaded after consent and ≤ 10 KB; video never autoplays on mobile data and uses poster + HLS on demand; "Lite mode" toggle removes galleries; offline guest app shows cached confirmation/pass. Budgets enforced in CI (Lighthouse CI/bundle size check) and in `docs/09` performance tests.
+
+---
+
+## 10. Design-system tokens
+
+Tokens live in `packages/ui-tokens` (`docs/03` §16) as W3C Design Tokens JSON → CSS custom properties and RN theme. Brand palette is a placeholder until MetriStay brand assets are approved (D-973); semantic tokens are the contract used by components.
+
+### 10.1 Foundations
+
+| Group | Tokens (name → value, light / dark) |
+|---|---|
+| Spacing (4-pt) | `space.0`=0, `.1`=4, `.2`=8, `.3`=12, `.4`=16, `.5`=24, `.6`=32, `.7`=48, `.8`=64 |
+| Radius | `radius.sm`=4, `.md`=8, `.lg`=12, `.pill`=999 |
+| Elevation | `elev.0` none, `.1` 0 1 2 rgba(0,0,0,.12), `.2` 0 4 12 rgba(0,0,0,.16) (dark: borders instead of shadows) |
+| Typography | `font.family.latin` = Inter-class sans (placeholder), `font.family.arabic` = Noto Sans Arabic / IBM Plex Sans Arabic class (licence check D-974), `font.family.mono` = mono for codes; sizes `12/14/16/18/20/24/30/36`; base 16 (web) / 17 (iOS) ; line-height 1.5 (Latin) / 1.6 (Arabic); weights 400/500/600/700 |
+| Breakpoints | `bp.sm` 360, `bp.md` 768, `bp.lg` 1024, `bp.xl` 1440 |
+| Touch target | `target.min` 44 (touch), 24 (pointer min) |
+| Motion | `motion.fast` 120 ms, `motion.base` 200 ms, `motion.slow` 320 ms; `prefers-reduced-motion` → 0 ms, no parallax |
+| Z-index | `z.base` 0, `z.sticky` 100, `z.drawer` 200, `z.modal` 300, `z.toast` 400 |
+
+### 10.2 Semantic colour tokens (contrast validated ≥ 4.5:1 text / ≥ 3:1 UI in both themes)
+
+| Token | Purpose | Light | Dark |
+|---|---|---|---|
+| `color.bg.canvas` | page background | #FFFFFF | #0F1115 |
+| `color.bg.surface` | cards/panels | #F6F7F9 | #171A21 |
+| `color.bg.raised` | menus/modals | #FFFFFF | #1E222B |
+| `color.text.primary` | body text | #14171F | #E9ECF2 |
+| `color.text.secondary` | secondary | #4A5160 | #B3BAC7 |
+| `color.border.default` | borders/dividers (≥ 3:1 where it conveys boundary) | #8A92A3 | #5B6475 |
+| `color.action.primary` | primary buttons/links | #0B5CAD | #6FB1FF |
+| `color.action.primary.text` | text on primary | #FFFFFF | #0B1320 |
+| `color.focus.ring` | focus indicator | #0B5CAD 2px + 2px offset | #9CCBFF |
+| `color.status.success` | success/ok | #1B7F3B | #5BD08A |
+| `color.status.warning` | warning (always with icon) | #8A5A00 | #F2C14E |
+| `color.status.danger` | error/critical | #B3261E | #FF8A80 |
+| `color.status.info` | info | #0B5CAD | #6FB1FF |
+| `color.honesty.estimate` | "estimate" badge | #6B4FA3 | #C3A8FF |
+| `color.honesty.simulator` | "SIMULATOR" badge | #9C27B0 | #E1A3F0 |
+| `color.honesty.blocked` | partner blocked | #5F6368 | #A0A6AD |
+| `color.room.dirty` / `.clean` / `.inspected` / `.ooo` | HK states (paired with icons + text) | #B3261E / #0B5CAD / #1B7F3B / #3C4043 | dark equivalents |
+| `color.data.1..8` | categorical chart palette (colour-blind safe, validated order) | placeholder set | placeholder set |
+
+### 10.3 Component contracts (selected)
+Button (primary/secondary/tertiary/danger; loading state disables and announces), TextField (label, hint, error, `dir=auto`), MoneyInput (currency-aware decimals), DateRangePicker (typed input + calendar, Hijri secondary display), DataGrid (A-grid, virtualised, column pinning, RTL), StatusBadge (icon + text + colour), HonestyBadge (§2.8), CountdownTimer (A-time, extend), Stepper/Wizard (focus management), Drawer/BottomSheet, Toast (aria-live polite; critical alerts use modal banner assertive), EmptyState, ErrorBanner (correlation id copy), OfflineBanner/QueueChip, SignaturePad (typed alternative), CameraCapture (manual alternative), ScanInput (keyboard-wedge + camera), KPI Tile (source, as-of, estimate label, table view), Chart wrapper (table + summary).
+
+---
+
+## 11. App distribution plan (corporate, vendor, staff, guest)
+
+### 11.1 Distribution matrix
+
+| App | Audience | Channel (Release 1) | Signing / identity | Update policy | Dependencies |
+|---|---|---|---|---|---|
+| Guest app (mobile-guest) | public guests | **Public stores**: Apple App Store, Google Play; web remains fully functional (app optional) | Apple Distribution certificate under MetriSys developer account; Google Play App Signing (upload key held in Vault) | store releases; OTA JS updates only for non-native, non-payment/ID changes and within store policy | Apple Developer Program (Organization) + D-U-N-S number; Google Play Console (organization) account; app name/trademark clearance "MetriStay" (§E brand note); privacy labels/data safety forms; per-hotel white-label decision D-975 |
+| Corporate app (mobile-corporate, "MetriStay Business") | corporate customers' employees | **Public stores** (unlisted/closed-testing option where supported) **plus** enterprise-friendly delivery: Apple Business Manager Custom App for specific corporates; Managed Google Play private app for corporates using MDM | same developer accounts; per-corporate distribution via ABM/Managed Play when requested | store releases; min supported version gate | developer accounts; corporate MDM cooperation; §F: "installable signed builds with parity for the core journey; public store publication depends on developer accounts and approval" |
+| Vendor app (mobile-vendor) | verified suppliers (external businesses) | **Public stores** (listed, login-gated) — vendors do not have hotel MDM; fallback: vendor web (VEN) always available | same developer accounts | store releases; forced update for security fixes | store review of login-gated apps requires demo accounts (simulator tenant); vendor devices unmanaged → app-level security (MFA, SQLCipher, jailbreak/root signals as risk flag, not block) |
+| Staff app (mobile-staff) | hotel employees | **Private**: Apple Business Manager Custom App / Apple Developer Enterprise Program only if eligible (D-976), Managed Google Play private app; for hotels without MDM: store-listed but realm-restricted build with device enrolment (SCR-OPS-device-enrollment) | device realm certificates (mTLS) + staff SSO | MDM-pushed updates; min version gate | hotel MDM (Intune/Jamf/other) or lightweight enrolment; shared-device mode for housekeeping; D-977 which MDM for pilot |
+| POS/KDS/kiosk shell | outlets, kitchens, lanes | device-provisioned (Android dedicated devices / managed tablets / web kiosk mode) | device identity certs | managed updates in maintenance windows | hardware selection per pilot (docs/05, docs/09) |
+
+### 11.2 Build and release pipeline
+1. EAS Build (or equivalent CI runners with macOS for iOS) produces signed builds; signing keys/certificates stored in Vault and CI secret store; no keys on developer laptops.
+2. Tracks: `internal` (QA, simulator tenant) → `pilot` (TestFlight external testing / Play closed testing; pilot hotel and selected vendors/corporates) → `production` (phased rollout 10 % → 50 % → 100 % with crash/error gates).
+3. Every build carries version, build number, git SHA and SBOM; release notes EN/AR.
+4. Store compliance: privacy nutrition labels / data safety forms per app; account deletion in-app (store requirement) mapped to DSR (SCR-GST-data-request); login-gated review accounts use the simulator tenant with fictitious data only.
+5. Kill switch & min version: server-side `min_supported_version` per app (SCR-OPS-app-update-required); remote config to disable a feature (e.g. referral in a market) without a release.
+6. Certificate/profile expiry monitored (SCR-ADM-secrets-certs), 30-day alert.
+
+### 11.3 External dependencies (release blockers if missing)
+
+| Dependency | Needed for | Owner | Status label |
+|---|---|---|---|
+| Apple Developer Program (Organization) account for Metrikingdom/MetriSys (D-U-N-S) | guest, corporate, vendor apps on iOS; ABM custom apps | Metrikingdom admin | `unverified-assumption` |
+| Google Play Console organization account | Android apps; Managed Google Play private apps | Metrikingdom admin | `unverified-assumption` |
+| Apple Developer Enterprise Program eligibility (optional) | in-house staff app distribution | Metrikingdom admin + counsel | `unverified-assumption` (D-976) |
+| Trademark/app-name clearance for "MetriStay", "MetriStay Business", "MetriStay Rewards", "MetriStay Partner Hub" | store listing names | Legal | `unverified-assumption` |
+| Pilot hotel MDM or enrolment approach | staff app | Pilot hotel IT | D-977 |
+| WhatsApp Business (BSP) account and template approvals EN/AR | OTP, notifications | Product/partner | see `docs/05` |
+| Push notification credentials (APNs key, FCM) | all apps | Platform | `unverified-assumption` |
+
+---
+
+## 12. Screen index, counts and traceability
+
+### 12.1 Counts by application
+
+| App | Screens | App | Screens |
+|---|---|---|---|
+| OPS | 22 | PRC | 36 |
+| GM | 37 | GST | 43 |
+| FO | 52 | AI | 11 |
+| FIN | 51 | CORP | 26 |
+| HR | 32 | CAPP | 15 |
+| ENG | 25 | PRK | 13 |
+| VEN | 29 | ADM | 52 |
+| VAPP | 23 | MED | 23 |
+| CON | 19 | SAF | 27 |
+| FNB | 42 | **Total** | **578** |
+
+*(Counts are generated from the tables above; the CI doc-lint in Phase 2 recounts and fails on duplicate or undefined ids.)*
+
+### 12.2 Module → primary screens (for catalogue writers)
+
+| Module | Primary screens |
+|---|---|
+| M01 | SCR-ADM-tenant-properties, SCR-ADM-property-profile, SCR-ADM-feature-flags, SCR-ADM-backup-restore, SCR-ADM-deployment-status, SCR-ADM-localization, SCR-OPS-my-profile |
+| M02 | SCR-OPS-login, SCR-OPS-step-up, SCR-ADM-users, SCR-ADM-roles-permissions, SCR-ADM-access-review, SCR-ADM-break-glass, SCR-ADM-consent-purposes, SCR-ADM-retention-policies, SCR-ADM-legal-holds, SCR-ADM-dsr-requests, SCR-GST-privacy-consent, SCR-GST-data-request |
+| M03 | SCR-ADM-room-setup, SCR-FO-availability-grid, SCR-FO-room-rack, SCR-GM-overbooking-control, SCR-ENG-room-ooo-request |
+| M04 | SCR-ADM-rate-plan-setup, SCR-GM-rate-grid, SCR-GM-restrictions-calendar, SCR-FO-reservation-new |
+| M05 | SCR-FO-reservation-*, SCR-FO-arrivals, SCR-FO-check-in, SCR-FO-room-move, SCR-FO-stay-extension, SCR-FO-checkout, SCR-FO-no-show-processing, SCR-FO-waitlist, SCR-GST-manage-booking |
+| M06 | SCR-FO-home, SCR-FO-hk-room-board, SCR-FO-hk-*, SCR-FO-in-house, SCR-FO-departures |
+| M07 | SCR-GM-rate-publish-status, SCR-GM-channel-performance, SCR-ADM-connectors |
+| M08 | SCR-FO-folio, SCR-FO-folio-routing, SCR-FO-folio-adjust, SCR-FO-payment-take, SCR-FO-invoice-print, SCR-FIN-cashier-shift, SCR-FO-night-audit |
+| M09 | SCR-ADM-timed-resource-setup, SCR-FNB-function-diary, SCR-CORP-event-search |
+| M10 | SCR-GM-sales-pipeline, SCR-GM-corporate-account-detail, SCR-GM-corporate-agreement-editor |
+| M11 | SCR-CORP-*, SCR-CAPP-* |
+| M12 | SCR-GM-group-block, SCR-GM-corporate-rfq-response, SCR-FNB-event-detail, SCR-FNB-beo-editor, SCR-FNB-event-change-order, SCR-FNB-event-actuals-settlement, SCR-FO-group-rooming-list |
+| M13 | SCR-FNB-pos-*, SCR-FNB-kds, SCR-FNB-menu-editor, SCR-FNB-happy-hour-pricing |
+| M14 | SCR-FNB-recipe-bom, SCR-FNB-outlet-stock, SCR-FNB-stock-count, SCR-FNB-theoretical-vs-actual, SCR-FNB-waste-log, SCR-PRC-stock-balances |
+| M15 | SCR-FNB-club-reservations, SCR-FNB-club-entry, SCR-FNB-club-memberships |
+| M16 | SCR-FNB-catering-order, SCR-FNB-catering-dispatch, SCR-FNB-production-plan |
+| M17 | SCR-PRK-*, SCR-FO-parking-permits, SCR-GST-parking-vehicle, SCR-CORP-parking-passes |
+| M18 | SCR-GST-my-trips, SCR-GST-service-requests, SCR-GST-messages, SCR-FO-guest-profile |
+| M19 | SCR-FIN-chart-of-accounts, SCR-FIN-posting-rules, SCR-FIN-journal-*, SCR-FIN-manual-journal, SCR-FIN-period-close, SCR-FIN-trial-balance, SCR-FIN-financial-statements, SCR-FIN-accruals-prepayments, SCR-FIN-allocation-rules |
+| M20 | SCR-FIN-ap-inbox, SCR-FIN-supplier-invoice-detail, SCR-FIN-three-way-match, SCR-FIN-payables-list, SCR-FIN-payment-batch, SCR-FIN-payment-release, SCR-FIN-ar-*, SCR-FIN-bank-*, SCR-FIN-cash-forecast |
+| M21 | SCR-PRC-requisition-*, SCR-PRC-po-*, SCR-PRC-contracts-blanket, SCR-ENG-requisition |
+| M22–M24 | SCR-ENG-meter-readings, SCR-ENG-meter-import, SCR-ENG-utility-accounts, SCR-ENG-tariffs, SCR-ENG-consumption-anomalies, SCR-ENG-gas-pipeline, SCR-FIN-utility-bill-inbox, SCR-FIN-utility-bill-detail, SCR-GM-utilities-overview |
+| M25 | SCR-PRC-cylinder-exchange, SCR-FIN-gas-cylinder-ledger, SCR-ENG-cylinder-stock |
+| M26 | SCR-ENG-*, SCR-VEN-assigned-jobs, SCR-VEN-job-evidence, SCR-VAPP-assigned-jobs, SCR-VAPP-job-evidence |
+| M27 | SCR-HR-* |
+| M28 | SCR-FO-payment-take, SCR-FO-deposit-preauth, SCR-GST-payment, SCR-GST-pay-balance, SCR-FIN-psp-reconciliation, SCR-FIN-chargeback-case, SCR-FIN-refund-approval, SCR-FIN-payment-release |
+| M29 | SCR-FIN-billpay-orders, SCR-FIN-bill-payment-detail |
+| M30 | SCR-GST-points, SCR-GST-points-redeem, SCR-ADM-loyalty-program, SCR-FIN-loyalty-liability |
+| M31 | SCR-GST-referral-status, SCR-GST-partner-hub-onboarding, SCR-GST-partner-hub-statement, SCR-ADM-referral-program, SCR-FIN-commission-payouts |
+| M32 | SCR-GM-flash, SCR-GM-flash-drilldown, SCR-GM-department-pnl, SCR-GM-profit-bridge, SCR-GM-budget-vs-actual, SCR-GM-report-catalogue, SCR-GM-custom-pivot, SCR-GM-scheduled-reports, SCR-OPS-report-viewer |
+| M33 | SCR-ADM-webhooks-api-keys, SCR-ADM-event-monitor, SCR-ADM-connectors |
+| M34–M37 | Later (Phase 7–8): screens to be added under ADM/GST/FO with ids reserved `SCR-ADM-uc-*`, `SCR-ADM-hsia-*`, `SCR-ADM-iptv-*`, `SCR-GST-marketplace-*` |
+| M38 | SCR-ADM-tax-config, SCR-ADM-filing-calendar, SCR-ADM-filing-submission, SCR-ADM-gov-connectors, SCR-FIN-tax-returns, SCR-FIN-invoice-series, SCR-HR-statutory-forms, SCR-HR-employee-sensitive |
+| M39 | SCR-MED-library, SCR-MED-upload, SCR-MED-asset-detail, SCR-MED-enhancement-queue, SCR-MED-enhance-compare, SCR-MED-approval, SCR-MED-publish-status, SCR-MED-takedown, SCR-MED-rights-expiry, SCR-MED-listing-preview |
+| M40 | SCR-AI-* |
+| M41 | SCR-GST-id-capture, SCR-GST-id-confirm, SCR-GST-registration-sign, SCR-GST-otp-verify, SCR-GST-qr-handoff, SCR-SAF-id-intake, SCR-SAF-ocr-correction, SCR-SAF-id-mismatch-review, SCR-SAF-signature-record, SCR-SAF-otp-qr-verify, SCR-SAF-consent-record |
+| M42 | SCR-SAF-incident-*, SCR-SAF-sensor-alert-review, SCR-SAF-playbooks, SCR-SAF-on-call, SCR-SAF-post-incident-review |
+| M43 | SCR-SAF-lost-*, SCR-GST-lost-item-inquiry |
+| M44 | SCR-ADM-jurisdiction-tree, SCR-ADM-legal-entities, SCR-ADM-rule-packs, SCR-ADM-rule-version-review, SCR-ADM-classifier-test, SCR-ADM-coverage-dashboard, SCR-ADM-activation-gates |
+| M45 | SCR-CON-* (except fleet), SCR-CORP-travel-requests, SCR-VEN-travel-order-queue, SCR-FIN-travel-reconciliation |
+| M46 | SCR-VEN-registration-wizard, SCR-VEN-document-upload, SCR-VEN-verification-status, SCR-PRC-vendor-directory, SCR-PRC-vendor-review, SCR-PRC-vendor-detail, SCR-PRC-credential-expiry, SCR-ADM-service-taxonomy |
+| M47 | SCR-FNB-chef-coverage-plan, SCR-FNB-chef-roster, SCR-FNB-emergency-roster, SCR-FNB-chef-callout, SCR-FNB-callout-handover, SCR-VEN-emergency-chef-availability, SCR-VEN-callout-offer, SCR-VAPP-callout-accept |
+| M48 | SCR-VAPP-*, SCR-VEN-catalog, SCR-VEN-catalog-item-editor, SCR-VEN-bulk-import, SCR-VEN-daily-stock, SCR-VEN-price-list, SCR-FNB-ingredient-catalog-search |
+| M49 | SCR-PRC-rfq-builder, SCR-PRC-rfq-monitor, SCR-PRC-rfq-waiver, SCR-PRC-sample-gallery, SCR-PRC-rfq-comparison, SCR-PRC-award, SCR-VEN-rfq-inbox, SCR-VEN-bid-submit, SCR-ADM-rfq-policy |
+| M50 | SCR-PRC-ai-followup-queue, SCR-PRC-delivery-schedule, SCR-PRC-receiving, SCR-PRC-receiving-verify, SCR-PRC-quarantine, SCR-PRC-return-to-vendor, SCR-PRC-store-issue, SCR-PRC-store-return, SCR-PRC-recall-lookup, SCR-VEN-asn-dispatch, SCR-PRC-procurement-reports |
+| M51 | SCR-GST-home, SCR-GST-room-search, SCR-GST-room-results, SCR-GST-room-detail, SCR-GST-content-pages, SCR-GST-cookie-consent, SCR-MED-website-pages, SCR-MED-seo-structured-data, SCR-MED-attribution |
+| M52 | SCR-MED-marketing-home, SCR-MED-segments, SCR-MED-campaign-editor, SCR-MED-campaign-results, SCR-MED-reviews-inbox, SCR-MED-review-response, SCR-MED-surveys, SCR-FO-guest-merge-review |
+| M53 | SCR-GM-revenue-home, SCR-GM-revenue-pickup-pace, SCR-GM-revenue-forecast, SCR-GM-rate-recommendation, SCR-GM-occupancy-forecast |
+| M54 | SCR-GST-extras, SCR-FO-upsell-offers, SCR-MED-offers-vouchers, SCR-FIN-voucher-liability |
+| M55 | SCR-FO-guest-inbox, SCR-FO-service-requests, SCR-FO-guest-case, SCR-GST-precheckin, SCR-GST-assisted-contact, SCR-GST-feedback-survey |
+| M56 | SCR-FO-hk-*, SCR-FO-hk-minibar-count, SCR-FO-hk-linen-par, SCR-FO-hk-laundry-dispatch, SCR-FO-hk-linen-discrepancy |
+| M57 | SCR-FNB-restaurant-reservations, SCR-FNB-in-room-dining, SCR-FNB-haccp-checks, SCR-FNB-lot-trace, SCR-FNB-allergen-matrix, SCR-GST-in-room-dining |
+| M58 | SCR-FNB-amenity-bookings, SCR-FNB-amenity-config, SCR-GST-amenity-booking |
+| M59 | SCR-CON-fleet-dispatch, SCR-CON-trip-manifest, SCR-CON-driver-trip, SCR-CON-vehicle-register, SCR-CON-taxi-transfer |
+| M60 | SCR-FIN-cashier-shift, SCR-FIN-cash-drop-safe, SCR-FIN-revenue-protection, SCR-FIN-anomaly-case, SCR-FO-night-audit-exceptions |
+| M61 | SCR-SAF-inspections, SCR-SAF-inspection-run, SCR-SAF-nonconformance, SCR-SAF-permit-calendar, SCR-FNB-haccp-checks |
+| M62 | SCR-HR-training-matrix, SCR-HR-certifications, SCR-HR-sop-library, SCR-HR-quality-sampling, SCR-HR-labor-forecast, SCR-OPS-shift-handover, SCR-OPS-help-sop |
+| M63 | SCR-ADM-workflow-templates, SCR-ADM-workflow-simulator, SCR-OPS-unified-inbox, SCR-OPS-task-detail, SCR-OPS-case-timeline, SCR-OPS-approvals-queue |
+| M64 | SCR-ADM-devices, SCR-ADM-integration-health, SCR-ADM-secrets-certs, SCR-ADM-backup-restore, SCR-OPS-outage-mode, SCR-OPS-sync-queue, SCR-PRK-device-status |
+| M65 | SCR-GM-data-coverage, SCR-ADM-data-quality, SCR-ADM-kpi-dictionary |
+| M66 | SCR-GM-owner-statement, SCR-GM-capex-requests, SCR-FIN-owner-fees, SCR-FIN-fixed-assets, SCR-ENG-capex-project |
+| M67 | SCR-GM-sustainability-dashboard, SCR-ENG-sustainability-baseline |
+| M68 | SCR-SAF-insurance-register, SCR-SAF-claim-file, SCR-SAF-continuity-plans, SCR-SAF-drills |
+
+---
+
+## 13. UX/design decisions requiring owners (registered in `docs/13`)
+
+| Id | Decision | Default assumption | Owner |
+|---|---|---|---|
+| D-971 | Chart time-axis direction in Arabic UI | left→right time axis in both languages; validate with pilot users | UX lead |
+| D-972 | Accessibility user testing panel (EN/AR screen-reader users) | recruit ≥ 5 users per language before Phase 6 | UX lead |
+| D-973 | MetriStay brand palette, logo and typography | placeholder tokens §10 | Metrikingdom marketing |
+| D-974 | Arabic/Latin font licences for web, apps and PDFs | open-licence families (OFL) | UX lead + legal |
+| D-975 | Guest app: single MetriStay app vs per-hotel white-label builds | single app with property selection; white-label later | Product owner |
+| D-976 | Apple Enterprise Program eligibility vs ABM custom apps for staff app | ABM custom app + Managed Google Play | IT lead + legal |
+| D-977 | Pilot hotel MDM product and shared-device mode | hotel's existing MDM; fallback enrolment screen | Pilot hotel IT |
+| D-978 | Sample-photo retention start event (RFQ close vs approval) — UI default in SCR-ADM-rfq-policy | RFQ close (per §J open decision) | Procurement owner |
+| D-979 | LPR confidence threshold for automatic gate decisions | 0.85 | Security manager + pilot hotel |
+| D-980 | Low-bandwidth "Lite mode" default on slow connections | auto-suggest when Save-Data or slow ECT detected | UX lead |
