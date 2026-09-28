@@ -949,7 +949,7 @@ One row per payable/receivable object; the dashboard aggregates by cost category
 | `reconciled` | All sources present, posted, and matched to external evidence (bill, bank, PSP, count); period may still be open. |
 | `certified` | `reconciled` **and** period closed **and** financial controller sign-off **and** (for tax/filing values) rule pack `counsel-reviewed`+ with submission receipt. |
 
-**Rule (non-negotiable):** a KPI, P&L line, bridge bar or report total **inherits the weakest status of any required input**. If any required cost source is missing, the value is displayed as **"incomplete estimate"** with the list of missing sources, owners and due dates — **never "certified actual"**, and never silently zero-filled. Required sources per scope are configured in `source_coverage_rule` (e.g. UTL for a month requires: electricity bill or ≥95 % metered kWh with tariff; water bill or meter; pipeline gas bill or meter; cylinder custody count). Exports carry the status column; PDF reports print a banner. Acceptance: `AT-G08.4` in `docs/09`.
+**Rule (non-negotiable):** a KPI, P&L line, bridge bar or report total **inherits the weakest status of any required input**. If any required cost source is missing, the value is displayed as **"incomplete estimate"** with the list of missing sources, owners and due dates — **never "certified actual"**, and never silently zero-filled. Required sources per scope are configured in `source_coverage_rule` (e.g. UTL for a month requires: electricity bill or ≥95 % metered kWh with tariff; water bill or meter; pipeline gas bill or meter; cylinder custody count). Exports carry the status column; PDF reports print a banner. Acceptance: `AT-G08.3` in `docs/09`.
 
 ---
 ## 12. KPI dictionary (M32, M65 SF65.1.2, P.6)

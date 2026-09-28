@@ -11,7 +11,8 @@
 - Every subfeature is a Section-L YAML block with all 18 fields (`id, name, phase, release, actors, screens, inputs, states, api, events, data, rules, security, failure_cases, finance_report_effect, i18n_a11y, acceptance, dependency`). `acceptance` is the unit-level `AC-<SF id>` test.
 - Subfeatures fixed by Section Q keep their ID and name verbatim. Subfeatures **added** in this catalogue to cover Section C/G/O/P requirements carry a trailing `# ADDED — <reason>` comment and continue the numbering of their feature.
 - `phase` is the first implementation phase (2–8). `release: R1` = Customer Release 1: Single Hotel (Phases 2–6); `Later` = Phase 7–8.
-- Screens use `SCR-<app>-<name>` with apps: `WEB` public website, `GST` guest app/web, `ADM` back-office admin, `STF` staff mobile (offline-capable), `REV` revenue, `MKT` marketing/CRM, `HK` housekeeping/laundry, `FNB` restaurant/kitchen, `ENG` engineering/IT, `FIN` finance, `OPS` exception/operations, `OWN` owner/GM, `VND` vendor app/web, `CORP` corporate portal/app.
+- Screens use `SCR-<app>-<name>` with apps: `WEB` public website, `KSK` self-service kiosk (Phase 7), `GST` guest app/web, `ADM` back-office admin, `STF` staff mobile (offline-capable), `REV` revenue, `MKT` marketing/CRM, `HK` housekeeping/laundry, `FNB` restaurant/kitchen, `ENG` engineering/IT, `FIN` finance, `OPS` exception/operations, `OWN` owner/GM, `VND` vendor app/web, `CORP` corporate portal/app.
+- Actors are the standard roles of `docs/README.md` §3.3 plus two role specializations of `employee` used here: `driver` (M59) and `practitioner` (M58); system actors follow the `*_worker` convention.
 - Integrations referenced as `INT-<name>` are specified in `docs/05-integrations.md`; acceptance scenarios `AT-Gnn.n` in `docs/09-acceptance-and-migration.md`.
 
 ## 1. Source-of-truth boundaries (no duplicates)
@@ -80,7 +81,7 @@ Totals and the decision register are in §20 at the end of this file.
 | Phases | 2 booking website, attribution foundation; 3–5 search/maps/metasearch/advertising integrations and campaign measurement. |
 | Release flag | R1 (all subfeatures). |
 | Bounded context | `acquisition` |
-| SoR entities (owned) | `website_site`, `website_domain`, `site_page`, `site_page_version`, `redirect_rule`, `structured_data_snapshot`, `destination_content_item`, `web_search_session`, `quote_funnel_event`, `abandonment_reason`, `acquisition_source`, `campaign_tag`, `attribution_touch`, `attribution_assignment`, `bot_filter_rule`, `acquisition_cost_line` (analytical allocation referencing M20/M19 postings, not a ledger). |
+| SoR entities (owned) | `website_site`, `website_domain`, `website_takedown`, `site_page`, `site_page_version`, `redirect_rule`, `structured_data_snapshot`, `destination_content_item`, `web_search_session`, `quote_funnel_event`, `abandonment_reason`, `acquisition_source`, `campaign_tag`, `attribution_touch`, `attribution_assignment`, `bot_filter_rule`, `acquisition_cost_line` (analytical allocation referencing M20/M19 postings, not a ledger). |
 | Referenced (not owned) | M39 `media_asset`/rights; M03 sellable inventory; M04 quote/policy snapshot; M05 reservation; M07 channel source/commission; M28 payment intent; M02 `consent_record` (cookie/analytics/marketing); M40 chat; M44 privacy rule pack; M19/M20 marketing spend. |
 | Dependencies | M01 (CDN, flags, locales), M02, M03, M04, M05, M07, M28, M39, M44; INT-cdn, INT-search-console, INT-maps-listing, INT-metasearch, INT-analytics (first-party). |
 
@@ -88,7 +89,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M51.F51.1.SF51.1.1
-  name: Responsive property website/theme/domain
+  name: responsive property website/theme/domain
   phase: 2
   release: R1
   actors: [property_admin, content_editor, content_approver, it_admin, guest]
@@ -107,7 +108,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M01 CDN/TLS automation, M02 admin roles; INT-cdn; pilot domain ownership (D-601)."
 
 - id: M51.F51.1.SF51.1.2
-  name: Room/venue media and facilities from approved M39 CMS
+  name: room/venue media and facilities from approved M39 CMS
   phase: 2
   release: R1
   actors: [content_editor, content_approver, guest]
@@ -126,7 +127,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M39 SF39.1.2, SF39.1.5, SF39.2.4; M03 room-type attributes."
 
 - id: M51.F51.1.SF51.1.3
-  name: Location, accessibility and policy content with owner/version
+  name: location, accessibility and policy content with owner/version
   phase: 2
   release: R1
   actors: [content_editor, content_approver, front_office_manager, compliance_officer, guest]
@@ -145,7 +146,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M04 policy snapshot; M03 accessible attributes; M63 tasks; D-602 map provider."
 
 - id: M51.F51.1.SF51.1.4
-  name: Multilingual pages, metadata/structured data, redirects/sitemap and page performance
+  name: multilingual pages, metadata/structured data, redirects/sitemap and page performance
   phase: 2
   release: R1
   actors: [content_editor, marketing_manager, it_admin]
@@ -164,7 +165,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M04 quote API; M52 SF52.2.6 review policy; INT-search-console (Phase 3, optional)."
 
 - id: M51.F51.1.SF51.1.5
-  name: Content approval/takedown
+  name: content approval/takedown
   phase: 2
   release: R1
   actors: [content_editor, content_approver, compliance_officer, dpo]
@@ -206,7 +207,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M51.F51.2.SF51.2.1
-  name: Live date/party/accessibility search with true sellable inventory
+  name: live date/party/accessibility search with true sellable inventory
   phase: 2
   release: R1
   actors: [guest, booker, front_desk_agent]
@@ -225,7 +226,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M03 availability API, M04 quote engine."
 
 - id: M51.F51.2.SF51.2.2
-  name: Total taxes/fees/policy and abandoned checkout recovery where consented
+  name: total taxes/fees/policy and abandoned checkout recovery where consented
   phase: 2
   release: R1
   actors: [guest, booker, marketing_manager, outbox_relay]
@@ -244,7 +245,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M04 tax/fee engine, M44 rule packs (unverified pack blocks sale), M02 consent, M52 messaging."
 
 - id: M51.F51.2.SF51.2.3
-  name: Approved search/maps/metasearch/OTA/GDS referrals and campaign tags
+  name: approved search/maps/metasearch/OTA/GDS referrals and campaign tags
   phase: 3
   release: R1
   actors: [marketing_manager, integration_admin, revenue_manager]
@@ -263,7 +264,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "INT-metasearch, INT-maps-listing (partner contracts, D-602); M07 source codes."
 
 - id: M51.F51.2.SF51.2.4
-  name: Cookie/analytics choices
+  name: cookie/analytics choices
   phase: 2
   release: R1
   actors: [guest, dpo, marketing_manager]
@@ -282,7 +283,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M02 consent API, M44 privacy rule packs, D-603 analytics tool choice."
 
 - id: M51.F51.2.SF51.2.5
-  name: Quote->paid-stay attribution and channel net cost
+  name: quote->paid-stay attribution and channel net cost
   phase: 2
   release: R1
   actors: [marketing_manager, revenue_manager, gm, owner]
@@ -301,7 +302,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M05, M07 source/commission, M28 fees, M20/M19 postings, M31 attribution."
 
 - id: M51.F51.2.SF51.2.6
-  name: Bot/duplicate attribution filtering and privacy-safe report
+  name: bot/duplicate attribution filtering and privacy-safe report
   phase: 3
   release: R1
   actors: [marketing_manager, dpo, it_admin]
@@ -395,7 +396,7 @@ Totals and the decision register are in §20 at the end of this file.
 | Phases | 3 profile merge, messaging, surveys and reviews; 5 advanced campaigns, measurement and lifetime value. |
 | Release flag | R1. |
 | Bounded context | `crm` |
-| SoR entities (owned) | `guest_merge_candidate`, `guest_merge_decision`, `guest_identity_link`, `segment_definition`, `segment_snapshot`, `message_template`, `campaign`, `campaign_send`, `message_delivery`, `frequency_cap_policy`, `survey_definition`, `survey_response`, `external_review`, `review_response`, `guest_value_snapshot`. |
+| SoR entities (owned) | `guest_merge_candidate`, `guest_merge_decision`, `guest_identity_link`, `send_eligibility_decision`, `review_policy`, `subject_tag`, `segment_definition`, `segment_snapshot`, `message_template`, `campaign`, `campaign_send`, `message_delivery`, `frequency_cap_policy`, `survey_definition`, `survey_response`, `external_review`, `review_response`, `guest_value_snapshot`. |
 | Referenced (not owned) | M18 `guest_profile`/preferences; M02 `consent_record`, suppression, erasure; M05 stays; M08 spend; M55 `guest_case`; M39 media; M44 marketing/privacy rules; M30 loyalty; M63 notifications; M20 campaign spend. |
 | Dependencies | M02, M05, M08, M18, M39, M44, M55, M63; INT-sms, INT-whatsapp (approved templates), INT-email, INT-review-sources. |
 
@@ -403,7 +404,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M52.F52.1.SF52.1.1
-  name: Permissioned merged guest/contact with identity uncertainty and correction
+  name: permissioned merged guest/contact with identity uncertainty and correction
   phase: 3
   release: R1
   actors: [guest_relations, front_office_manager, dpo, crm_worker]
@@ -422,7 +423,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M18 guest_profile, M02 consent, M65 SF65.1.1 governance."
 
 - id: M52.F52.1.SF52.1.2
-  name: Preferences and service history with purpose boundaries
+  name: preferences and service history with purpose boundaries
   phase: 3
   release: R1
   actors: [guest_relations, front_desk_agent, housekeeper, guest]
@@ -441,7 +442,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M18 preferences, M02 purpose consents."
 
 - id: M52.F52.1.SF52.1.3
-  name: Country/channel-specific consent/opt-out and suppression
+  name: country/channel-specific consent/opt-out and suppression
   phase: 3
   release: R1
   actors: [guest, marketing_manager, dpo, crm_worker]
@@ -460,7 +461,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M02 consent SoR, M44 marketing rule packs (Canada CASL, Portugal/EU, Oman, Saudi, Pakistan: counsel review D-606)."
 
 - id: M52.F52.1.SF52.1.4
-  name: Segment by permitted criteria, lifecycle and frequency cap
+  name: segment by permitted criteria, lifecycle and frequency cap
   phase: 3
   release: R1
   actors: [marketing_manager, dpo]
@@ -479,7 +480,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "SF52.1.2, SF52.1.3."
 
 - id: M52.F52.1.SF52.1.5
-  name: Template/approval/send/delivery/failure
+  name: template/approval/send/delivery/failure
   phase: 3
   release: R1
   actors: [marketing_manager, content_approver, crm_worker, outbox_relay]
@@ -498,7 +499,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "INT-email, INT-sms, INT-whatsapp; M63 notifications; M39 media."
 
 - id: M52.F52.1.SF52.1.6
-  name: Campaign conversion and cost
+  name: campaign conversion and cost
   phase: 5
   release: R1
   actors: [marketing_manager, revenue_manager, gm]
@@ -559,7 +560,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M52.F52.2.SF52.2.1
-  name: Post-stay survey and internal case
+  name: post-stay survey and internal case
   phase: 3
   release: R1
   actors: [guest, guest_relations, crm_worker]
@@ -578,7 +579,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M55 SF55.2.1, M05 checkout event."
 
 - id: M52.F52.2.SF52.2.2
-  name: External review ingestion only via approved channel
+  name: external review ingestion only via approved channel
   phase: 3
   release: R1
   actors: [integration_admin, guest_relations, review_worker]
@@ -597,7 +598,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "INT-review-sources (contract per source, D-607)."
 
 - id: M52.F52.2.SF52.2.3
-  name: Response queue/approval, privacy and anti-retaliation
+  name: response queue/approval, privacy and anti-retaliation
   phase: 3
   release: R1
   actors: [guest_relations, marketing_manager, gm, dpo]
@@ -616,7 +617,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M40 drafting (optional), M63 SLA."
 
 - id: M52.F52.2.SF52.2.4
-  name: Guest follow-up and recovery closure
+  name: guest follow-up and recovery closure
   phase: 4
   release: R1
   actors: [guest_relations, duty_manager, guest]
@@ -635,7 +636,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M55 F55.2."
 
 - id: M52.F52.2.SF52.2.5
-  name: Source/rating/subject trends
+  name: source/rating/subject trends
   phase: 5
   release: R1
   actors: [gm, marketing_manager, guest_relations]
@@ -654,7 +655,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "SF52.2.1, SF52.2.2, M65."
 
 - id: M52.F52.2.SF52.2.6
-  name: No fabricated or incentivized deceptive reviews
+  name: no fabricated or incentivized deceptive reviews
   phase: 3
   release: R1
   actors: [marketing_manager, compliance_officer, auditor]
@@ -716,7 +717,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M53.F53.1.SF53.1.1
-  name: Pace/pickup by stay date and booking date
+  name: pace/pickup by stay date and booking date
   phase: 3
   release: R1
   actors: [revenue_manager, gm, revenue_worker]
@@ -735,7 +736,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M08 night audit event, M05 reservations, M12 blocks."
 
 - id: M53.F53.1.SF53.1.2
-  name: Cancellations/no-shows/group wash/OOO supply
+  name: cancellations/no-shows/group wash/OOO supply
   phase: 3
   release: R1
   actors: [revenue_manager, sales_manager]
@@ -754,7 +755,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M03 OOO/OOS, M12 pickup."
 
 - id: M53.F53.1.SF53.1.3
-  name: Segment/channel contribution after fees
+  name: segment/channel contribution after fees
   phase: 3
   release: R1
   actors: [revenue_manager, gm, owner]
@@ -773,7 +774,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M07, M28, M51, M19, M65."
 
 - id: M53.F53.1.SF53.1.4
-  name: Holiday/event and optional licensed competitor inputs
+  name: holiday/event and optional licensed competitor inputs
   phase: 5
   release: R1
   actors: [revenue_manager, integration_admin]
@@ -792,7 +793,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "INT-market-data (D-609), M44 holiday calendars."
 
 - id: M53.F53.1.SF53.1.5
-  name: Confidence, data coverage and prior-year comparison
+  name: confidence, data coverage and prior-year comparison
   phase: 5
   release: R1
   actors: [revenue_manager, gm, revenue_worker]
@@ -834,7 +835,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M53.F53.2.SF53.2.1
-  name: Candidate rate/length/stay/close-to-arrival rule with rationale
+  name: candidate rate/length/stay/close-to-arrival rule with rationale
   phase: 5
   release: R1
   actors: [revenue_manager, revenue_worker]
@@ -853,7 +854,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "SF53.1.5, M04, M10."
 
 - id: M53.F53.2.SF53.2.2
-  name: Guardrails and approval based on role
+  name: guardrails and approval based on role
   phase: 3
   release: R1
   actors: [revenue_manager, gm, owner]
@@ -872,7 +873,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M02 approvals, M63 escalation, D-610."
 
 - id: M53.F53.2.SF53.2.3
-  name: Simulation against occupancy/net yield and corporate contract
+  name: simulation against occupancy/net yield and corporate contract
   phase: 5
   release: R1
   actors: [revenue_manager]
@@ -891,7 +892,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M10 contracts, SF53.1.5."
 
 - id: M53.F53.2.SF53.2.4
-  name: Publish to rate engine/channel with acknowledgment
+  name: publish to rate engine/channel with acknowledgment
   phase: 3
   release: R1
   actors: [revenue_manager, channel_worker]
@@ -910,7 +911,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M04, M07 SF (ARI/ack), INT-channel-manager."
 
 - id: M53.F53.2.SF53.2.5
-  name: Versioned rollback and price-discrepancy queue
+  name: versioned rollback and price-discrepancy queue
   phase: 3
   release: R1
   actors: [revenue_manager, integration_admin]
@@ -929,7 +930,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "SF53.2.4, M51 quotes."
 
 - id: M53.F53.2.SF53.2.6
-  name: Backtest versus actual, with no asserted guaranteed uplift
+  name: backtest versus actual, with no asserted guaranteed uplift
   phase: 5
   release: R1
   actors: [revenue_manager, gm, owner]
@@ -1010,7 +1011,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M54.F54.1.SF54.1.1
-  name: Eligible room upgrade and inventory check
+  name: eligible room upgrade and inventory check
   phase: 3
   release: R1
   actors: [guest, front_desk_agent, revenue_manager]
@@ -1029,7 +1030,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M03 atomic moves, M04 pricing, M05."
 
 - id: M54.F54.1.SF54.1.2
-  name: Early arrival/late checkout bounded by cleaning and room sale
+  name: early arrival/late checkout bounded by cleaning and room sale
   phase: 3
   release: R1
   actors: [guest, front_desk_agent, housekeeping_supervisor]
@@ -1048,7 +1049,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M06, M56 SF56.1.2, M08."
 
 - id: M54.F54.1.SF54.1.3
-  name: Dining/parking/spa/transport offer and live capacity
+  name: dining/parking/spa/transport offer and live capacity
   phase: 3
   release: R1
   actors: [guest, concierge, fnb_manager]
@@ -1067,7 +1068,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M09, M17, M58, M59."
 
 - id: M54.F54.1.SF54.1.4
-  name: Targeted timing, expiry and consent
+  name: targeted timing, expiry and consent
   phase: 3
   release: R1
   actors: [marketing_manager, revenue_manager, crm_worker]
@@ -1086,7 +1087,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M52 SF52.1.3, SF52.1.4."
 
 - id: M54.F54.1.SF54.1.5
-  name: Booked price, cancellation/refund and folio/revenue allocation
+  name: booked price, cancellation/refund and folio/revenue allocation
   phase: 3
   release: R1
   actors: [guest, front_desk_agent, finance_clerk]
@@ -1128,7 +1129,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M54.F54.2.SF54.2.1
-  name: Gift voucher issue/redemption/partial balance with accounting liability and fraud checks
+  name: gift voucher issue/redemption/partial balance with accounting liability and fraud checks
   phase: 4
   release: R1
   actors: [guest, cashier, front_desk_agent, finance_clerk, voucher_worker]
@@ -1147,7 +1148,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M19, M28, M44 (D-613)."
 
 - id: M54.F54.2.SF54.2.2
-  name: Bundle components and consumption dates
+  name: bundle components and consumption dates
   phase: 3
   release: R1
   actors: [revenue_manager, front_desk_agent, fnb_manager]
@@ -1166,7 +1167,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M04, M13 POS lookup."
 
 - id: M54.F54.2.SF54.2.3
-  name: Component tax, FX, commission and package allocation
+  name: component tax, FX, commission and package allocation
   phase: 4
   release: R1
   actors: [finance_clerk, financial_controller]
@@ -1185,7 +1186,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M19, M44 tax, D-614."
 
 - id: M54.F54.2.SF54.2.4
-  name: Blackout/expiry and jurisdiction review
+  name: blackout/expiry and jurisdiction review
   phase: 4
   release: R1
   actors: [revenue_manager, compliance_officer]
@@ -1204,7 +1205,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M44 rule packs, D-616."
 
 - id: M54.F54.2.SF54.2.5
-  name: Transfer/refund/chargeback reconciliation
+  name: transfer/refund/chargeback reconciliation
   phase: 5
   release: R1
   actors: [finance_clerk, guest]
@@ -1284,7 +1285,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M55.F55.1.SF55.1.1
-  name: Unified phone/email/web/approved messaging inbox with consent
+  name: unified phone/email/web/approved messaging inbox with consent
   phase: 3
   release: R1
   actors: [guest_relations, front_desk_agent, concierge, guest, ai_assistant]
@@ -1303,7 +1304,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M02 consent, M40 handoff, M63 SLA, INT-messaging providers (D-619)."
 
 - id: M55.F55.1.SF55.1.2
-  name: Pre-arrival instructions and accessible/assisted check-in
+  name: pre-arrival instructions and accessible/assisted check-in
   phase: 2
   release: R1
   actors: [guest, front_desk_agent, front_office_manager]
@@ -1322,7 +1323,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M41, M28, M06, M05."
 
 - id: M55.F55.1.SF55.1.3
-  name: Room/amenity/diet/accessibility need routed to owning team
+  name: room/amenity/diet/accessibility need routed to owning team
   phase: 2
   release: R1
   actors: [guest, front_desk_agent, housekeeping_supervisor, engineer, fnb_manager, executive_chef]
@@ -1341,7 +1342,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M26, M56, M57, M63."
 
 - id: M55.F55.1.SF55.1.4
-  name: In-stay service, status, handoff and urgent escalation
+  name: in-stay service, status, handoff and urgent escalation
   phase: 3
   release: R1
   actors: [guest, guest_relations, duty_manager, security_officer]
@@ -1360,7 +1361,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M42, M63, M62."
 
 - id: M55.F55.1.SF55.1.5
-  name: Departure/receipt/follow-up
+  name: departure/receipt/follow-up
   phase: 2
   release: R1
   actors: [guest, front_desk_agent, cashier]
@@ -1379,7 +1380,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M08, M28, M52."
 
 - id: M55.F55.1.SF55.1.6
-  name: Outage-assisted fallback
+  name: outage-assisted fallback
   phase: 2
   release: R1
   actors: [front_desk_agent, duty_manager, it_admin]
@@ -1421,7 +1422,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M55.F55.2.SF55.2.1
-  name: Complaint severity/case owner/SLA
+  name: complaint severity/case owner/SLA
   phase: 3
   release: R1
   actors: [guest_relations, duty_manager, front_office_manager, guest]
@@ -1440,7 +1441,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M63, M52 SF52.2.1 case creation."
 
 - id: M55.F55.2.SF55.2.2
-  name: Housekeeping/maintenance incident link and guest privacy
+  name: housekeeping/maintenance incident link and guest privacy
   phase: 3
   release: R1
   actors: [guest_relations, housekeeping_supervisor, engineer]
@@ -1459,7 +1460,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M26, M56, M42."
 
 - id: M55.F55.2.SF55.2.3
-  name: Compensation options with cap/approval, folio reversal or voucher ledger
+  name: compensation options with cap/approval, folio reversal or voucher ledger
   phase: 4
   release: R1
   actors: [guest_relations, duty_manager, gm, cashier]
@@ -1478,7 +1479,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M08, M54, M30, M60, D-618."
 
 - id: M55.F55.2.SF55.2.4
-  name: Guest confirmation and reopen
+  name: guest confirmation and reopen
   phase: 4
   release: R1
   actors: [guest, guest_relations]
@@ -1497,7 +1498,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M52 SF52.2.4."
 
 - id: M55.F55.2.SF55.2.5
-  name: Repeat issue and recovery cost/outcome report
+  name: repeat issue and recovery cost/outcome report
   phase: 4
   release: R1
   actors: [gm, front_office_manager, guest_relations]
@@ -1516,7 +1517,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M65, M32."
 
 - id: M55.F55.2.SF55.2.6
-  name: Vulnerable-guest/accessibility escalation without discriminatory automation
+  name: vulnerable-guest/accessibility escalation without discriminatory automation
   phase: 4
   release: R1
   actors: [duty_manager, guest_relations, front_office_manager]
@@ -1620,7 +1621,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M56.F56.1.SF56.1.1
-  name: Priority from arrival/departure/VIP and DND
+  name: priority from arrival/departure/VIP and DND
   phase: 2
   release: R1
   actors: [housekeeping_supervisor, housekeeper, front_office_manager]
@@ -1639,7 +1640,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M05 events, M06 status, M63."
 
 - id: M56.F56.1.SF56.1.2
-  name: Task durations and assignment capacity
+  name: task durations and assignment capacity
   phase: 2
   release: R1
   actors: [housekeeping_supervisor, housekeeper]
@@ -1658,7 +1659,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M27 roster, M06."
 
 - id: M56.F56.1.SF56.1.3
-  name: Inspection/reclean
+  name: inspection/reclean
   phase: 2
   release: R1
   actors: [housekeeping_supervisor, housekeeper]
@@ -1677,7 +1678,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M61 templates, M06."
 
 - id: M56.F56.1.SF56.1.4
-  name: Lost/found, room fault and release gate
+  name: lost/found, room fault and release gate
   phase: 2
   release: R1
   actors: [housekeeper, housekeeping_supervisor, engineer, front_office_manager]
@@ -1696,7 +1697,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M26, M43, M03, M61."
 
 - id: M56.F56.1.SF56.1.5
-  name: Offline conflict/audit and room-ready ETA
+  name: offline conflict/audit and room-ready ETA
   phase: 2
   release: R1
   actors: [housekeeper, housekeeping_supervisor, front_desk_agent]
@@ -1718,7 +1719,7 @@ Totals and the decision register are in §20 at the end of this file.
   name: Periodic deep-clean and rotation schedules
   phase: 3
   release: R1
-  actors: [housekeeping_supervisor, executive_housekeeper_as_housekeeping_supervisor]
+  actors: [housekeeping_supervisor, housekeeper]
   screens: [SCR-HK-deep-clean-plan]
   inputs: [room_id, task_type, frequency, last_done, blackout_on_occupancy]
   states: [scheduled, due, done, overdue]
@@ -1738,7 +1739,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M56.F56.2.SF56.2.1
-  name: Clean/soiled linen SKU, par and custody by room/floor/vendor
+  name: clean/soiled linen SKU, par and custody by room/floor/vendor
   phase: 3
   release: R1
   actors: [laundry_attendant, housekeeping_supervisor, storekeeper]
@@ -1757,7 +1758,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M14 SKUs, M50 ledger, M53 forecast (arrivals)."
 
 - id: M56.F56.2.SF56.2.2
-  name: Outsourced laundry pickup/weight/return/mismatch
+  name: outsourced laundry pickup/weight/return/mismatch
   phase: 3
   release: R1
   actors: [laundry_attendant, vendor_user, housekeeping_supervisor, ap_clerk]
@@ -1776,17 +1777,17 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M46 vendor, M49 PO/contract, M50, M20."
 
 - id: M56.F56.2.SF56.2.3
-  name: Damage/loss and replacement cost
+  name: damage/loss and replacement cost
   phase: 4
   release: R1
   actors: [housekeeping_supervisor, front_office_manager, finance_clerk]
   screens: [SCR-HK-damage-loss]
-  inputs: [sku_id, quantity, cause (stain, tear, missing, guest_damage, vendor_damage), room_id, reservation_id, photos]
+  inputs: [sku_id, quantity, cause_code, room_id, reservation_id, photos]
   states: [reported, assessed, charged_to_guest, claimed_from_vendor, written_off]
   api: ["POST /v1/properties/{pid}/housekeeping/linen-damage"]
   events: [LinenDamageRecorded, LinenWrittenOff]
   data: [linen_damage_record, stock_ledger_entry (M50)]
-  rules: ["Write-off moves stock to waste via M50 with reason and photo.", "Guest charge only per disclosed policy and with manager approval; vendor damage creates vendor claim.", "Stained items to rewash are a location move, not a write-off."]
+  rules: ["cause_code is stain, tear, missing, guest_damage or vendor_damage.", "Write-off moves stock to waste via M50 with reason and photo.", "Guest charge only per disclosed policy and with manager approval; vendor damage creates vendor claim.", "Stained items to rewash are a location move, not a write-off."]
   security: "Guest charges require front_office_manager approval."
   failure_cases: [guest_dispute]
   finance_report_effect: "Write-off to linen replacement expense; guest charge to other income via M08."
@@ -1795,10 +1796,10 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M50, M08, M49 claims."
 
 - id: M56.F56.2.SF56.2.4
-  name: Minibar and amenity stocking/count/consumption with one-time folio post
+  name: minibar and amenity stocking/count/consumption with one-time folio post
   phase: 3
   release: R1
-  actors: [housekeeper, minibar_attendant_as_housekeeper, front_desk_agent]
+  actors: [housekeeper, housekeeping_supervisor, front_desk_agent]
   screens: [SCR-STF-minibar-count, SCR-HK-minibar-exceptions]
   inputs: [room_id, reservation_id, item_counts, count_time, idempotency_key]
   states: [counted, posted, not_chargeable, disputed, reversed]
@@ -1814,7 +1815,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M08, M50, M13 price list."
 
 - id: M56.F56.2.SF56.2.5
-  name: Low-stock reorder and cost allocation
+  name: low-stock reorder and cost allocation
   phase: 4
   release: R1
   actors: [storekeeper, housekeeping_supervisor, procurement_officer]
@@ -1833,7 +1834,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M49, M50."
 
 - id: M56.F56.2.SF56.2.6
-  name: Disputed charge/stock variance
+  name: disputed charge/stock variance
   phase: 4
   release: R1
   actors: [front_office_manager, housekeeping_supervisor, storekeeper]
@@ -1895,7 +1896,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M57.F57.1.SF57.1.1
-  name: Table reservation/party/turn time and capacity
+  name: table reservation/party/turn time and capacity
   phase: 3
   release: R1
   actors: [guest, server, fnb_manager, front_desk_agent]
@@ -1914,7 +1915,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M09 composite holds."
 
 - id: M57.F57.1.SF57.1.2
-  name: In-room dining order, kitchen promise and delivery confirmation
+  name: in-room dining order, kitchen promise and delivery confirmation
   phase: 3
   release: R1
   actors: [guest, server, shift_chef, front_desk_agent]
@@ -1933,17 +1934,17 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M13, M55, M08."
 
 - id: M57.F57.1.SF57.1.3
-  name: Charge destination/tip/void/refund
+  name: charge destination/tip/void/refund
   phase: 3
   release: R1
   actors: [server, cashier, fnb_manager]
   screens: [SCR-FNB-check-settle, SCR-FNB-void-approval]
-  inputs: [pos_check_id, destination (room, corporate, event master, card, cash), tip_amount, void_reason, approver_id]
+  inputs: [pos_check_id, charge_destination, tip_amount, void_reason, approver_id]
   states: [open, settled, voided, refunded]
   api: ["POST /v1/properties/{pid}/pos-checks/{cid}/settle", "POST /v1/properties/{pid}/pos-checks/{cid}/void"]
   events: [PosCheckSettled, PosCheckVoided]
   data: [pos_check (M13), folio_line (M08)]
-  rules: ["Room charge only to in-house guest with charge privileges; event master only to active M12 account.", "Void/comp/discount above role limit requires M60 approval with reason.", "Tips allocated per M27/M13 policy; service charge treatment per M44 tax/labor rule pack."]
+  rules: ["charge_destination is room folio, corporate account, event master, card or cash.", "Room charge only to in-house guest with charge privileges; event master only to active M12 account.", "Void/comp/discount above role limit requires M60 approval with reason.", "Tips allocated per M27/M13 policy; service charge treatment per M44 tax/labor rule pack."]
   security: "Server cannot approve own void."
   failure_cases: [charge_privileges_off, folio_closed, offline_pos_queue]
   finance_report_effect: "Revenue, tips payable and service charge liabilities to M19."
@@ -1952,7 +1953,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M13, M08, M60."
 
 - id: M57.F57.1.SF57.1.4
-  name: Allergy/diet disclosure and kitchen acknowledgment
+  name: allergy/diet disclosure and kitchen acknowledgment
   phase: 3
   release: R1
   actors: [guest, server, shift_chef, executive_chef]
@@ -1971,7 +1972,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M14 allergen profile, M47 chef on duty."
 
 - id: M57.F57.1.SF57.1.5
-  name: Club/bar licensing, age and responsible service gates by location where relevant
+  name: club/bar licensing, age and responsible service gates by location where relevant
   phase: 3
   release: R1
   actors: [bartender, club_host, fnb_manager, compliance_officer]
@@ -2032,7 +2033,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M57.F57.2.SF57.2.1
-  name: Recipe yield and ingredient lot
+  name: recipe yield and ingredient lot
   phase: 4
   release: R1
   actors: [shift_chef, executive_chef, storekeeper]
@@ -2051,7 +2052,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M14, M50, M12/M16."
 
 - id: M57.F57.2.SF57.2.2
-  name: Production/holding/cold-chain checks according to verified local rule pack
+  name: production/holding/cold-chain checks according to verified local rule pack
   phase: 4
   release: R1
   actors: [shift_chef, executive_chef, compliance_officer]
@@ -2070,7 +2071,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M61, M44, D-625."
 
 - id: M57.F57.2.SF57.2.3
-  name: Substitution and allergen impact review
+  name: substitution and allergen impact review
   phase: 4
   release: R1
   actors: [executive_chef, shift_chef, catering_manager]
@@ -2089,7 +2090,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M14, M12, M50 substitutions."
 
 - id: M57.F57.2.SF57.2.4
-  name: Guest/event lot trace and recall hold
+  name: guest/event lot trace and recall hold
   phase: 4
   release: R1
   actors: [executive_chef, storekeeper, compliance_officer, gm]
@@ -2108,17 +2109,17 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M50 SF50.2.10, SF50.3.8."
 
 - id: M57.F57.2.SF57.2.5
-  name: Wasted/returned portion and cost
+  name: wasted/returned portion and cost
   phase: 4
   release: R1
   actors: [shift_chef, server, fnb_manager]
   screens: [SCR-FNB-waste-log]
-  inputs: [batch_id_or_check_line, quantity, reason (overproduction, returned_by_guest, spoiled, dropped), photo]
+  inputs: [batch_id_or_check_line, quantity, waste_reason_code, photo]
   states: [recorded, approved]
   api: ["POST /v1/properties/{pid}/portion-waste"]
   events: [PortionWasteRecorded]
   data: [portion_waste_record, stock_ledger_entry (M50)]
-  rules: ["Plate returns and discarded portions never return to sellable stock.", "Waste entries post to M50 waste transaction with reason; above threshold needs approval."]
+  rules: ["waste_reason_code is overproduction, returned_by_guest, spoiled or dropped.", "Plate returns and discarded portions never return to sellable stock.", "Waste entries post to M50 waste transaction with reason; above threshold needs approval."]
   security: "Kitchen roles."
   failure_cases: [duplicate_waste_entry]
   finance_report_effect: "Waste cost to F&B COGS; feeds M67 food-waste metric."
@@ -2127,7 +2128,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M50 SF50.3.5, M67."
 
 - id: M57.F57.2.SF57.2.6
-  name: Food-safety incident link
+  name: food-safety incident link
   phase: 4
   release: R1
   actors: [executive_chef, duty_manager, compliance_officer]
@@ -2187,17 +2188,17 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M58.F58.1.SF58.1.1
-  name: Enable owned spa/pool/gym/beach/golf/retail modules independently
+  name: enable owned spa/pool/gym/beach/golf/retail modules independently
   phase: 3
   release: R1
   actors: [property_admin, gm]
   screens: [SCR-ADM-amenity-activation]
-  inputs: [amenity_type, enabled_flag, operating_entity (owned, leased, concession), department_code, activation_evidence]
+  inputs: [amenity_type, enabled_flag, operating_model, department_code, activation_evidence]
   states: [not_offered, configured, enabled, suspended, retired]
   api: ["PUT /v1/properties/{pid}/amenities/{type}"]
   events: [AmenityEnabled, AmenityDisabled]
   data: [amenity_business_profile]
-  rules: ["Default is not_offered: navigation, website, guest app, offers, reports and APIs for that amenity are hidden/404.", "Enable requires department/GL mapping and at least one bookable service or POS outlet.", "Concession-run amenities can be listed but revenue flows per contract (commission only)."]
+  rules: ["operating_model is owned, leased or concession.", "Default is not_offered: navigation, website, guest app, offers, reports and APIs for that amenity are hidden/404.", "Enable requires department/GL mapping and at least one bookable service or POS outlet.", "Concession-run amenities can be listed but revenue flows per contract (commission only)."]
   security: "property_admin with gm approval."
   failure_cases: [enable_without_mapping_blocked]
   finance_report_effect: "Creates department in M19/M32 when enabled."
@@ -2206,12 +2207,12 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M01 flags, M19 mapping, D-628."
 
 - id: M58.F58.1.SF58.1.2
-  name: Specialist/therapist/equipment/time-slot and safety capacity
+  name: specialist/therapist/equipment/time-slot and safety capacity
   phase: 3
   release: R1
-  actors: [fnb_manager_or_amenity_manager_as_gm, front_desk_agent, guest]
+  actors: [gm, practitioner, front_desk_agent, guest]
   screens: [SCR-ADM-amenity-capacity, SCR-STF-amenity-schedule]
-  inputs: [service_id, duration, resource_requirements (room, practitioner, equipment), safety_max_occupancy, buffer_minutes]
+  inputs: [service_id, duration, resource_requirements, safety_max_occupancy, buffer_minutes]
   states: [open, full, closed, safety_capacity_reached]
   api: ["PUT /v1/properties/{pid}/amenities/{type}/services/{sid}", "GET /v1/properties/{pid}/amenities/{type}/availability"]
   events: [AmenityCapacityChanged]
@@ -2225,17 +2226,17 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M09, M27, M46."
 
 - id: M58.F58.1.SF58.1.3
-  name: Membership/day-pass/guest/corporate rate
+  name: membership/day-pass/guest/corporate rate
   phase: 3
   release: R1
   actors: [guest, corporate_booker, front_desk_agent, revenue_manager]
   screens: [SCR-ADM-amenity-rates, SCR-GST-day-pass]
-  inputs: [price_list, audience (in_house, day_guest, member, corporate), membership_plan_id (M15), corporate_agreement_id (M10)]
+  inputs: [price_list, audience_type, membership_plan_id (M15), corporate_agreement_id (M10)]
   states: [draft, active, retired]
   api: ["PUT /v1/properties/{pid}/amenities/{type}/rates"]
   events: [AmenityRateActivated]
   data: [amenity_service, membership_plan (M15)]
-  rules: ["Memberships use M15 plans; no second membership store.", "Day-pass sales to non-residents create a guest profile minimal record in M18 and pass in M15.", "Corporate rates only for eligible M10 agreements."]
+  rules: ["audience_type is in_house, day_guest, member or corporate.", "Memberships use M15 plans; no second membership store.", "Day-pass sales to non-residents create a guest profile minimal record in M18 and pass in M15.", "Corporate rates only for eligible M10 agreements."]
   security: "Rate changes by revenue_manager."
   failure_cases: [expired_membership]
   finance_report_effect: "Membership deferred revenue per M15/M19."
@@ -2244,7 +2245,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M15, M10, M18."
 
 - id: M58.F58.1.SF58.1.4
-  name: Room/guest entitlement and double-booking protection
+  name: room/guest entitlement and double-booking protection
   phase: 3
   release: R1
   actors: [guest, front_desk_agent]
@@ -2286,7 +2287,7 @@ Totals and the decision register are in §20 at the end of this file.
 
 ```yaml
 - id: M58.F58.2.SF58.2.1
-  name: Treatment/retail POS and stock
+  name: treatment/retail POS and stock
   phase: 4
   release: R1
   actors: [cashier, storekeeper, fnb_manager]
@@ -2305,10 +2306,10 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M13, M14, M50."
 
 - id: M58.F58.2.SF58.2.2
-  name: Intake/contraindication consent where locally permitted
+  name: intake/contraindication consent where locally permitted
   phase: 4
   release: R1
-  actors: [guest, practitioner_as_employee, dpo]
+  actors: [guest, practitioner, dpo]
   screens: [SCR-GST-spa-intake, SCR-STF-intake-review]
   inputs: [booking_id, intake_form_version, answers, consent_signature_ref (M41), retention_period]
   states: [not_required, pending, completed, practitioner_reviewed, declined_service]
@@ -2324,7 +2325,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M41 e-sign, M44, M02, D-629."
 
 - id: M58.F58.2.SF58.2.3
-  name: Practitioner qualification and room sanitation
+  name: practitioner qualification and room sanitation
   phase: 4
   release: R1
   actors: [gm, hr_officer, housekeeping_supervisor]
@@ -2343,7 +2344,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M62, M61."
 
 - id: M58.F58.2.SF58.2.4
-  name: Commission/tips/folio/invoice
+  name: commission/tips/folio/invoice
   phase: 4
   release: R1
   actors: [cashier, payroll_officer, finance_clerk]
@@ -2362,7 +2363,7 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M27, M20, M08, D-630."
 
 - id: M58.F58.2.SF58.2.5
-  name: Incident/closure and department contribution
+  name: incident/closure and department contribution
   phase: 4
   release: R1
   actors: [gm, duty_manager]
@@ -2381,10 +2382,10 @@ Totals and the decision register are in §20 at the end of this file.
   dependency: "M42, M32."
 
 - id: M58.F58.2.SF58.2.6
-  name: Unavailable amenity never sold as available
+  name: unavailable amenity never sold as available
   phase: 3
   release: R1
-  actors: [guest, system_worker]
+  actors: [guest, amenity_worker]
   screens: [SCR-WEB-amenities, SCR-GST-add-ons]
   inputs: [amenity_status, closure_windows, capacity]
   states: [sellable, not_sellable]
@@ -2442,7 +2443,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
 
 ```yaml
 - id: M59.F59.1.SF59.1.1
-  name: Hotel shuttle/driver/vehicle or external taxi assignment
+  name: hotel shuttle/driver/vehicle or external taxi assignment
   phase: 3
   release: R1
   actors: [concierge, front_desk_agent, driver, vendor_user]
@@ -2461,7 +2462,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M09, M45, M46, M27."
 
 - id: M59.F59.1.SF59.1.2
-  name: Pickup, flight/ship ETA and guest consent
+  name: pickup, flight/ship ETA and guest consent
   phase: 3
   release: R1
   actors: [concierge, guest, transport_worker]
@@ -2480,7 +2481,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "INT-flight-status (D-632), M02."
 
 - id: M59.F59.1.SF59.1.3
-  name: Manifest, luggage and accessible vehicle
+  name: manifest, luggage and accessible vehicle
   phase: 3
   release: R1
   actors: [concierge, driver]
@@ -2499,7 +2500,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "SF59.1.1."
 
 - id: M59.F59.1.SF59.1.4
-  name: Driver acknowledgment/trip live status
+  name: driver acknowledgment/trip live status
   phase: 3
   release: R1
   actors: [driver, vendor_user, concierge, guest]
@@ -2518,7 +2519,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M63, M64."
 
 - id: M59.F59.1.SF59.1.5
-  name: Missed pickup/disruption and rescue
+  name: missed pickup/disruption and rescue
   phase: 3
   release: R1
   actors: [concierge, duty_manager, guest]
@@ -2560,7 +2561,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
 
 ```yaml
 - id: M59.F59.2.SF59.2.1
-  name: Permit/insurance/vehicle condition/maintenance validity
+  name: permit/insurance/vehicle condition/maintenance validity
   phase: 4
   release: R1
   actors: [chief_engineer, hr_officer, concierge]
@@ -2579,7 +2580,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M26, M46, M62, M68."
 
 - id: M59.F59.2.SF59.2.2
-  name: Route and passenger data minimization
+  name: route and passenger data minimization
   phase: 3
   release: R1
   actors: [dpo, concierge]
@@ -2598,7 +2599,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M02, M65."
 
 - id: M59.F59.2.SF59.2.3
-  name: Tariff, gratuity and payer
+  name: tariff, gratuity and payer
   phase: 3
   release: R1
   actors: [concierge, revenue_manager, guest]
@@ -2617,7 +2618,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M08, M10, M44."
 
 - id: M59.F59.2.SF59.2.4
-  name: External vendor settlement vs owned-fleet labor/fuel cost
+  name: external vendor settlement vs owned-fleet labor/fuel cost
   phase: 4
   release: R1
   actors: [ap_clerk, finance_clerk, chief_engineer]
@@ -2636,7 +2637,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M20, M27, M26, M19."
 
 - id: M59.F59.2.SF59.2.5
-  name: Incident evidence and reimbursement
+  name: incident evidence and reimbursement
   phase: 4
   release: R1
   actors: [driver, duty_manager, security_officer, finance_clerk]
@@ -2695,7 +2696,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
 
 ```yaml
 - id: M60.F60.1.SF60.1.1
-  name: Till opening/float
+  name: till opening/float
   phase: 2
   release: R1
   actors: [cashier, front_office_manager]
@@ -2714,7 +2715,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M08 cashier shift."
 
 - id: M60.F60.1.SF60.1.2
-  name: Cash drop/refund/comp approval
+  name: cash drop/refund/comp approval
   phase: 2
   release: R1
   actors: [cashier, front_office_manager, duty_manager, fnb_manager]
@@ -2733,7 +2734,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M08, M28."
 
 - id: M60.F60.1.SF60.1.3
-  name: Shift closing and safe/bank movement
+  name: shift closing and safe/bank movement
   phase: 2
   release: R1
   actors: [cashier, front_office_manager, finance_clerk]
@@ -2752,7 +2753,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M08, M20 bank reconciliation."
 
 - id: M60.F60.1.SF60.1.4
-  name: Night audit with difference queue
+  name: night audit with difference queue
   phase: 2
   release: R1
   actors: [night_auditor, front_office_manager, finance_clerk, night_audit_worker]
@@ -2771,7 +2772,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M08 night audit, M13."
 
 - id: M60.F60.1.SF60.1.5
-  name: Immutable financial correction
+  name: immutable financial correction
   phase: 2
   release: R1
   actors: [front_office_manager, financial_controller, auditor]
@@ -2794,7 +2795,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
 
 ```yaml
 - id: M60.F60.2.SF60.2.1
-  name: Duplicate booking/invoice/payment detection
+  name: duplicate booking/invoice/payment detection
   phase: 4
   release: R1
   actors: [finance_clerk, ap_clerk, front_office_manager, control_worker]
@@ -2832,7 +2833,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M13."
 
 - id: M60.F60.2.SF60.2.3
-  name: Channel commission and payout match
+  name: channel commission and payout match
   phase: 5
   release: R1
   actors: [finance_clerk, revenue_manager]
@@ -2851,7 +2852,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M07, M20."
 
 - id: M60.F60.2.SF60.2.4
-  name: Purchasing conflict or split-order alert
+  name: purchasing conflict or split-order alert
   phase: 4
   release: R1
   actors: [procurement_approver, financial_controller, compliance_officer]
@@ -2870,7 +2871,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M49, M46, M27."
 
 - id: M60.F60.2.SF60.2.5
-  name: Authorized investigation case/evidence and employee privacy
+  name: authorized investigation case/evidence and employee privacy
   phase: 4
   release: R1
   actors: [financial_controller, gm, hr_officer, compliance_officer]
@@ -2889,7 +2890,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M02, M44, D-635."
 
 - id: M60.F60.2.SF60.2.6
-  name: False-positive feedback and access log
+  name: false-positive feedback and access log
   phase: 4
   release: R1
   actors: [financial_controller, auditor]
@@ -2968,7 +2969,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
 
 ```yaml
 - id: M61.F61.1.SF61.1.1
-  name: Jurisdiction-specific food, pool, room, pest, fire and water checklist
+  name: jurisdiction-specific food, pool, room, pest, fire and water checklist
   phase: 3
   release: R1
   actors: [compliance_officer, chief_engineer, executive_chef, housekeeping_supervisor]
@@ -2987,7 +2988,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M44, D-637."
 
 - id: M61.F61.1.SF61.1.2
-  name: Credentialed assessor/owner and schedule
+  name: credentialed assessor/owner and schedule
   phase: 3
   release: R1
   actors: [compliance_officer, chief_engineer, hr_officer]
@@ -3006,7 +3007,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M62."
 
 - id: M61.F61.1.SF61.1.3
-  name: Sensor or manual evidence and exception
+  name: sensor or manual evidence and exception
   phase: 3
   release: R1
   actors: [engineer, shift_chef, housekeeping_supervisor]
@@ -3025,7 +3026,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M26 sensors, M64."
 
 - id: M61.F61.1.SF61.1.4
-  name: Expired permit/task escalation
+  name: expired permit/task escalation
   phase: 4
   release: R1
   actors: [compliance_officer, gm]
@@ -3044,7 +3045,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M58, M57, M44."
 
 - id: M61.F61.1.SF61.1.5
-  name: Inspector-ready evidence/export
+  name: inspector-ready evidence/export
   phase: 4
   release: R1
   actors: [compliance_officer, auditor]
@@ -3086,7 +3087,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
 
 ```yaml
 - id: M61.F61.2.SF61.2.1
-  name: Severity and service stoppage
+  name: severity and service stoppage
   phase: 4
   release: R1
   actors: [compliance_officer, duty_manager, gm]
@@ -3105,7 +3106,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M03, M13, M58."
 
 - id: M61.F61.2.SF61.2.2
-  name: Quarantine/room block/food recall
+  name: quarantine/room block/food recall
   phase: 4
   release: R1
   actors: [storekeeper, executive_chef, housekeeping_supervisor]
@@ -3124,7 +3125,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M50, M03."
 
 - id: M61.F61.2.SF61.2.3
-  name: Responsible manager/vendor assignment
+  name: responsible manager/vendor assignment
   phase: 4
   release: R1
   actors: [compliance_officer, chief_engineer, vendor_user]
@@ -3143,7 +3144,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M46, M26."
 
 - id: M61.F61.2.SF61.2.4
-  name: Retest/independent release
+  name: retest/independent release
   phase: 4
   release: R1
   actors: [compliance_officer, gm]
@@ -3162,7 +3163,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "SF61.1.3, D-638."
 
 - id: M61.F61.2.SF61.2.5
-  name: Guest safety incident link and audit
+  name: guest safety incident link and audit
   phase: 4
   release: R1
   actors: [duty_manager, compliance_officer, auditor]
@@ -3221,7 +3222,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
 
 ```yaml
 - id: M62.F62.1.SF62.1.1
-  name: Role/SOP and language matrix
+  name: role/SOP and language matrix
   phase: 3
   release: R1
   actors: [hr_officer, gm, fnb_manager, housekeeping_supervisor, front_office_manager]
@@ -3240,7 +3241,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M27 employee languages, M02 permissions."
 
 - id: M62.F62.1.SF62.1.2
-  name: Onboarding and certification expiry
+  name: onboarding and certification expiry
   phase: 4
   release: R1
   actors: [hr_officer, employee]
@@ -3259,7 +3260,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M27."
 
 - id: M62.F62.1.SF62.1.3
-  name: Training attestation and assessment
+  name: training attestation and assessment
   phase: 4
   release: R1
   actors: [employee, hr_officer]
@@ -3278,7 +3279,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "SF62.1.6."
 
 - id: M62.F62.1.SF62.1.4
-  name: Contractor site briefing
+  name: contractor site briefing
   phase: 3
   release: R1
   actors: [chief_engineer, security_officer, vendor_user]
@@ -3297,7 +3298,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M26 SF26.2.3, M46."
 
 - id: M62.F62.1.SF62.1.5
-  name: Revocation on lapse
+  name: revocation on lapse
   phase: 4
   release: R1
   actors: [hr_officer, it_admin, enablement_worker]
@@ -3339,7 +3340,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
 
 ```yaml
 - id: M62.F62.2.SF62.2.1
-  name: Shift handover/coverage
+  name: shift handover/coverage
   phase: 3
   release: R1
   actors: [front_office_manager, duty_manager, housekeeping_supervisor, shift_chef]
@@ -3358,7 +3359,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M63, M27, M47."
 
 - id: M62.F62.2.SF62.2.2
-  name: Labor forecast versus roster and overtime
+  name: labor forecast versus roster and overtime
   phase: 4
   release: R1
   actors: [gm, front_office_manager, housekeeping_supervisor, fnb_manager, hr_officer]
@@ -3377,7 +3378,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M53, M27."
 
 - id: M62.F62.2.SF62.2.3
-  name: Sampled quality review and coaching
+  name: sampled quality review and coaching
   phase: 4
   release: R1
   actors: [front_office_manager, housekeeping_supervisor, fnb_manager, employee]
@@ -3396,7 +3397,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M44 labor/privacy, D-642."
 
 - id: M62.F62.2.SF62.2.4
-  name: Dispute/correction and confidentiality
+  name: dispute/correction and confidentiality
   phase: 4
   release: R1
   actors: [employee, hr_officer]
@@ -3415,7 +3416,7 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
   dependency: "M65."
 
 - id: M62.F62.2.SF62.2.5
-  name: Guest outcome and staff-cost measure
+  name: guest outcome and staff-cost measure
   phase: 5
   release: R1
   actors: [gm, owner]
@@ -3455,3 +3456,1673 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
 | D-640 | Build in-product learning vs integrate an external LMS. | HR + Product Owner | In-product lightweight courses and attestations; SCORM import deferred. |
 | D-641 | Required certifications per role per market (food handler, lifeguard, first aid, fire warden, driver). | HR + Compliance Officer | Hotel-defined list labelled unverified until rule pack verified. |
 | D-642 | Quality sampling program scope and staff notice. | HR + DPO | Record-based sampling only; written notice to staff; no recordings. |
+
+---
+
+## M63 — Workflow automation and service desk
+
+| Field | Value |
+|---|---|
+| Purpose | The shared task/SLA/approval/notification engine: reusable, versioned, property-specific templates with triggers, timers, escalations, maker-checker, cross-department handoffs, safe retries, bounded no-code configuration, dry-run and rollback, and audit. It is the SoR for `work_item`; domain modules own their domain records. |
+| Phases | 2 engine (tasks, SLA, approvals, escalations, notifications); 3–6 templates, governance, simulator and performance. |
+| Release flag | R1. |
+| Bounded context | `workflow` |
+| SoR entities (owned) | `workflow_template`, `workflow_version`, `workflow_trigger`, `workflow_instance`, `work_item`, `sla_timer`, `escalation_step`, `approval_request`, `approval_decision`, `notification_rule`, `notification_delivery`, `on_call_schedule`, `workflow_change_audit`. |
+| Referenced (not owned) | M01 outbox/inbox event bus and job queue; M02 roles/scopes/delegations; M27 roster (on-call); every domain module's events as triggers; M64 device push registration; M65 performance metrics. |
+| Dependencies | M01, M02, M27, M64, M65; INT-push, INT-sms (staff alerts). |
+
+### F63.1 Task
+
+```yaml
+- id: M63.F63.1.SF63.1.1
+  name: versioned trigger/template
+  phase: 2
+  release: R1
+  actors: [property_admin, gm, workflow_worker]
+  screens: [SCR-ADM-workflow-templates, SCR-ADM-workflow-editor]
+  inputs: [template_key, trigger_event_type, filter_expression, steps, sla_policy, version_notes]
+  states: [draft, validated, active, deprecated, retired]
+  api: ["POST /v1/properties/{pid}/workflows", "POST /v1/properties/{pid}/workflows/{wid}/versions", "POST /v1/properties/{pid}/workflows/{wid}/versions/{v}/activate"]
+  events: [WorkflowVersionActivated, WorkflowInstanceStarted]
+  data: [workflow_template, workflow_version, workflow_trigger, workflow_instance]
+  rules: ["Triggers subscribe to domain events via the M01 inbox (dedup on event_id); filter expressions use a bounded, side-effect-free expression language.", "Each instance pins the version active at start; new versions affect new instances only.", "Seed templates ship for Release 1 flows (arrival readiness, complaint SLA, chef callout, permit expiry, delivery follow-up, approval chains)."]
+  security: "Template editing limited per SF63.2.1; instances inherit property scope."
+  failure_cases: [invalid_filter_expression, trigger_event_schema_version_change]
+  finance_report_effect: "None directly; approvals gate financial actions in owning modules."
+  i18n_a11y: "Template labels bilingual; editor keyboard-accessible (no drag-only)."
+  acceptance: "AC-SF63.1.1: Activating v2 leaves running v1 instances unchanged; a replayed trigger event starts one instance only."
+  dependency: "M01 outbox/inbox, D-643."
+
+- id: M63.F63.1.SF63.1.2
+  name: owner, property/department and SLA
+  phase: 2
+  release: R1
+  actors: [duty_manager, front_office_manager, housekeeping_supervisor, workflow_worker]
+  screens: [SCR-OPS-my-work, SCR-STF-my-tasks, SCR-OWN-exceptions-overview]
+  inputs: [work_item_type, owner_user_or_role, property_id, department_id, due_at, priority, source_ref]
+  states: [open, assigned, acknowledged, in_progress, waiting, done, cancelled]
+  api: ["GET /v1/properties/{pid}/work-items?owner=me", "PUT /v1/properties/{pid}/work-items/{wid}"]
+  events: [WorkItemCreated, WorkItemAssigned, WorkItemCompleted, SlaBreached]
+  data: [work_item, sla_timer]
+  rules: ["Every work_item has exactly one accountable owner (user or role queue), property, department, due time and source record link.", "SLA clocks respect property time zone and optional business hours; pauses recorded.", "Role home screens show top 3–7 items by priority/due (Section P.1)."]
+  security: "Users see items in their scopes; source-record fields filtered by scope."
+  failure_cases: [owner_deactivated_reassign, clock_skew]
+  finance_report_effect: "None."
+  i18n_a11y: "Unified inbox accessible, bilingual, mobile-friendly."
+  acceptance: "AC-SF63.1.2: Every open exception in a fixture property has an owner and due time; the GM overview lists overdue items by owner (Section O GM question)."
+  dependency: "M02 scopes."
+
+- id: M63.F63.1.SF63.1.3
+  name: safe retry/dedup and acknowledgment
+  phase: 2
+  release: R1
+  actors: [workflow_worker, it_admin]
+  screens: [SCR-ADM-workflow-runs, SCR-OPS-dead-letters]
+  inputs: [step_id, attempt, idempotency_key, ack_required]
+  states: [pending, running, succeeded, retrying, failed_dead_letter, acknowledged]
+  api: ["POST /v1/properties/{pid}/workflow-instances/{iid}/steps/{sid}/retry"]
+  events: [WorkflowStepFailed, WorkflowStepDeadLettered]
+  data: [workflow_instance]
+  rules: ["Automated steps are idempotent and retried with exponential backoff up to a limit then dead-lettered with alert.", "Steps calling money/stock/external commands never retry blindly: they call the owning module command with Idempotency-Key and inquire status on timeout.", "Notifications requiring acknowledgment re-notify then escalate."]
+  security: "Dead-letter replay by it_admin with audit."
+  failure_cases: [downstream_timeout_unknown_status, poison_message]
+  finance_report_effect: "Prevents duplicate postings."
+  i18n_a11y: "Accessible admin."
+  acceptance: "AC-SF63.1.3: Simulated timeout on a payable-approval step results in status inquiry, not a second command; poison message lands in dead letter with alert (AT-G20.2)."
+  dependency: "M01 job queue."
+
+- id: M63.F63.1.SF63.1.4
+  name: human action/approval with reason
+  phase: 2
+  release: R1
+  actors: [procurement_approver, finance_approver, duty_manager, gm]
+  screens: [SCR-OPS-approval-queue, SCR-STF-approvals]
+  inputs: [approval_request_id, decision, reason, delegated_from, step_up_token]
+  states: [pending, approved, rejected, expired, delegated]
+  api: ["POST /v1/properties/{pid}/approvals/{aid}/decision"]
+  events: [ApprovalGranted, ApprovalRejected, ApprovalExpired]
+  data: [approval_request, approval_decision]
+  rules: ["Maker-checker: requester cannot approve own request; delegation per M02 with validity window.", "Reason mandatory for reject and for overrides.", "Approval is recorded here; the owning module executes the action and re-checks authorization server-side."]
+  security: "Step-up MFA for thresholds configured by module."
+  failure_cases: [approver_absent_delegate, concurrent_decisions]
+  finance_report_effect: "Approval evidence linked to financial documents."
+  i18n_a11y: "Accessible approval cards."
+  acceptance: "AC-SF63.1.4: Two approvers clicking simultaneously produce one decision; self-approval is rejected."
+  dependency: "M02 delegated approvals."
+
+- id: M63.F63.1.SF63.1.5
+  name: escalation, pause and cancel
+  phase: 2
+  release: R1
+  actors: [duty_manager, gm, workflow_worker]
+  screens: [SCR-OPS-escalations]
+  inputs: [work_item_id, escalation_policy, pause_reason, cancel_reason]
+  states: [on_track, escalated_l1, escalated_l2, paused, cancelled]
+  api: ["POST /v1/properties/{pid}/work-items/{wid}/pause", "POST /v1/properties/{pid}/work-items/{wid}/cancel"]
+  events: [WorkItemEscalated, WorkItemPaused, WorkItemCancelled]
+  data: [escalation_step, work_item]
+  rules: ["Escalation ladder by severity (owner -> supervisor -> duty_manager -> gm) with on-call from SF63.1.6.", "Pause requires reason and resume time; cancel requires reason and keeps history.", "Life-safety escalations also go through M42, not only M63."]
+  security: "Scoped."
+  failure_cases: [nobody_on_call]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF63.1.5: When nobody acknowledges an L2 escalation, the gm is paged and the item shows 'unowned risk' on the GM screen (AT-G15.3)."
+  dependency: "SF63.1.6, M42."
+
+- id: M63.F63.1.SF63.1.6  # ADDED — Section C 'notifications'; Section O GM 'who owns every unresolved exception'
+  name: Notification routing, channels, quiet hours and on-call
+  phase: 2
+  release: R1
+  actors: [property_admin, employee, duty_manager]
+  screens: [SCR-ADM-notification-rules, SCR-STF-notification-settings, SCR-ADM-on-call]
+  inputs: [event_type, recipients_rule, channels, quiet_hours, on_call_rota, critical_flag]
+  states: [queued, sent, delivered, failed, acknowledged]
+  api: ["PUT /v1/properties/{pid}/notification-rules", "PUT /v1/properties/{pid}/on-call"]
+  events: [NotificationSent, NotificationFailed, NotificationAcknowledged]
+  data: [notification_rule, notification_delivery, on_call_schedule]
+  rules: ["Staff channels: in-app/push first, SMS fallback for critical; staff WhatsApp only via approved business account and staff consent.", "Quiet hours never suppress critical/safety alerts.", "On-call rota derived from M27 roster with manual overrides."]
+  security: "Staff phone numbers from M27 visible only to messaging service."
+  failure_cases: [push_token_expired, sms_provider_outage]
+  finance_report_effect: "Messaging costs to IT/admin cost center."
+  i18n_a11y: "Notifications in the recipient's preferred language."
+  acceptance: "AC-SF63.1.6: A critical alert during quiet hours is delivered and falls back to SMS when push fails."
+  dependency: "M27, M64 devices, D-645."
+```
+
+### F63.2 Governance
+
+```yaml
+- id: M63.F63.2.SF63.2.1
+  name: permitted configuration by role
+  phase: 3
+  release: R1
+  actors: [tenant_admin, property_admin, gm]
+  screens: [SCR-ADM-workflow-permissions]
+  inputs: [role, allowed_template_categories, allowed_step_types, max_sla_change]
+  states: [configured]
+  api: ["PUT /v1/properties/{pid}/workflow-permissions"]
+  events: [WorkflowPermissionsChanged]
+  data: [workflow_template]
+  rules: ["No-code editing limited to allowed step types (notify, assign, wait, approve, create task, call whitelisted module command); no arbitrary code or external HTTP calls.", "Financial and safety templates editable only by designated roles and require approval to activate."]
+  security: "Changes audited."
+  failure_cases: [privilege_escalation_attempt_blocked]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF63.2.1: A department manager cannot add a step calling an unlisted module command or edit the payment approval template."
+  dependency: "M02, D-644."
+
+- id: M63.F63.2.SF63.2.2
+  name: dry-run/simulator before activation
+  phase: 3
+  release: R1
+  actors: [property_admin, gm]
+  screens: [SCR-ADM-workflow-simulator]
+  inputs: [workflow_version_id, sample_events, time_acceleration]
+  states: [simulated_pass, simulated_warnings, simulated_fail]
+  api: ["POST /v1/properties/{pid}/workflows/{wid}/versions/{v}/simulate"]
+  events: [WorkflowSimulated]
+  data: [workflow_version]
+  rules: ["Activation requires a passed simulation on recorded or synthetic events within the last 24 h.", "Simulator has no side effects (sandboxed commands)."]
+  security: "No real notifications sent."
+  failure_cases: [unreachable_step, infinite_loop_detected]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible results."
+  acceptance: "AC-SF63.2.2: A version with an unreachable step fails simulation and cannot be activated."
+  dependency: "SF63.1.1."
+
+- id: M63.F63.2.SF63.2.3
+  name: guest-sensitive data minimization
+  phase: 3
+  release: R1
+  actors: [dpo, property_admin]
+  screens: [SCR-ADM-workflow-data-policy]
+  inputs: [field_classification, allowed_fields_per_step, protected_attribute_blocklist]
+  states: [configured]
+  api: ["PUT /v1/properties/{pid}/workflow-data-policy"]
+  events: [WorkflowDataPolicyChanged]
+  data: [workflow_version]
+  rules: ["Steps receive only fields needed; notification text cannot embed health, ID or payment data.", "Conditions on protected attributes (nationality, religion, gender, age, disability, ethnicity) are rejected at validation; accessibility/diet needs usable only when stated by the guest for fulfillment routing."]
+  security: "DPO owns blocklist."
+  failure_cases: [template_references_blocked_field]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF63.2.3: A condition 'nationality = X' fails validation; a notification template containing an ID number placeholder is rejected."
+  dependency: "M02, M55 SF55.2.6."
+
+- id: M63.F63.2.SF63.2.4
+  name: workflow version rollback
+  phase: 3
+  release: R1
+  actors: [property_admin, gm]
+  screens: [SCR-ADM-workflow-editor]
+  inputs: [workflow_id, target_version]
+  states: [rolled_back]
+  api: ["POST /v1/properties/{pid}/workflows/{wid}/rollback"]
+  events: [WorkflowRolledBack]
+  data: [workflow_version]
+  rules: ["Rollback activates a prior version as a new activation record; running instances continue on their pinned version unless admin migrates them explicitly."]
+  security: "Same approval as activation."
+  failure_cases: [prior_version_incompatible_trigger_schema]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF63.2.4: Rolling back restores prior behaviour for new instances within one minute."
+  dependency: "SF63.1.1."
+
+- id: M63.F63.2.SF63.2.5
+  name: cross-department audit and performance
+  phase: 4
+  release: R1
+  actors: [gm, auditor, property_admin]
+  screens: [SCR-OWN-exceptions-overview, SCR-ADM-workflow-audit]
+  inputs: [period, department, template_key]
+  states: [computed]
+  api: ["GET /v1/properties/{pid}/work-items/performance?period"]
+  events: [WorkflowPerformanceComputed]
+  data: [workflow_change_audit, work_item, sla_timer]
+  rules: ["Report on-time %, median time-to-acknowledge/resolve, escalations and handoffs by department and template.", "All template changes, activations and overrides in immutable audit."]
+  security: "Aggregates for management; auditor read-only."
+  failure_cases: [none_blocking]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF63.2.5: Fixture work items produce on-time % matching expected; audit lists every activation with actor."
+  dependency: "M65."
+```
+
+### M63 key invariants
+
+1. One accountable owner per work item; SLA always visible.
+2. No blind retries of money/stock/external commands; idempotency plus status inquiry.
+3. No-code is bounded: no arbitrary code, no protected-attribute conditions, versions pinned per instance.
+
+### M63 module acceptance
+
+| AC | Section G | Section O question answered |
+|---|---|---|
+| AC-SF63.1.2, AC-SF63.1.5 | AT-G15 (escalation when nobody accepts), AT-G19 | GM: "Who owns every unresolved exception and by when?" |
+| AC-SF63.1.3 | AT-G20 (duplicate webhook, outage) | Technology: "Where are... failed callbacks?" |
+| AC-SF63.2.3 | AT-G19 | Guest safety/fairness (no discriminatory automation) |
+
+### M63 open decisions
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-643 | Workflow runtime (pg-boss only vs Temporal for long sagas). | Lead Architect | pg-boss plus state tables in Phase 2; Temporal evaluated in Phase 3 for sagas over 24 h. |
+| D-644 | Which roles may edit which template categories. | GM + Tenant Admin | property_admin edits operational templates; financial/safety templates need gm plus financial_controller or compliance_officer. |
+| D-645 | Staff alert channels (push/SMS/WhatsApp) and on-call rules. | IT Admin + HR | Push first, SMS fallback for critical; no staff WhatsApp until approved. |
+
+---
+
+## M64 — Technology, site devices and resilience
+
+| Field | Value |
+|---|---|
+| Purpose | Know and keep healthy every connected site device and connector (PMS clients, POS, locks, gates/LPR, phones, Wi-Fi, BMS, printers, scales, kiosks), operate degraded/offline with tested manual alternatives, and prove recovery (backups, restore, DR failover, cyber incident isolation, patch/change control, support desk, status page). |
+| Phases | 2 foundation (device registry, health, offline sync, backups, time sync); 3–6 tested profiles, change/patch, support, cyber, measured recovery; 7 optional UC/HSIA/IPTV profiles. |
+| Release flag | R1; `Later` for SF64.1.7. |
+| Bounded context | `site-ops` |
+| SoR entities (owned) | `device`, `device_firmware_record`, `certificate_record`, `connector_profile`, `network_zone`, `device_health_sample`, `degraded_queue_item`, `maintenance_window`, `manual_fallback_procedure`, `fallback_test_record`, `backup_job`, `restore_test`, `recovery_objective`, `offline_action_log`, `cyber_containment_record`, `change_request`, `support_ticket`, `status_page_entry`, `dr_failover_test`. |
+| Referenced (not owned) | M01 deployment profiles, secrets, observability; M02 device identity and privileged access; M26 physical asset records (device linked to asset); M33 integration adapters/event replay; M42 incidents (cyber incident type); M17 gates/LPR, M13 POS, M34–M36 UC/HSIA/IPTV; M68 continuity plans. |
+| Dependencies | M01, M02, M13, M17, M26, M33, M42, M68; INT-mdm (optional), INT-status-page. |
+
+### F64.1 Connected site
+
+```yaml
+- id: M64.F64.1.SF64.1.1
+  name: device/firmware/cert inventory
+  phase: 2
+  release: R1
+  actors: [it_admin, integration_admin, chief_engineer]
+  screens: [SCR-ENG-device-registry, SCR-ENG-certificates]
+  inputs: [device_type, vendor, model, serial, asset_id, location, firmware_version, certificate_expiry, connector_profile_id, enrollment_token]
+  states: [registered, enrolled, active, degraded, retired, revoked]
+  api: ["POST /v1/properties/{pid}/devices", "POST /v1/properties/{pid}/devices/{did}/enroll", "GET /v1/properties/{pid}/certificates?expiring_within"]
+  events: [DeviceEnrolled, DeviceRevoked, CertificateExpiring, FirmwareOutdated]
+  data: [device, device_firmware_record, certificate_record, asset (M26)]
+  rules: ["Each device links to one M26 asset; the physical asset record is not duplicated.", "Staff mobile devices enroll with device identity (M02) and can be remotely revoked/wiped of cached data.", "Certificates tracked with expiry alerts at 30/7/1 days; supported connector list per device model with honesty label."]
+  security: "Enrollment tokens single-use; device keys in secure hardware where available."
+  failure_cases: [unknown_device_on_network, cert_expired_connector_down]
+  finance_report_effect: "Device costs via M26/M19 asset or expense."
+  i18n_a11y: "Admin bilingual."
+  acceptance: "AC-SF64.1.1: A revoked staff device can no longer sync and its cache key is invalidated; certificate expiring in 7 days raises an alert."
+  dependency: "M02, M26."
+
+- id: M64.F64.1.SF64.1.2
+  name: network segmentation/connector permission
+  phase: 3
+  release: R1
+  actors: [it_admin, integration_admin]
+  screens: [SCR-ENG-network-zones, SCR-ADM-connector-permissions]
+  inputs: [zone_name, devices, allowed_flows, connector_scopes]
+  states: [designed, verified, drifted]
+  api: ["PUT /v1/properties/{pid}/network-zones/{zid}", "PUT /v1/properties/{pid}/connectors/{cid}/scopes"]
+  events: [NetworkPolicyDriftDetected]
+  data: [network_zone, connector_profile]
+  rules: ["Reference design separates guest Wi-Fi, staff, POS/payment (PCI scope), building systems/BMS/cameras, and servers.", "Each connector has least-privilege scopes to the platform API; no shared admin tokens.", "Segmentation verified at site acceptance and re-checked after changes."]
+  security: "PCI scope minimization; camera streams never routed to guest networks."
+  failure_cases: [flat_network_site_blocker]
+  finance_report_effect: "None."
+  i18n_a11y: "Admin bilingual."
+  acceptance: "AC-SF64.1.2: A connector token with parking scope cannot call folio endpoints (403); site checklist records segmentation evidence."
+  dependency: "D-646, M17, M13."
+
+- id: M64.F64.1.SF64.1.3
+  name: health and degraded service queue
+  phase: 2
+  release: R1
+  actors: [it_admin, duty_manager, site_worker]
+  screens: [SCR-ENG-health, SCR-OPS-outage-mode]
+  inputs: [heartbeat, error_rate, queue_depth, last_success_at]
+  states: [healthy, degraded, down, recovering]
+  api: ["GET /v1/properties/{pid}/health", "GET /v1/properties/{pid}/degraded-queue"]
+  events: [DeviceHealthDegraded, ConnectorDown, DegradedQueueDrained]
+  data: [device_health_sample, degraded_queue_item]
+  rules: ["When a connector is down, commands queue in degraded_queue with TTL and are replayed in order when healthy; money/external commands inquire status before replay.", "Users see 'degraded' banner with the manual procedure (SF64.1.5).", "Health alerts route through M63 on-call."]
+  security: "Queue items encrypted at rest."
+  failure_cases: [queue_ttl_expired_manual_action, replay_conflict]
+  finance_report_effect: "None."
+  i18n_a11y: "Banner accessible and bilingual."
+  acceptance: "AC-SF64.1.3: With the POS interface down, room charges queue and post once on recovery; a queue item past TTL becomes a manual task (AT-G20.5)."
+  dependency: "M63, M33."
+
+- id: M64.F64.1.SF64.1.4
+  name: vendor maintenance window
+  phase: 3
+  release: R1
+  actors: [it_admin, vendor_user, duty_manager]
+  screens: [SCR-ENG-maintenance-windows]
+  inputs: [device_or_connector, vendor_id, start, end, impact, fallback_procedure_id]
+  states: [requested, approved, in_progress, completed, overrun]
+  api: ["POST /v1/properties/{pid}/maintenance-windows"]
+  events: [MaintenanceWindowStarted, MaintenanceWindowOverrun]
+  data: [maintenance_window]
+  rules: ["Windows avoid peak check-in/out by default and need duty_manager approval.", "Vendor remote access time-boxed and logged (M02 privileged access)."]
+  security: "Just-in-time vendor access."
+  failure_cases: [overrun_escalation]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF64.1.4: Vendor remote access outside the approved window is denied."
+  dependency: "M02, M46."
+
+- id: M64.F64.1.SF64.1.5
+  name: tested manual gate/key/POS alternatives
+  phase: 3
+  release: R1
+  actors: [duty_manager, security_officer, parking_attendant, cashier, front_desk_agent]
+  screens: [SCR-OPS-manual-procedures, SCR-ENG-fallback-tests]
+  inputs: [procedure_type, steps, printable_forms, last_test_date, test_result]
+  states: [defined, tested_pass, tested_fail, overdue_test]
+  api: ["POST /v1/properties/{pid}/fallback-procedures", "POST /v1/properties/{pid}/fallback-procedures/{fid}/tests"]
+  events: [FallbackTestRecorded, FallbackTestOverdue]
+  data: [manual_fallback_procedure, fallback_test_record]
+  rules: ["Each critical device class (gate/LPR, locks, POS, payment terminal, PMS client) has a documented manual procedure with reconciliation steps.", "Procedures tested at least on the configured frequency; overdue tests escalate.", "Manual gate overrides are logged in M17 with reason and later reconciled."]
+  security: "Procedures available offline on staff devices and printed."
+  failure_cases: [test_failed_corrective_action]
+  finance_report_effect: "Manual sales reconciled via M60."
+  i18n_a11y: "Printable bilingual procedures."
+  acceptance: "AC-SF64.1.5: A simulated gate outage uses the manual override procedure; each manual entry appears in the M17 reconciliation (AT-G03.2, AT-G14.2)."
+  dependency: "M17, M13, M60."
+
+- id: M64.F64.1.SF64.1.6
+  name: on-prem/cloud behavior and time synchronization
+  phase: 2
+  release: R1
+  actors: [it_admin, tenant_admin]
+  screens: [SCR-ENG-deployment-profile]
+  inputs: [deployment_profile, ntp_sources, clock_drift_threshold, offsite_link_status]
+  states: [in_sync, drift_warning, drift_critical]
+  api: ["GET /v1/properties/{pid}/deployment-status"]
+  events: [ClockDriftDetected, OffsiteLinkDown]
+  data: [device_health_sample]
+  rules: ["Servers and devices sync to approved NTP; drift beyond threshold blocks signing events (e-signatures, audit) until corrected.", "On-prem profile continues local operations when internet is down; cloud-only features (website, OTA, PSP) show degraded status.", "Business date comes from M01, never device clock."]
+  security: "Authenticated NTP where supported."
+  failure_cases: [ntp_unreachable, offsite_backup_link_down]
+  finance_report_effect: "Correct timestamps for audit and tax."
+  i18n_a11y: "Admin bilingual."
+  acceptance: "AC-SF64.1.6: Injected 5-minute drift on a device blocks its signature capture and raises an alert."
+  dependency: "M01 deployment profiles."
+
+- id: M64.F64.1.SF64.1.7  # ADDED — Section C 'M64 7 optional UC/HSIA/IPTV'
+  name: Optional UC/HSIA/IPTV device profiles
+  phase: 7
+  release: Later
+  actors: [it_admin, integration_admin]
+  screens: [SCR-ENG-device-registry]
+  inputs: [pbx_model, hsia_gateway, iptv_platform, certification_status]
+  states: [not_enabled, certified, active]
+  api: ["POST /v1/properties/{pid}/devices"]
+  events: [DeviceProfileCertified]
+  data: [device, connector_profile]
+  rules: ["Profiles for M34/M35/M36 appear only after vendor certification; otherwise hidden."]
+  security: "Same as SF64.1.1."
+  failure_cases: [certification_missing]
+  finance_report_effect: "None."
+  i18n_a11y: "Admin bilingual."
+  acceptance: "AC-SF64.1.7: Without certification the UC/HSIA/IPTV device types are not selectable."
+  dependency: "M34, M35, M36 (Phase 7)."
+```
+
+### F64.2 Recover
+
+```yaml
+- id: M64.F64.2.SF64.2.1
+  name: encrypted backups and independent restore tests
+  phase: 2
+  release: R1
+  actors: [it_admin, auditor, backup_worker]
+  screens: [SCR-ENG-backups, SCR-ENG-restore-tests]
+  inputs: [backup_policy, schedule, retention, target_location, encryption_key_ref, restore_environment]
+  states: [scheduled, running, succeeded, failed, restore_tested_pass, restore_tested_fail]
+  api: ["GET /v1/properties/{pid}/backups", "POST /v1/properties/{pid}/restore-tests"]
+  events: [BackupSucceeded, BackupFailed, RestoreTestPassed, RestoreTestFailed]
+  data: [backup_job, restore_test]
+  rules: ["Database PITR plus object storage backups encrypted with keys held separately; offsite copy for on-prem.", "Restore tests to an isolated environment at least monthly; test verifies row counts, ledger balances and a sample reservation-to-folio check.", "Failed backup or missing restore test escalates."]
+  security: "Backup access separate from production admin (separation of duties)."
+  failure_cases: [offsite_upload_failed, key_unavailable]
+  finance_report_effect: "Backup storage cost to IT."
+  i18n_a11y: "Admin bilingual."
+  acceptance: "AC-SF64.2.1: Monthly restore test restores to an isolated environment and trial balance equals production snapshot (AT-G20 restore, Section O technology question)."
+  dependency: "M01, D-648."
+
+- id: M64.F64.2.SF64.2.2
+  name: offline booking/payment conflict policy and eventual sync
+  phase: 2
+  release: R1
+  actors: [front_desk_agent, housekeeper, cashier, it_admin, sync_worker]
+  screens: [SCR-STF-sync-status, SCR-OPS-sync-conflicts]
+  inputs: [offline_actions, base_versions, device_id, action_types_allowed_offline]
+  states: [queued_offline, replaying, applied, conflict, rejected]
+  api: ["POST /v1/properties/{pid}/sync/replay", "GET /v1/properties/{pid}/sync/conflicts"]
+  events: [OfflineActionsReplayed, OfflineConflictDetected]
+  data: [offline_action_log]
+  rules: ["Allowed offline: room status updates, task completion, minibar counts, notes, check-in of pre-assigned rooms, cash receipts. Not allowed offline: new reservations that consume inventory, card payments without terminal offline mode approved by PSP, refunds.", "Replay uses optimistic concurrency; conflicts never silently overwrite; money actions replay with Idempotency-Key.", "Offline window limit configurable; beyond it, device requires online revalidation."]
+  security: "Offline cache encrypted and bound to enrolled device and user."
+  failure_cases: [replay_conflict, device_lost]
+  finance_report_effect: "Offline cash reconciled at M60 shift close."
+  i18n_a11y: "Sync state accessible."
+  acceptance: "AC-SF64.2.2: An offline attempt to create a new reservation is refused locally; replayed minibar counts post once (AT-G20.5)."
+  dependency: "M05, M56, M60."
+
+- id: M64.F64.2.SF64.2.3
+  name: cyber incident isolation and log preservation
+  phase: 4
+  release: R1
+  actors: [it_admin, gm, dpo, security_officer]
+  screens: [SCR-ENG-cyber-incident]
+  inputs: [incident_id, affected_devices, isolation_actions, log_snapshot_refs, notification_assessment]
+  states: [detected, contained, eradicated, recovered, closed]
+  api: ["POST /v1/properties/{pid}/cyber-incidents/{iid}/containment"]
+  events: [CyberIncidentContained, LogsPreserved]
+  data: [cyber_containment_record, incident (M42)]
+  rules: ["Cyber incidents are M42 incidents with type cyber; M64 records technical containment.", "Isolation actions: revoke device/credentials, rotate secrets, block connector; each logged.", "Logs snapshotted to write-once storage with hash; breach-notification assessment by DPO per jurisdiction."]
+  security: "Break-glass access with dual approval."
+  failure_cases: [logs_tampered_detected, containment_breaks_operations_fallback]
+  finance_report_effect: "Incident costs tracked for M68 claim."
+  i18n_a11y: "Admin bilingual."
+  acceptance: "AC-SF64.2.3: Tabletop injection of a compromised staff device results in revocation, secret rotation and a hashed log snapshot within the target time (AT-G14)."
+  dependency: "M42, M68, M01 secrets."
+
+- id: M64.F64.2.SF64.2.4
+  name: measured recovery objectives
+  phase: 6
+  release: R1
+  actors: [it_admin, gm, owner]
+  screens: [SCR-ENG-recovery-objectives]
+  inputs: [service, rpo_target, rto_target, measured_rpo, measured_rto, test_ref]
+  states: [defined, met, not_met]
+  api: ["GET /v1/properties/{pid}/recovery-objectives"]
+  events: [RecoveryObjectiveMissed]
+  data: [recovery_objective]
+  rules: ["Targets agreed with the pilot hotel (Section P.6), not asserted universally.", "Measured values come only from restore/failover tests or real incidents; untested services show 'unmeasured'."]
+  security: "Management read."
+  failure_cases: [target_not_met_release_blocker]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF64.2.4: A service without a test in the period shows 'unmeasured' rather than meeting target."
+  dependency: "SF64.2.1, SF64.2.7, D-647."
+
+- id: M64.F64.2.SF64.2.5
+  name: patch/change approval/rollback and operator alert
+  phase: 3
+  release: R1
+  actors: [it_admin, gm, integration_admin]
+  screens: [SCR-ENG-change-requests]
+  inputs: [change_type, affected_components, risk, rollback_plan, window, approver]
+  states: [requested, approved, scheduled, implemented, rolled_back, failed]
+  api: ["POST /v1/properties/{pid}/change-requests"]
+  events: [ChangeImplemented, ChangeRolledBack]
+  data: [change_request]
+  rules: ["Every change has a rollback plan and approval; emergency security patches allowed with retrospective approval within 24 h.", "Operators alerted before/after; failed change auto-alerts on-call."]
+  security: "Separation: implementer differs from approver for high-risk changes."
+  failure_cases: [rollback_failed_dr_invoke]
+  finance_report_effect: "None."
+  i18n_a11y: "Admin bilingual."
+  acceptance: "AC-SF64.2.5: A high-risk change without a rollback plan cannot be approved."
+  dependency: "M63 approvals."
+
+- id: M64.F64.2.SF64.2.6
+  name: support ownership and status page
+  phase: 3
+  release: R1
+  actors: [it_admin, gm, employee, vendor_user]
+  screens: [SCR-ENG-support-desk, SCR-STF-report-it-issue, SCR-ADM-status-page]
+  inputs: [issue_description, component, severity, owner_tier, status_message]
+  states: [new, triaged, in_progress, waiting_vendor, resolved, closed]
+  api: ["POST /v1/properties/{pid}/support-tickets", "POST /v1/properties/{pid}/status-page/entries"]
+  events: [SupportTicketOpened, StatusPageUpdated]
+  data: [support_ticket, status_page_entry]
+  rules: ["Each component has a support owner (hotel IT, MetriSys, named vendor) and SLA.", "Status page shows component status to staff; guest-facing notices only for guest-impacting outages and approved text."]
+  security: "Ticket attachments scanned; no guest PII in tickets."
+  failure_cases: [owner_unknown_route_to_it_admin]
+  finance_report_effect: "None."
+  i18n_a11y: "Bilingual, accessible."
+  acceptance: "AC-SF64.2.6: A ticket for the LPR camera routes to the named vendor owner with SLA."
+  dependency: "D-649."
+
+- id: M64.F64.2.SF64.2.7  # ADDED — Section C 'DR failover'
+  name: DR failover and failback test
+  phase: 6
+  release: R1
+  actors: [it_admin, gm]
+  screens: [SCR-ENG-dr-tests]
+  inputs: [dr_plan_version, failover_target, test_scope, observed_data_loss, observed_duration]
+  states: [planned, executing, failed_over, failed_back, passed, failed]
+  api: ["POST /v1/properties/{pid}/dr-tests"]
+  events: [DrFailoverTested]
+  data: [dr_failover_test]
+  rules: ["SaaS: region/zone failover; on-prem: restore to standby host or cloud standby from offsite backup.", "Failback verified with ledger integrity checks; results feed SF64.2.4."]
+  security: "DR credentials in separate vault scope."
+  failure_cases: [standby_outdated]
+  finance_report_effect: "None."
+  i18n_a11y: "Admin bilingual."
+  acceptance: "AC-SF64.2.7: A DR test records measured RPO/RTO and ledger balances equal before and after failback."
+  dependency: "SF64.2.1, D-648."
+```
+
+### M64 key invariants
+
+1. Every device is enrolled, owned and linked to one M26 asset; revocation is immediate.
+2. Degraded mode never double-executes money/external commands; unsafe actions are refused offline.
+3. Recovery claims are only measured values from tests or incidents.
+
+### M64 module acceptance
+
+| AC | Section G | Section O question answered |
+|---|---|---|
+| AC-SF64.1.3, AC-SF64.2.2 | AT-G20 (network outage), AT-G14 (outage fallback) | GM: "Can we operate if internet or a provider fails?"; Front desk: "What if... internet is down?" |
+| AC-SF64.1.1, AC-SF64.1.2 | AT-G03 (tested gate) | Technology: "Which integrations, connected devices, certificates... are healthy?" |
+| AC-SF64.2.1, AC-SF64.2.4, AC-SF64.2.7 | AT-G20 (restore), Section B Phase 6 exit | Technology: "Can we restore to a test environment and prove recovery?" |
+| AC-SF64.1.5 | AT-G03, AT-G14 | Maintenance/security: "Is the parking gate override auditable?" |
+
+### M64 open decisions
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-646 | Pilot site network profile and segmentation capability. | IT Admin (pilot) | Reference five-zone design; flat network is a site blocker for payment devices. |
+| D-647 | RPO/RTO targets per service. | GM + Owner + Lead Architect | PMS core RPO 15 min / RTO 4 h (to be agreed); guest website RTO 1 h on SaaS. |
+| D-648 | On-prem hardware and offsite backup location/residency. | IT Admin + DPO | Hotel server plus encrypted offsite copy in same-country cloud region where required. |
+| D-649 | Support model (hotel IT L1, MetriSys L2/L3, vendor L3). | Product Owner | Tiered model with named owners per component. |
+
+---
+
+## M65 — Data governance and decision intelligence
+
+| Field | Value |
+|---|---|
+| Purpose | Make every number trustworthy and traceable: canonical entities and duplicate review, governed metric definitions with denominators, event/source-to-ledger lineage, business-vs-accounting date mapping, freshness/coverage alerts, scoped reports and exports, point-in-time reproducibility, forecast/budget/actual with corrections, and purpose-based retention. |
+| Phases | 2 definitions, scopes, date mapping, canonical registry; 4–6 governed analytics (lineage, freshness, reproducibility, flash-to-detail, scheduled exports, retention). |
+| Release flag | R1. |
+| Bounded context | `data-governance` |
+| SoR entities (owned) | `canonical_entity_registry`, `master_data_issue`, `metric_definition`, `metric_version`, `lineage_edge`, `dataset_freshness_status`, `date_mapping_rule`, `report_definition`, `report_version`, `report_snapshot`, `scheduled_report`, `export_job`, `purpose_retention_map`, `attribution_model_version`. |
+| Referenced (not owned) | M32 report rendering and suite (consumes `metric_definition`, see D-651); M19 GL periods/journals; M08 business date/night audit; M02 retention execution, legal hold, erasure; M52 guest merge execution; every module's events (lineage sources); M51 attribution; M53 forecasts; budgets in M19/M32. |
+| Dependencies | M01, M02, M08, M19, M32, M51, M52, M53. |
+
+### F65.1 Trust
+
+```yaml
+- id: M65.F65.1.SF65.1.1
+  name: canonical entities and duplicate merge review
+  phase: 2
+  release: R1
+  actors: [property_admin, finance_clerk, procurement_officer, guest_relations]
+  screens: [SCR-ADM-master-data-quality]
+  inputs: [entity_type, record_ids, issue_type, proposed_action, reviewer]
+  states: [detected, under_review, merged_in_owner_module, rejected, fixed]
+  api: ["GET /v1/properties/{pid}/master-data/issues", "POST /v1/properties/{pid}/master-data/issues/{iid}/decision"]
+  events: [MasterDataIssueDetected, MasterDataIssueResolved]
+  data: [canonical_entity_registry, master_data_issue]
+  rules: ["Registry names the single owning module and table for each canonical entity (guest_profile M18, room M03, item M14, vendor M46, employee M27, account M19).", "Duplicate detection raises issues; the merge itself executes in the owning module (e.g. M52 for guests, M46 for vendors) with reversible links.", "Vendor duplicates by tax ID/bank details are high priority (fraud risk)."]
+  security: "Reviewers only see entity types in their scope."
+  failure_cases: [owner_module_rejects_merge, cross_scope_duplicate]
+  finance_report_effect: "Prevents double-counting in reports and duplicate payments."
+  i18n_a11y: "Accessible review UI."
+  acceptance: "AC-SF65.1.1: Two vendors with the same tax ID raise one issue routed to M46; no merge happens in M65 tables."
+  dependency: "M18, M46, M52, M14."
+
+- id: M65.F65.1.SF65.1.2
+  name: metric definitions/denominators and data coverage
+  phase: 2
+  release: R1
+  actors: [financial_controller, revenue_manager, gm]
+  screens: [SCR-ADM-metric-dictionary]
+  inputs: [metric_key, formula, numerator, denominator, inclusions_exclusions, grain, owner, version]
+  states: [draft, approved, active, superseded]
+  api: ["GET /v1/metric-definitions", "POST /v1/properties/{pid}/metric-definitions/{key}/versions"]
+  events: [MetricDefinitionActivated]
+  data: [metric_definition, metric_version]
+  rules: ["Every KPI shown anywhere references a metric_definition version (occupancy with OOO/comp/house-use treatment, ADR, RevPAR, TRevPAR, net contribution, quote conversion, recovery time, utility per occupied room, food waste per cover).", "Reports show coverage (share of source data present) with each value.", "Definition change creates a new version; historical reports keep their version unless restated."]
+  security: "Approval by financial_controller for financial metrics."
+  failure_cases: [conflicting_definitions_blocked]
+  finance_report_effect: "Defines all M32 KPIs."
+  i18n_a11y: "Definitions bilingual; tooltip accessible."
+  acceptance: "AC-SF65.1.2: Changing the occupancy denominator to exclude OOO creates v2; a report run for last month still states v1 unless restated."
+  dependency: "M32 SF32.1.1, D-651."
+
+- id: M65.F65.1.SF65.1.3
+  name: source-to-ledger and event lineage
+  phase: 4
+  release: R1
+  actors: [financial_controller, auditor, owner]
+  screens: [SCR-OWN-drilldown, SCR-FIN-lineage]
+  inputs: [report_cell_ref, journal_entry_id, source_event_id]
+  states: [traced, partial_trace, untraceable]
+  api: ["GET /v1/properties/{pid}/lineage?journal_entry_id", "GET /v1/properties/{pid}/lineage?report_cell"]
+  events: [LineageGapDetected]
+  data: [lineage_edge]
+  rules: ["Every M19 journal line links to its source document/event (folio line, GRN, invoice, payroll run, meter bill) and correlation_id.", "Report cells drill to journal lines then to source evidence; gaps flagged as untraceable.", "Lineage derived from event envelopes (causation_id/correlation_id) plus posting maps."]
+  security: "Drill respects field scopes (salary lines aggregate unless payroll role)."
+  failure_cases: [manual_journal_without_evidence_flagged]
+  finance_report_effect: "Enables GM drill from profit to source events (AT-G19, AT-G08)."
+  i18n_a11y: "Drill path accessible with breadcrumbs."
+  acceptance: "AC-SF65.1.3: From the P&L laundry cost line the GM reaches the laundry invoice and M56 batch evidence; salary drill stops at department level for gm (AT-G08.3, AT-G19.8)."
+  dependency: "M19 SF19.2.3, M01 event envelope."
+
+- id: M65.F65.1.SF65.1.4
+  name: business-date/accounting-date mapping
+  phase: 2
+  release: R1
+  actors: [financial_controller, night_auditor]
+  screens: [SCR-FIN-date-mapping]
+  inputs: [business_date, accounting_period, cutoff_rules, late_posting_policy]
+  states: [open, closed, reopened]
+  api: ["GET /v1/properties/{pid}/date-mapping?business_date"]
+  events: [DateMappingApplied]
+  data: [date_mapping_rule]
+  rules: ["Each transaction carries business_date (M08) and accounting_date (M19); rules map late postings after period close to next open period with reference.", "Reports declare which date basis they use."]
+  security: "financial_controller."
+  failure_cases: [period_closed_late_charge]
+  finance_report_effect: "Consistent period reporting."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF65.1.4: A minibar late charge after month close posts to the next period with a link and appears in the correct business-date operational report."
+  dependency: "M08, M19 SF19.1.3."
+
+- id: M65.F65.1.SF65.1.5
+  name: missing-data and stale-feed alert
+  phase: 4
+  release: R1
+  actors: [it_admin, financial_controller, gm, governance_worker]
+  screens: [SCR-OWN-data-health, SCR-ADM-data-freshness]
+  inputs: [dataset, expected_cadence, last_received_at, expected_count, received_count]
+  states: [fresh, late, stale, missing]
+  api: ["GET /v1/properties/{pid}/data-freshness"]
+  events: [DatasetStale, DatasetMissing]
+  data: [dataset_freshness_status]
+  rules: ["Each feed (meter intervals, utility bills, PSP settlement, channel statements, POS, payroll) has expected cadence; late/missing raises alert and marks dependent KPIs 'incomplete estimate'.", "Missing cost source never shows as certified actual (AT-G08)."]
+  security: "Aggregates."
+  failure_cases: [cadence_misconfigured]
+  finance_report_effect: "KPI labels estimate/reconciled per Section 3.6."
+  i18n_a11y: "Status icons with text."
+  acceptance: "AC-SF65.1.5: A missed meter interval marks utility per occupied room as incomplete estimate for that day (AT-G20.4, AT-G08.4)."
+  dependency: "M22–M25, M28, M07."
+```
+
+### F65.2 Answers
+
+```yaml
+- id: M65.F65.2.SF65.2.1
+  name: role/row/field filters on reports and exports
+  phase: 2
+  release: R1
+  actors: [gm, owner, financial_controller, payroll_officer, auditor]
+  screens: [SCR-OWN-reports, SCR-FIN-reports]
+  inputs: [report_definition_id, user_scopes, field_classifications]
+  states: [rendered, redacted]
+  api: ["GET /v1/properties/{pid}/reports/{rid}"]
+  events: [ReportViewed, ReportFieldRedacted]
+  data: [report_definition]
+  rules: ["Row filters by tenant/property/department; field filters for salary, ID, health, card data.", "Exports apply the same filters; small-cell suppression for individual inference where configured."]
+  security: "Server-side enforcement; tested against OWASP API object-level authorization."
+  failure_cases: [cached_report_scope_leak_prevented]
+  finance_report_effect: "Salary confidentiality (Section D)."
+  i18n_a11y: "Accessible tables."
+  acceptance: "AC-SF65.2.1: GM export of labor cost contains department totals only; payroll_officer export contains individual lines (AT-G05.2)."
+  dependency: "M02 scopes, M27."
+
+- id: M65.F65.2.SF65.2.2
+  name: point-in-time reproducible version
+  phase: 4
+  release: R1
+  actors: [financial_controller, auditor, owner]
+  screens: [SCR-FIN-report-snapshots]
+  inputs: [report_definition_version, parameters, as_of_timestamp]
+  states: [generated, restated]
+  api: ["POST /v1/properties/{pid}/reports/{rid}/snapshots", "GET /v1/properties/{pid}/report-snapshots/{sid}"]
+  events: [ReportSnapshotCreated, ReportRestated]
+  data: [report_version, report_snapshot]
+  rules: ["Snapshots store definition version, metric versions, parameters, data as-of and a content hash.", "Restatements create new snapshots referencing the old with reason."]
+  security: "Snapshots immutable."
+  failure_cases: [source_purged_by_retention_note]
+  finance_report_effect: "Owner and audit statements reproducible."
+  i18n_a11y: "Accessible PDF."
+  acceptance: "AC-SF65.2.2: Regenerating a closed-month snapshot yields the same hash; a restatement shows both versions."
+  dependency: "SF65.1.2, M19 close."
+
+- id: M65.F65.2.SF65.2.3
+  name: daily flash to detail
+  phase: 4
+  release: R1
+  actors: [gm, owner, duty_manager]
+  screens: [SCR-OWN-daily-flash, SCR-OWN-drilldown]
+  inputs: [business_date, comparison_basis]
+  states: [provisional, final_after_audit]
+  api: ["GET /v1/properties/{pid}/flash?business_date"]
+  events: [DailyFlashPublished]
+  data: [report_snapshot]
+  rules: ["Flash shows occupancy, ADR, RevPAR, TRevPAR, revenue by department, key costs, cash, open exceptions, each with source/freshness badge and drill link.", "Provisional before night audit; final after."]
+  security: "Scoped."
+  failure_cases: [night_audit_late_provisional]
+  finance_report_effect: "Consumes M32/M19."
+  i18n_a11y: "Mobile-friendly, accessible, bilingual."
+  acceptance: "AC-SF65.2.3: Each flash tile links to its drill path and shows freshness; before audit it is labelled provisional (AT-G19.8)."
+  dependency: "M32 SF32.4.1, SF65.1.3."
+
+- id: M65.F65.2.SF65.2.4
+  name: scheduled report/export/recipient consent
+  phase: 4
+  release: R1
+  actors: [gm, financial_controller, owner]
+  screens: [SCR-OWN-scheduled-reports]
+  inputs: [report_id, schedule, format, recipients, delivery_channel]
+  states: [active, paused, failed_delivery]
+  api: ["POST /v1/properties/{pid}/scheduled-reports"]
+  events: [ScheduledReportDelivered, ScheduledReportFailed]
+  data: [scheduled_report, export_job]
+  rules: ["Recipients must be platform users with scope for the report content, or external recipients approved with data-sharing note (e.g. owner's accountant).", "Links expire; attachments only for non-sensitive reports."]
+  security: "Signed expiring links; no salary/ID data to external recipients."
+  failure_cases: [recipient_scope_removed_auto_pause]
+  finance_report_effect: "None."
+  i18n_a11y: "PDF/CSV/XLSX accessible, bilingual headers."
+  acceptance: "AC-SF65.2.4: Removing a recipient's scope pauses their subscription automatically."
+  dependency: "M32 SF32.4.8."
+
+- id: M65.F65.2.SF65.2.5
+  name: forecast vs budget vs actual and correction
+  phase: 5
+  release: R1
+  actors: [financial_controller, gm, owner]
+  screens: [SCR-OWN-budget-vs-actual]
+  inputs: [period, budget_version, forecast_run_id, actuals_basis]
+  states: [computed, restated]
+  api: ["GET /v1/properties/{pid}/variance?period"]
+  events: [VarianceReportComputed]
+  data: [report_snapshot]
+  rules: ["Actual (closed-period M19), estimate (open period), forecast (M53) and budget each labelled; variances explained by drill.", "Corrections to actuals appear as restatements with reason."]
+  security: "Scoped."
+  failure_cases: [budget_version_missing]
+  finance_report_effect: "Owner budget/actual reporting."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF65.2.5: An open-period value is labelled estimate and cannot be exported as certified actual."
+  dependency: "M19, M53, M32 SF32.3.3."
+
+- id: M65.F65.2.SF65.2.6
+  name: retention and deletion by purpose
+  phase: 4
+  release: R1
+  actors: [dpo, financial_controller, compliance_officer]
+  screens: [SCR-ADM-retention-map]
+  inputs: [record_type, purpose, jurisdiction, retention_period, legal_basis, deletion_method]
+  states: [draft, approved, active]
+  api: ["PUT /v1/properties/{pid}/retention-map/{record_type}"]
+  events: [RetentionRuleActivated, PurposeDeletionExecuted]
+  data: [purpose_retention_map]
+  rules: ["Each record type maps purposes to retention per jurisdiction (M44); accounting, tax, safety and incident evidence retained per law; marketing and analytics data deleted earlier.", "Deletion executed by M02 jobs; M65 verifies completion and records proof; legal hold overrides.", "Analytics aggregates are anonymized before retention of personal data expires."]
+  security: "DPO approval."
+  failure_cases: [conflicting_retention_rules_longest_lawful_wins_with_dpo_review]
+  finance_report_effect: "Financial records retained; reports remain reproducible via aggregates."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF65.2.6: Purpose-based deletion removes marketing data while folio and incident evidence remain (Section O technology question)."
+  dependency: "M02, M44, D-652."
+
+- id: M65.F65.2.SF65.2.7  # ADDED — Section C 'profitability and attribution'
+  name: Profitability and attribution model governance
+  phase: 5
+  release: R1
+  actors: [financial_controller, revenue_manager, owner]
+  screens: [SCR-ADM-attribution-models]
+  inputs: [model_type, allocation_drivers, attribution_precedence, version, approver]
+  states: [draft, approved, active, superseded]
+  api: ["POST /v1/properties/{pid}/attribution-models"]
+  events: [AttributionModelActivated]
+  data: [attribution_model_version]
+  rules: ["Channel/campaign attribution precedence (M51) and shared-cost allocation drivers (M19/M32) are versioned models with owner and approval.", "Reports state model version; changing a model restates only on request."]
+  security: "financial_controller approval."
+  failure_cases: [model_change_mid_period]
+  finance_report_effect: "Departmental and channel profitability consistency."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF65.2.7: Channel net contribution report cites the active attribution model version."
+  dependency: "M51 SF51.2.5, M32 SF32.3.1."
+```
+
+### M65 key invariants
+
+1. One canonical owner per entity; M65 never stores a second copy to merge.
+2. Every KPI cites a metric version, coverage and freshness; missing sources show as incomplete estimates.
+3. Reports are reproducible (hash) and scope-filtered, including exports.
+4. Deletion is purpose-based and never destroys legally required financial/safety evidence.
+
+### M65 module acceptance
+
+| AC | Section G | Section O question answered |
+|---|---|---|
+| AC-SF65.1.3, AC-SF65.2.3 | AT-G08, AT-G19 (GM drill from occupancy and profit to source events) | Owner: "What changed since yesterday/month/year? What is accrued versus settled?" |
+| AC-SF65.1.5, AC-SF65.2.5 | AT-G08, AT-G20 (missed meter interval) | Owner: "Is this property profitable after payroll, energy...?" (honest estimates) |
+| AC-SF65.2.1 | AT-G05 | Finance/HR: "Who can see salary and ID?" |
+| AC-SF65.2.6 | AT-G20 | Technology/compliance: "Can we delete data by purpose without deleting required accounting and safety evidence?" |
+
+### M65 open decisions
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-650 | Analytics store (Postgres reporting schema/replica vs separate warehouse). | Lead Architect | Postgres reporting schema with materialized views in R1. |
+| D-651 | KPI dictionary ownership M32 vs M65. | Lead Architect + Financial Controller | M65 owns `metric_definition`; M32 renders. |
+| D-652 | Retention schedule per record purpose per market. | DPO + counsel | Longest plausible statutory period for finance/tax (10 years) pending counsel; marketing 24 months after last stay. |
+
+---
+
+## M66 — Owner, brand and property lifecycle
+
+| Field | Value |
+|---|---|
+| Purpose | Represent ownership and management economics (owner/manager/franchise relationships, fee schedules, owner statements, lease/debt inputs), and property change (capex case, renovation closures, capitalization/depreciation, new outlets/rooms, brand standards and reopening) for a single property in R1, portfolio later. |
+| Phases | 4–6 single-property owner reporting and lifecycle; 7 portfolio. |
+| Release flag | R1; `Later` for SF66.2.6. |
+| Bounded context | `owner-lifecycle` |
+| SoR entities (owned) | `ownership_relationship`, `management_agreement`, `fee_schedule`, `fee_calculation`, `owner_statement`, `external_obligation_input`, `capex_request`, `investment_case`, `renovation_project`, `capitalization_decision`, `brand_standard`, `brand_audit_evidence`, `reopening_checklist`. |
+| Referenced (not owned) | M01 legal entity/property; M19 GL, fixed-asset postings and depreciation journals (see D-654); M20 AP/payments; M26 physical assets, warranties and work orders; M03 room inventory and OOO; M09/M13 outlets/facilities; M21/M49 procurement; M32 P&L; M65 snapshots; M61 inspections; M68 insurance. |
+| Dependencies | M01, M03, M19, M20, M26, M32, M49, M61, M65. |
+
+### F66.1 Contract economics
+
+```yaml
+- id: M66.F66.1.SF66.1.1
+  name: owner/manager/franchise legal relationship
+  phase: 4
+  release: R1
+  actors: [owner, financial_controller, tenant_admin]
+  screens: [SCR-OWN-relationships]
+  inputs: [legal_entity_id, relationship_type, counterparty, effective_from, effective_to, contract_document_ref]
+  states: [draft, active, expired, terminated]
+  api: ["POST /v1/properties/{pid}/ownership-relationships"]
+  events: [OwnershipRelationshipActivated]
+  data: [ownership_relationship, management_agreement]
+  rules: ["relationship_type is owner_operated, management_contract, franchise or lease.", "Exactly one active owner of record per property per date; managers/franchisors as counterparties.", "Contract documents stored with restricted access."]
+  security: "owner and financial_controller only."
+  failure_cases: [overlapping_relationships]
+  finance_report_effect: "Determines which fees and statements apply."
+  i18n_a11y: "Bilingual."
+  acceptance: "AC-SF66.1.1: Two overlapping active owners of record for the same dates are rejected."
+  dependency: "M01 legal entity, D-653."
+
+- id: M66.F66.1.SF66.1.2
+  name: management/brand fee schedule and approval
+  phase: 4
+  release: R1
+  actors: [financial_controller, owner]
+  screens: [SCR-FIN-fee-schedules]
+  inputs: [agreement_id, fee_type, basis_metric, rate, thresholds, calculation_period, approver]
+  states: [draft, approved, calculated, invoiced, paid]
+  api: ["POST /v1/properties/{pid}/fee-schedules", "POST /v1/properties/{pid}/fee-calculations"]
+  events: [FeeCalculated, FeeApproved]
+  data: [fee_schedule, fee_calculation]
+  rules: ["fee_type examples: base management fee on total revenue, incentive fee on GOP, royalty on rooms revenue, marketing fund, reservation fee.", "Basis metric references M65 metric versions; calculation shows inputs and is approved before AP/accrual.", "Estimates in open periods labelled."]
+  security: "Owner/finance only."
+  failure_cases: [basis_restated]
+  finance_report_effect: "Fee accrual and payable via M19/M20; management fees below GOP per profit bridge."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF66.1.2: A 3% base fee on fixture total revenue calculates to the minor unit and posts an accrual after approval."
+  dependency: "M65, M19, M20."
+
+- id: M66.F66.1.SF66.1.3
+  name: owner statement and restricted access
+  phase: 5
+  release: R1
+  actors: [owner, gm, financial_controller]
+  screens: [SCR-OWN-owner-statement]
+  inputs: [period, statement_template, snapshot_id]
+  states: [draft, reviewed, issued, restated]
+  api: ["POST /v1/properties/{pid}/owner-statements", "GET /v1/properties/{pid}/owner-statements/{sid}"]
+  events: [OwnerStatementIssued]
+  data: [owner_statement, report_snapshot (M65)]
+  rules: ["Statement generated from a reproducible M65 snapshot with estimate vs reconciled labels and profit bridge (operating result vs net income).", "Access limited to owner, gm, financial_controller; management company reporting variant for managed hotels."]
+  security: "Row/field scopes; no individual salaries."
+  failure_cases: [period_not_closed_draft_only]
+  finance_report_effect: "Owner reporting."
+  i18n_a11y: "Accessible PDF; bilingual."
+  acceptance: "AC-SF66.1.3: An owner statement cannot be issued for an open period except as a labelled draft (AT-G08.5)."
+  dependency: "M65 SF65.2.2, M32 SF32.3.2."
+
+- id: M66.F66.1.SF66.1.4
+  name: lease or debt inputs only from authorized source
+  phase: 4
+  release: R1
+  actors: [financial_controller, owner]
+  screens: [SCR-FIN-external-obligations]
+  inputs: [obligation_type, counterparty, schedule, source_document, entered_by, approved_by]
+  states: [entered, approved, active, ended]
+  api: ["POST /v1/properties/{pid}/external-obligations"]
+  events: [ExternalObligationApproved]
+  data: [external_obligation_input]
+  rules: ["Lease/debt schedules entered only from signed documents or lender/lessor statements with maker-checker.", "The system does not calculate lease accounting beyond approved schedules unless finance policy configures it."]
+  security: "Finance only."
+  failure_cases: [schedule_mismatch_with_statement]
+  finance_report_effect: "Debt service and lease payments shown in owner cash view (Section O owner: 'what cash, debt... obligations are due')."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF66.1.4: An obligation without source document cannot be approved."
+  dependency: "M19, M20."
+
+- id: M66.F66.1.SF66.1.5
+  name: audit and year-end export
+  phase: 6
+  release: R1
+  actors: [financial_controller, auditor, owner]
+  screens: [SCR-FIN-year-end-pack]
+  inputs: [fiscal_year, pack_contents]
+  states: [assembling, ready, delivered]
+  api: ["POST /v1/properties/{pid}/year-end-packs"]
+  events: [YearEndPackReady]
+  data: [report_snapshot (M65), owner_statement]
+  rules: ["Pack includes trial balance, fee calculations, fixed-asset register, owner statements, and evidence index with hashes."]
+  security: "Auditor read-only access link, expiring."
+  failure_cases: [unclosed_period]
+  finance_report_effect: "External audit support."
+  i18n_a11y: "Accessible exports."
+  acceptance: "AC-SF66.1.5: Year-end pack generation fails with a list of open periods if any month is unclosed."
+  dependency: "M19 period close."
+```
+
+### F66.2 Changes
+
+```yaml
+- id: M66.F66.2.SF66.2.1
+  name: capex request, budget and investment case
+  phase: 4
+  release: R1
+  actors: [gm, chief_engineer, financial_controller, owner]
+  screens: [SCR-OWN-capex-requests]
+  inputs: [title, scope, estimated_cost, quotes (M49), expected_benefits, payback_assumptions, risk, budget_line]
+  states: [draft, submitted, approved, rejected, in_execution, completed, post_review]
+  api: ["POST /v1/properties/{pid}/capex-requests", "POST /v1/properties/{pid}/capex-requests/{cid}/decision"]
+  events: [CapexApproved, CapexPostReviewed]
+  data: [capex_request, investment_case]
+  rules: ["Investment case lists assumptions and a sensitivity range; savings/uplift are projections, not guarantees.", "Approval thresholds by amount (gm, owner); procurement through M21/M49.", "Post-completion review compares projected vs measured (M67 for energy savings)."]
+  security: "Owner/finance/gm."
+  failure_cases: [budget_exceeded_reapproval]
+  finance_report_effect: "Capex budget encumbrance; capitalization via SF66.2.3."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF66.2.1: Capex above gm threshold routes to owner; post-review shows projected vs measured with labels (Section O owner: 'Which capex will pay back?')."
+  dependency: "M49, M67 SF67.2.3, D-655."
+
+- id: M66.F66.2.SF66.2.2
+  name: renovation room closure/resale date
+  phase: 4
+  release: R1
+  actors: [gm, revenue_manager, front_office_manager]
+  screens: [SCR-OWN-renovation-plan, SCR-REV-renovation-impact]
+  inputs: [project_id, room_ids, closure_start, planned_resale_date, affected_reservations]
+  states: [planned, rooms_blocked, in_progress, delayed, reopened]
+  api: ["POST /v1/properties/{pid}/renovation-projects/{rid}/room-closures"]
+  events: [RenovationRoomsClosed, RenovationResaleDateChanged]
+  data: [renovation_project, room_block (M03)]
+  rules: ["Closures create M03 OOO blocks with reason renovation; conflicting reservations listed for relocation before confirmation.", "Resale date change updates M03 blocks and M53 supply."]
+  security: "gm approval."
+  failure_cases: [reservation_conflict, delay]
+  finance_report_effect: "OOO rooms excluded per occupancy definition; displacement estimate shown."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF66.2.2: Closing 10 rooms with 3 conflicting reservations blocks confirmation until relocations are handled."
+  dependency: "M03, M53."
+
+- id: M66.F66.2.SF66.2.3
+  name: asset capitalization/depreciation and warranty
+  phase: 4
+  release: R1
+  actors: [financial_controller, chief_engineer]
+  screens: [SCR-FIN-capitalization]
+  inputs: [invoice_lines, asset_id (M26), capitalize_flag, useful_life, method, warranty_terms]
+  states: [pending_decision, capitalized, expensed, depreciating, disposed]
+  api: ["POST /v1/properties/{pid}/capitalization-decisions"]
+  events: [AssetCapitalized, DepreciationPosted]
+  data: [capitalization_decision, asset (M26), journal_entry (M19)]
+  rules: ["Capitalization decision per policy threshold; depreciation journals generated monthly via M19.", "Warranty terms stored on M26 asset; claims routed via M26."]
+  security: "financial_controller."
+  failure_cases: [policy_threshold_missing]
+  finance_report_effect: "Fixed-asset register and depreciation below GOP."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF66.2.3: A capitalized renovation invoice generates monthly depreciation journals that sum to cost minus residual over the life."
+  dependency: "M19, M26, M21 SF21.2.4, D-654."
+
+- id: M66.F66.2.SF66.2.4
+  name: new outlet/room/facility configuration
+  phase: 4
+  release: R1
+  actors: [property_admin, gm, financial_controller]
+  screens: [SCR-ADM-property-changes]
+  inputs: [change_type, room_type_or_outlet_details, effective_date, gl_mapping, feature_flags]
+  states: [planned, configured, tested, live]
+  api: ["POST /v1/properties/{pid}/property-changes"]
+  events: [PropertyChangeLive]
+  data: [reopening_checklist]
+  rules: ["New rooms/outlets are created in owning modules (M03/M09/M13) with effective date; M66 tracks the change and checklist.", "Go-live requires GL mapping, tax setup (M44), inventory and media (M39)."]
+  security: "property_admin with gm approval."
+  failure_cases: [missing_gl_mapping]
+  finance_report_effect: "New department/outlet reporting from effective date."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF66.2.4: A new outlet cannot go live without GL mapping and tax setup."
+  dependency: "M03, M09, M13, M44, M39."
+
+- id: M66.F66.2.SF66.2.5
+  name: brand standards evidence and reopening test
+  phase: 5
+  release: R1
+  actors: [gm, content_approver, compliance_officer]
+  screens: [SCR-OWN-brand-standards, SCR-OWN-reopening-checklist]
+  inputs: [standard_id, evidence_items, audit_result, reopening_checks]
+  states: [compliant, noncompliant, waived, reopening_ready]
+  api: ["POST /v1/properties/{pid}/brand-audits", "POST /v1/properties/{pid}/reopening-checklists/{cid}/complete"]
+  events: [BrandAuditRecorded, ReopeningApproved]
+  data: [brand_standard, brand_audit_evidence, reopening_checklist]
+  rules: ["Brand standards apply only if a franchise/brand relationship exists; evidence captured with photos and dates.", "Reopening requires M61 inspections passed, M64 devices tested, M03 blocks released and staff briefed (M62)."]
+  security: "gm."
+  failure_cases: [inspection_failed]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF66.2.5: Reopening is blocked while any M61 critical finding for the area is open."
+  dependency: "M61, M64, M62, M03."
+
+- id: M66.F66.2.SF66.2.6  # ADDED — Section C 'multi-property extension later'; Phase 7 portfolio
+  name: Portfolio owner reporting across properties
+  phase: 7
+  release: Later
+  actors: [owner, tenant_admin]
+  screens: [SCR-OWN-portfolio]
+  inputs: [property_ids, period, currency_basis]
+  states: [computed]
+  api: ["GET /v1/tenants/{tid}/portfolio/owner-summary"]
+  events: [PortfolioSummaryComputed]
+  data: [owner_statement, report_snapshot (M65)]
+  rules: ["Consolidation only across properties the owner holds; FX basis declared.", "Property-level scopes preserved."]
+  security: "Tenant-level owner scope."
+  failure_cases: [fx_missing]
+  finance_report_effect: "Portfolio view."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF66.2.6: Owner of two properties sees consolidated view; a user scoped to one property cannot access it."
+  dependency: "Phase 7 multi-property."
+```
+
+### M66 key invariants
+
+1. One owner of record per property per date; fees computed from versioned metrics with approval.
+2. Renovation closures are M03 blocks; asset records live in M26 and journals in M19.
+3. Investment cases state projections, never guaranteed payback.
+
+### M66 module acceptance
+
+| AC | Section G | Section O question answered |
+|---|---|---|
+| AC-SF66.1.2, AC-SF66.1.3 | AT-G08 | Owner: "Is this property profitable...? What is accrued versus settled?" |
+| AC-SF66.1.4 | AT-G08 | Owner: "What cash, debt, insurance and tax obligations are due?" |
+| AC-SF66.2.1 | AT-G08 | Owner: "Which capex/renovation will pay back?" |
+
+### M66 open decisions
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-653 | Pilot ownership structure (owner-operated, managed, franchised). | Owner | Owner-operated; fee schedules specified and tested on fixtures. |
+| D-654 | Fixed-asset register ownership (M19 vs M26 vs M66) and depreciation method. | Financial Controller + Lead Architect | M26 physical asset; M66 capitalization decision; M19 depreciation journals; straight-line. |
+| D-655 | Capex approval thresholds and payback method. | Owner + GM | gm up to 5,000 OMR-equivalent; above -> owner; simple payback and NPV shown as projections. |
+
+---
+
+## M67 — Sustainability and resource performance
+
+| Field | Value |
+|---|---|
+| Purpose | Measure energy, water, gas, laundry and food waste from traceable sources with verified/estimated/missing status, normalize by occupancy/guests/covers, set targets against baselines, turn anomalies into work orders, measure capex savings with context, and export evidence **without any unverified green claim**. |
+| Phases | 4 utilities/waste measurement and anomalies; 5–6 dashboards, targets, emission factors, savings, assurance export. |
+| Release flag | R1. |
+| Bounded context | `sustainability` |
+| SoR entities (owned) | `resource_metric_series`, `metric_data_status`, `meter_quality_score`, `intensity_snapshot`, `emission_factor_set`, `sustainability_target`, `sustainability_baseline`, `savings_measurement`, `sustainability_export`, `claim_review`, `supplier_sustainability_evidence`. |
+| Referenced (not owned) | M22 electricity, M23 water, M24 pipeline gas, M25 cylinders (meters, intervals, bills — the utility SoR); M56 laundry batches/weights; M50/M57 waste transactions; M03/M05/M13 occupied rooms, guests, covers; M26 work orders; M66 capex; M46 vendor documents; M44 jurisdiction rules; M65 metric definitions/freshness. |
+| Dependencies | M22, M23, M24, M25, M26, M46, M50, M56, M57, M65, M66. |
+
+### F67.1 Measure
+
+```yaml
+- id: M67.F67.1.SF67.1.1
+  name: utility and waste source meter/vendor
+  phase: 4
+  release: R1
+  actors: [chief_engineer, financial_controller, sustainability_worker]
+  screens: [SCR-ENG-resource-sources]
+  inputs: [resource_type, source_ref, meter_id_or_bill_account, waste_vendor_id, unit, cadence]
+  states: [mapped, unmapped, retired]
+  api: ["GET /v1/properties/{pid}/sustainability/sources", "PUT /v1/properties/{pid}/sustainability/sources/{sid}"]
+  events: [ResourceSourceMapped]
+  data: [resource_metric_series, meter (M22/M23/M24), waste_ledger_view (M50)]
+  rules: ["Series are derived views over M22–M25 readings/bills and M50 waste transactions; M67 stores no independent readings.", "Waste haulage weights from vendor tickets via M46/M49 evidence.", "Unmapped consumption sources are listed as coverage gaps."]
+  security: "Engineering/finance scope."
+  failure_cases: [meter_replaced_series_break]
+  finance_report_effect: "None; costs remain in M19 via utility modules."
+  i18n_a11y: "Units localized; accessible tables."
+  acceptance: "AC-SF67.1.1: A kitchen submeter reading in M22 appears in the M67 series without duplication; an unmapped building meter shows as a coverage gap."
+  dependency: "M22–M25, M50."
+
+- id: M67.F67.1.SF67.1.2
+  name: missing/estimated/verified value
+  phase: 4
+  release: R1
+  actors: [chief_engineer, financial_controller]
+  screens: [SCR-ENG-resource-data-status]
+  inputs: [period, series_id, value, status, estimation_method]
+  states: [missing, estimated, measured, bill_verified]
+  api: ["GET /v1/properties/{pid}/sustainability/series/{sid}/status"]
+  events: [ResourceValueEstimated, ResourceValueVerified]
+  data: [metric_data_status]
+  rules: ["Every period value carries one status; estimates state method (interpolation, bill pro-rata) and are replaced when data arrives.", "Bill-verified = meter total reconciled to supplier bill within tolerance (M22 SF22.1.6)."]
+  security: "Read scoped."
+  failure_cases: [bill_meter_mismatch]
+  finance_report_effect: "Shares status with M65 freshness."
+  i18n_a11y: "Status text plus icon."
+  acceptance: "AC-SF67.1.2: A missed interval shows 'estimated (interpolation)' until the reading arrives, then 'measured' (AT-G20.4)."
+  dependency: "M65 SF65.1.5."
+
+- id: M67.F67.1.SF67.1.3
+  name: per occupied room/guest/cover intensity
+  phase: 4
+  release: R1
+  actors: [gm, owner, chief_engineer]
+  screens: [SCR-OWN-resource-intensity]
+  inputs: [period, resource, denominator_metric]
+  states: [computed]
+  api: ["GET /v1/properties/{pid}/sustainability/intensity?period"]
+  events: [IntensityComputed]
+  data: [intensity_snapshot]
+  rules: ["Denominators from M65 metric definitions (occupied rooms, guest nights, covers); status of numerator propagates.", "Utility cost per occupied room shown next to consumption intensity."]
+  security: "Aggregates."
+  failure_cases: [zero_occupancy_period]
+  finance_report_effect: "Feeds Section P.6 'utility per occupied room'."
+  i18n_a11y: "Accessible charts."
+  acceptance: "AC-SF67.1.3: kWh per occupied room for a fixture month equals meter total / occupied rooms and inherits 'estimated' if any interval is estimated (AT-G19.8)."
+  dependency: "M65."
+
+- id: M67.F67.1.SF67.1.4
+  name: food waste and laundry usage
+  phase: 4
+  release: R1
+  actors: [executive_chef, housekeeping_supervisor, gm]
+  screens: [SCR-OWN-waste-laundry]
+  inputs: [period, waste_reasons, laundry_kg, covers, occupied_rooms]
+  states: [computed]
+  api: ["GET /v1/properties/{pid}/sustainability/waste-laundry?period"]
+  events: [WasteLaundryComputed]
+  data: [resource_metric_series]
+  rules: ["Food waste from M50/M57 waste transactions by reason (spoilage, overproduction, plate return) per cover; laundry kg per occupied room from M56 batches.", "Weights estimated from counts are labelled estimated."]
+  security: "Aggregates."
+  failure_cases: [waste_not_weighed]
+  finance_report_effect: "Waste cost from M50 alongside quantities."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF67.1.4: Waste per cover and laundry kg per occupied room reproduce fixture values (AT-G19.8 GM drill)."
+  dependency: "M50, M56, M57, D-658."
+
+- id: M67.F67.1.SF67.1.5
+  name: emission-factor source/version only after review
+  phase: 5
+  release: R1
+  actors: [compliance_officer, financial_controller]
+  screens: [SCR-ADM-emission-factors]
+  inputs: [factor_set_name, source_citation, geography, year, values, reviewer, review_date]
+  states: [draft, reviewed, active, superseded, rejected]
+  api: ["POST /v1/properties/{pid}/sustainability/emission-factor-sets"]
+  events: [EmissionFactorSetActivated]
+  data: [emission_factor_set]
+  rules: ["No emissions figures computed until a factor set with cited source and named reviewer is active.", "Each emissions value states factor set version; changes create restatement notes."]
+  security: "compliance_officer approval."
+  failure_cases: [no_reviewed_factor_set_emissions_hidden]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF67.1.5: Without an active reviewed factor set, emissions tiles show 'not calculated: no reviewed factor set'."
+  dependency: "D-656."
+
+- id: M67.F67.1.SF67.1.6  # ADDED — Section C 'meter quality'
+  name: Meter data quality score
+  phase: 4
+  release: R1
+  actors: [chief_engineer]
+  screens: [SCR-ENG-meter-quality]
+  inputs: [meter_id, gaps, resets, outliers, calibration_date]
+  states: [good, fair, poor]
+  api: ["GET /v1/properties/{pid}/sustainability/meter-quality"]
+  events: [MeterQualityDegraded]
+  data: [meter_quality_score]
+  rules: ["Score from gap %, reset count, outlier count and calibration age; poor meters flagged and excluded from targets until fixed.", "Degradation creates an M26 work order suggestion."]
+  security: "Engineering."
+  failure_cases: [calibration_unknown]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF67.1.6: A meter with 20% gaps is scored poor and excluded from target tracking with a visible note."
+  dependency: "M22 SF22.1.4, M26."
+```
+
+### F67.2 Improve
+
+```yaml
+- id: M67.F67.2.SF67.2.1
+  name: target and baseline
+  phase: 5
+  release: R1
+  actors: [owner, gm, chief_engineer]
+  screens: [SCR-OWN-sustainability-targets]
+  inputs: [resource, baseline_period, normalization, target_value, target_date, approver]
+  states: [draft, approved, active, achieved, missed]
+  api: ["POST /v1/properties/{pid}/sustainability/targets"]
+  events: [SustainabilityTargetActivated]
+  data: [sustainability_target, sustainability_baseline]
+  rules: ["Baseline requires minimum data coverage and verified status share; otherwise target is 'provisional'.", "Targets are internal goals; external publication follows SF67.2.4."]
+  security: "Owner/gm approval."
+  failure_cases: [insufficient_baseline_data]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF67.2.1: A baseline with under 80% verified coverage marks the target provisional."
+  dependency: "D-657."
+
+- id: M67.F67.2.SF67.2.2
+  name: anomaly-to-work-order
+  phase: 4
+  release: R1
+  actors: [chief_engineer, engineer, sustainability_worker]
+  screens: [SCR-ENG-resource-anomalies]
+  inputs: [series_id, anomaly_rule, detected_value, expected_range]
+  states: [detected, work_order_created, dismissed, resolved]
+  api: ["GET /v1/properties/{pid}/sustainability/anomalies", "POST /v1/properties/{pid}/sustainability/anomalies/{aid}/work-order"]
+  events: [ResourceAnomalyDetected]
+  data: [resource_metric_series, work_order (M26)]
+  rules: ["Night-time water flow above threshold or kWh spike relative to occupancy-adjusted expectation creates an anomaly; engineer converts to M26 work order or dismisses with reason.", "Water leak anomalies reuse M23 SF23.1.4 path."]
+  security: "Engineering."
+  failure_cases: [false_positive_dismissed]
+  finance_report_effect: "Avoided cost estimated, labelled estimate."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF67.2.2: A simulated 03:00 water flow spike creates an anomaly and one M26 work order when accepted."
+  dependency: "M23, M26."
+
+- id: M67.F67.2.SF67.2.3
+  name: capex savings measurement with occupancy/weather context
+  phase: 5
+  release: R1
+  actors: [chief_engineer, financial_controller, owner]
+  screens: [SCR-OWN-savings-measurement]
+  inputs: [capex_request_id (M66), pre_period, post_period, normalization_variables, weather_source]
+  states: [planned, measuring, measured, inconclusive]
+  api: ["POST /v1/properties/{pid}/sustainability/savings-measurements"]
+  events: [SavingsMeasured]
+  data: [savings_measurement]
+  rules: ["Savings = normalized baseline minus measured post-period consumption, with occupancy and (where a licensed/official weather source exists) degree-day adjustment; result with uncertainty.", "Results reported as measured savings with method, never as guaranteed; inconclusive when uncertainty exceeds effect."]
+  security: "Management."
+  failure_cases: [weather_data_unavailable_occupancy_only]
+  finance_report_effect: "Feeds M66 capex post-review."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF67.2.3: A LED retrofit fixture with 3% effect and 5% uncertainty is reported inconclusive."
+  dependency: "M66 SF66.2.1."
+
+- id: M67.F67.2.SF67.2.4
+  name: assurance/export and no unverified green claim
+  phase: 6
+  release: R1
+  actors: [compliance_officer, marketing_manager, gm]
+  screens: [SCR-OWN-sustainability-export, SCR-MKT-claim-review]
+  inputs: [export_scope, period, claim_text, evidence_refs, reviewer]
+  states: [draft, evidence_linked, approved, rejected, published]
+  api: ["POST /v1/properties/{pid}/sustainability/exports", "POST /v1/properties/{pid}/sustainability/claims/{cid}/review"]
+  events: [SustainabilityExportGenerated, SustainabilityClaimApproved, SustainabilityClaimRejected]
+  data: [sustainability_export, claim_review]
+  rules: ["Exports include values, statuses, methods, factor versions and evidence index.", "Any public sustainability statement (website M51, campaigns M52) requires a claim_review with evidence and compliance approval; claims like 'carbon neutral', 'eco-friendly', 'green hotel' are blocked unless backed by approved evidence/certification.", "No certification logo displayed without a certificate record and expiry."]
+  security: "compliance_officer approval."
+  failure_cases: [claim_without_evidence_blocked, certificate_expired_logo_removed]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible export; bilingual."
+  acceptance: "AC-SF67.2.4: A website content version containing 'carbon neutral' without an approved claim_review fails publish validation in M51."
+  dependency: "M51 SF51.1.5, M52 SF52.1.5."
+
+- id: M67.F67.2.SF67.2.5
+  name: supplier sustainability evidence and expiry
+  phase: 5
+  release: R1
+  actors: [procurement_officer, vendor_user, compliance_officer]
+  screens: [SCR-VND-sustainability-documents, SCR-OPS-supplier-evidence]
+  inputs: [vendor_id, evidence_type, document, issuer, expiry]
+  states: [submitted, verified, expired, rejected]
+  api: ["POST /v1/vendors/{vid}/sustainability-evidence"]
+  events: [SupplierEvidenceVerified, SupplierEvidenceExpired]
+  data: [supplier_sustainability_evidence, vendor_document (M46)]
+  rules: ["Stored as M46 vendor documents typed 'sustainability'; M67 tracks verification and use.", "Expired evidence cannot support claims or RFQ weighting."]
+  security: "Vendor sees own documents."
+  failure_cases: [unverifiable_issuer]
+  finance_report_effect: "None."
+  i18n_a11y: "Vendor app bilingual."
+  acceptance: "AC-SF67.2.5: Expired supplier certificate removes that supplier from any claim evidence and RFQ sustainability criterion."
+  dependency: "M46, M49 SF49.2.2."
+```
+
+### M67 key invariants
+
+1. No independent resource readings: series derive from M22–M25/M50/M56 SoR.
+2. Every value carries missing/estimated/measured/verified status.
+3. No emissions without a reviewed factor set; no public green claim without approved evidence.
+4. Savings are measured with method and uncertainty, never guaranteed.
+
+### M67 module acceptance
+
+| AC | Section G | Section O question answered |
+|---|---|---|
+| AC-SF67.1.3, AC-SF67.1.4 | AT-G19 (GM drill: laundry, food waste, utilities), AT-G08 | Owner: "Is this property profitable after... energy...?"; Chef: "what should recipe use versus actual" (waste) |
+| AC-SF67.1.2 | AT-G20 (missed meter interval) | Technology: "Where are outages...?" |
+| AC-SF67.2.3 | AT-G08 | Owner: "Which capex/renovation will pay back?" |
+| AC-SF67.2.4 | AT-G19 (accurate website) | Marketing: "accurate listings" |
+
+### M67 open decisions
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-656 | Emission-factor sources and any reporting framework per market. | Compliance Officer | Emissions not calculated in R1 until a reviewed factor set exists. |
+| D-657 | Baseline year and normalization variables. | Chief Engineer + GM | First 12 months of verified data; occupancy normalization only. |
+| D-658 | Food-waste measurement method (weighing vs estimate). | Executive Chef | Weighed bins at kitchen for spoilage/overproduction; plate returns estimated by portion. |
+
+---
+
+## M68 — Enterprise risk, insurance and continuity
+
+| Field | Value |
+|---|---|
+| Purpose | Insurance register (policies, insured assets/risks, premiums, claims with evidence packets, deductibles/reserves) and business continuity (impact assessment for fire, flood, weather, cyber, power, staff shortage; crisis roles/contacts; guest welfare/relocation; manual workflows and supplier backup; drills; recovery targets vs actual). |
+| Phases | 4 incident linkage, policy/claim register, BIA, crisis roles, welfare; 6 operational drills and recovery evidence. |
+| Release flag | R1. |
+| Bounded context | `risk-continuity` |
+| SoR entities (owned) | `insurance_policy`, `insured_item`, `premium_schedule`, `insurance_claim`, `claim_evidence_packet`, `claim_party_access`, `bia_scenario`, `crisis_role`, `crisis_contact_plan`, `continuity_plan`, `guest_relocation_record`, `drill_record`, `recovery_measurement`. |
+| Referenced (not owned) | M42 incidents, chronology and evidence; M26 assets; M20 AP (premiums), AR/receipts (claim settlements); M19 GL (prepaid insurance, reserves); M64 recovery objectives/backups; M61 findings; M55 guest cases; M05 in-house guests; M46 backup suppliers; M27 staff contacts/roster; M02 external access scopes. |
+| Dependencies | M02, M05, M19, M20, M26, M27, M42, M46, M55, M61, M63, M64. |
+
+### F68.1 Coverage
+
+```yaml
+- id: M68.F68.1.SF68.1.1
+  name: policy, insured asset/risk and coverage/expiry
+  phase: 4
+  release: R1
+  actors: [financial_controller, gm, owner]
+  screens: [SCR-FIN-insurance-register]
+  inputs: [insurer, broker, policy_number, coverage_type, limits, deductibles, period_start, period_end, insured_items, document_ref]
+  states: [draft, active, expiring, expired, renewed, cancelled]
+  api: ["POST /v1/properties/{pid}/insurance-policies", "POST /v1/properties/{pid}/insurance-policies/{pol}/insured-items"]
+  events: [InsurancePolicyActivated, InsurancePolicyExpiring]
+  data: [insurance_policy, insured_item, asset (M26)]
+  rules: ["Coverage types: property, business interruption, liability, cyber, vehicle, employer; insured items link to M26 assets or risk descriptions.", "Expiry alerts at 60/30/7 days; lapse of a required policy (e.g. vehicle) triggers gates in M59/M58.", "Policy document stored with restricted access."]
+  security: "Finance/owner scope."
+  failure_cases: [coverage_gap_detected]
+  finance_report_effect: "Prepaid insurance and expense amortization via M19."
+  i18n_a11y: "Bilingual."
+  acceptance: "AC-SF68.1.1: A vehicle policy expiring removes linked vehicles from M59 assignment at expiry."
+  dependency: "M26, M59, D-659."
+
+- id: M68.F68.1.SF68.1.2
+  name: premium payable/accrual
+  phase: 4
+  release: R1
+  actors: [ap_clerk, financial_controller]
+  screens: [SCR-FIN-insurance-premiums]
+  inputs: [policy_id, premium_amount, installments, tax, due_dates]
+  states: [scheduled, invoiced, approved, paid]
+  api: ["POST /v1/properties/{pid}/insurance-policies/{pol}/premium-schedule"]
+  events: [PremiumInvoiced, PremiumPaid]
+  data: [premium_schedule, supplier_invoice (M20)]
+  rules: ["Premium invoices go through M20 AP backbone (Section D); prepaid amortized monthly via M19.", "Allocation to departments by approved driver."]
+  security: "AP segregation of duties."
+  failure_cases: [duplicate_premium_invoice]
+  finance_report_effect: "Insurance expense below GOP or per profit bridge policy."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF68.1.2: An annual premium paid upfront amortizes 1/12 per month in M19."
+  dependency: "M20, M19."
+
+- id: M68.F68.1.SF68.1.3
+  name: incident evidence packet and claim status
+  phase: 4
+  release: R1
+  actors: [financial_controller, gm, security_officer]
+  screens: [SCR-FIN-insurance-claims, SCR-OPS-incident]
+  inputs: [incident_ids (M42), policy_id, loss_description, loss_estimate, evidence_selection]
+  states: [draft, notified, submitted, under_assessment, approved, partially_approved, denied, settled, closed]
+  api: ["POST /v1/properties/{pid}/insurance-claims", "POST /v1/properties/{pid}/insurance-claims/{cid}/evidence-packets"]
+  events: [InsuranceClaimSubmitted, InsuranceClaimStatusChanged]
+  data: [insurance_claim, claim_evidence_packet]
+  rules: ["Evidence packet assembles hashed copies/pointers of M42 chronology, photos, M61 inspection history, M26 asset records, repair quotes and invoices; original evidence remains in source modules.", "Notification deadlines per policy tracked via M63."]
+  security: "Guest PII redacted unless required and approved by DPO."
+  failure_cases: [notification_deadline_missed_alert, evidence_hash_mismatch]
+  finance_report_effect: "Claim receivable recognized only when insurer confirms (not on submission)."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF68.1.3: A fire incident produces a packet whose hashes match the M42 evidence; receivable is not posted until approval (AT-G14.4)."
+  dependency: "M42, M61, M26."
+
+- id: M68.F68.1.SF68.1.4
+  name: adjuster/vendor access scope
+  phase: 4
+  release: R1
+  actors: [financial_controller, vendor_user, it_admin]
+  screens: [SCR-ADM-external-access, SCR-VND-claim-workspace]
+  inputs: [claim_id, external_party, access_scope, expiry]
+  states: [granted, active, expired, revoked]
+  api: ["POST /v1/properties/{pid}/insurance-claims/{cid}/access-grants"]
+  events: [ClaimAccessGranted, ClaimAccessRevoked]
+  data: [claim_party_access]
+  rules: ["Adjusters/loss assessors get time-limited read access to the specific packet only, via M02 external identity with MFA.", "Downloads watermarked and logged."]
+  security: "Least privilege; auto-expiry."
+  failure_cases: [access_after_expiry_denied]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF68.1.4: An adjuster cannot open another claim or any other record; access ends at expiry."
+  dependency: "M02, M46."
+
+- id: M68.F68.1.SF68.1.5
+  name: deductible/reserve/settlement report
+  phase: 5
+  release: R1
+  actors: [financial_controller, owner]
+  screens: [SCR-OWN-insurance-summary]
+  inputs: [period, claims, reserves, settlements]
+  states: [computed]
+  api: ["GET /v1/properties/{pid}/insurance/summary?period"]
+  events: [InsuranceSummaryComputed]
+  data: [insurance_claim]
+  rules: ["Shows claimed, reserved (internal estimate, labelled), approved, received, deductible borne, and uninsured loss per incident.", "Settlements matched to bank receipts (M20)."]
+  security: "Owner/finance."
+  failure_cases: [settlement_unmatched]
+  finance_report_effect: "Loss and recovery in M19; owner report input."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF68.1.5: A settled claim shows received amount matched to bank receipt and deductible borne."
+  dependency: "M20, M19."
+```
+
+### F68.2 Continuity
+
+```yaml
+- id: M68.F68.2.SF68.2.1
+  name: scenario impact (fire, flood, cyber, power, staff shortage)
+  phase: 4
+  release: R1
+  actors: [gm, chief_engineer, it_admin, hr_officer]
+  screens: [SCR-OWN-bia]
+  inputs: [scenario_type, affected_services, dependencies, max_tolerable_downtime, financial_impact_estimate, guest_impact]
+  states: [draft, reviewed, approved, due_for_review]
+  api: ["POST /v1/properties/{pid}/bia-scenarios"]
+  events: [BiaScenarioApproved]
+  data: [bia_scenario]
+  rules: ["Scenarios include fire, flood, severe weather, cyber, power/utility outage, key supplier failure, staff shortage (including chef coverage via M47).", "Each lists dependent modules/devices (from M64 registry) and manual workaround.", "Annual review."]
+  security: "Management."
+  failure_cases: [dependency_unknown]
+  finance_report_effect: "Estimates labelled; feeds insurance adequacy review."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF68.2.1: A power outage scenario lists PMS, POS, locks and gate dependencies from M64 and their manual procedures."
+  dependency: "M64, M47."
+
+- id: M68.F68.2.SF68.2.2
+  name: crisis role tree and contacts
+  phase: 4
+  release: R1
+  actors: [gm, duty_manager, hr_officer]
+  screens: [SCR-OWN-crisis-roles]
+  inputs: [role_name, primary_person, deputies, contact_channels, external_contacts]
+  states: [assigned, gap, verified]
+  api: ["PUT /v1/properties/{pid}/crisis-roles/{rid}"]
+  events: [CrisisRoleGap]
+  data: [crisis_role, crisis_contact_plan]
+  rules: ["Every crisis role has primary and at least one deputy; gaps (leaver, leave) flagged from M27.", "External contacts (fire, police, utility emergency lines, insurer hotline) per M44 local numbers, verified periodically."]
+  security: "Contacts available offline to crisis role holders."
+  failure_cases: [contact_unverified]
+  finance_report_effect: "None."
+  i18n_a11y: "Offline printable bilingual card."
+  acceptance: "AC-SF68.2.2: Deactivating the primary incident commander in M27 flags a crisis-role gap to the gm."
+  dependency: "M27, M42, M44."
+
+- id: M68.F68.2.SF68.2.3
+  name: guest welfare/relocation
+  phase: 4
+  release: R1
+  actors: [duty_manager, front_office_manager, guest_relations]
+  screens: [SCR-OPS-guest-welfare, SCR-OPS-relocation]
+  inputs: [incident_id, in_house_list (M05), accessibility_needs, relocation_partner, transport_needs]
+  states: [assessed, relocating, relocated, returned, closed]
+  api: ["GET /v1/properties/{pid}/incidents/{iid}/guest-welfare", "POST /v1/properties/{pid}/guest-relocations"]
+  events: [GuestRelocated]
+  data: [guest_relocation_record, reservation (M05)]
+  rules: ["Welfare list from M05 in-house guests with stated accessibility needs prioritized; list available offline.", "Relocation to partner hotels recorded with transport (M59) and cost; guest folios adjusted via M08."]
+  security: "Guest data minimal; accessibility info visible to crisis roles only during incident."
+  failure_cases: [partner_hotel_full]
+  finance_report_effect: "Relocation costs to incident cost and potential claim."
+  i18n_a11y: "Accessible; bilingual guest notices."
+  acceptance: "AC-SF68.2.3: During a simulated evacuation the welfare list shows guests with stated mobility needs first and works offline (AT-G14.2)."
+  dependency: "M05, M59, M08, M42, D-660."
+
+- id: M68.F68.2.SF68.2.4
+  name: safe manual workflow, supplier backup and drill
+  phase: 6
+  release: R1
+  actors: [gm, duty_manager, procurement_officer, it_admin]
+  screens: [SCR-OWN-continuity-plans, SCR-OWN-drills]
+  inputs: [plan_id, manual_procedures (M64), backup_suppliers (M46), drill_type, participants, observations]
+  states: [planned, executed, findings_open, closed]
+  api: ["POST /v1/properties/{pid}/continuity-plans", "POST /v1/properties/{pid}/drills"]
+  events: [DrillExecuted, DrillFindingOpened]
+  data: [continuity_plan, drill_record]
+  rules: ["Each critical supply (gas, food, linen, water) has a backup supplier from M46 or documented alternative.", "Tabletop and live drills per schedule; findings become M63 work items.", "Drills never trigger real emergency services unless planned with them."]
+  security: "Management."
+  failure_cases: [backup_supplier_expired_credentials]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF68.2.4: A tabletop drill records timeline, findings and follow-up tasks; a backup supplier with expired permit is flagged."
+  dependency: "M46, M64, M63, D-661."
+
+- id: M68.F68.2.SF68.2.5
+  name: recovery target, actual duration and corrective action
+  phase: 6
+  release: R1
+  actors: [gm, owner, it_admin]
+  screens: [SCR-OWN-recovery-evidence]
+  inputs: [scenario_id, target_duration, actual_start, actual_end, source (drill or incident)]
+  states: [measured, target_met, target_missed, corrective_open, corrective_closed]
+  api: ["POST /v1/properties/{pid}/recovery-measurements"]
+  events: [RecoveryMeasured, RecoveryTargetMissed]
+  data: [recovery_measurement, recovery_objective (M64)]
+  rules: ["Only drills or real incidents produce measurements; missed targets require corrective action with owner.", "Recovery evidence reported to owner."]
+  security: "Management."
+  failure_cases: [no_measurement_in_period]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF68.2.5: A drill exceeding the target opens a corrective action and shows target_missed on the owner screen."
+  dependency: "M64 SF64.2.4."
+
+- id: M68.F68.2.SF68.2.6  # ADDED — Section C 'emergency contact plans'; Section O GM 'did a fire/gas/water alarm reach an accountable person'
+  name: Emergency contact plan publication and reachability test
+  phase: 4
+  release: R1
+  actors: [gm, duty_manager, security_officer]
+  screens: [SCR-OWN-contact-plan-tests]
+  inputs: [contact_plan_id, test_message, recipients, ack_deadline]
+  states: [scheduled, sent, acknowledged_all, partial, failed]
+  api: ["POST /v1/properties/{pid}/crisis-contact-plans/{cid}/tests"]
+  events: [ContactPlanTested]
+  data: [crisis_contact_plan]
+  rules: ["Periodic test pages crisis roles via M63 channels and records acknowledgment times.", "Unreachable contacts create correction tasks."]
+  security: "Test messages clearly labelled TEST."
+  failure_cases: [channel_outage]
+  finance_report_effect: "None."
+  i18n_a11y: "Bilingual."
+  acceptance: "AC-SF68.2.6: A monthly test records acknowledgment times and flags one unreachable deputy."
+  dependency: "M63 SF63.1.6, M42."
+```
+
+### M68 key invariants
+
+1. Evidence packets reference hashed originals in source modules; no evidence copies edited.
+2. Claim receivables only on insurer confirmation.
+3. Recovery performance is measured from drills or incidents, never asserted.
+4. Every crisis role has a deputy; gaps are visible.
+
+### M68 module acceptance
+
+| AC | Section G | Section O question answered |
+|---|---|---|
+| AC-SF68.1.3, AC-SF68.1.4 | AT-G14 (incident chronology/evidence) | Maintenance/security: "What evidence preserves an incident or insurance claim?" |
+| AC-SF68.2.3, AC-SF68.2.6 | AT-G14 (escalation, outage fallback) | Maintenance/security: "Did a fire/gas/water alarm reach an accountable person?" |
+| AC-SF68.2.4, AC-SF68.2.5 | Section B Phase 6 exit (cyber/physical continuity) | GM: "Can we operate if internet or a provider fails?" |
+| AC-SF68.1.1, AC-SF68.1.5 | AT-G08 | Owner: "What cash, debt, insurance and tax obligations are due?" |
+
+### M68 open decisions
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-659 | Insurance broker/insurer data exchange (manual vs portal/API). | Financial Controller | Manual entry and document upload; no insurer API. |
+| D-660 | Relocation partner hotels and transport arrangements. | GM | Two nearby partner hotels by written agreement; manual booking. |
+| D-661 | Drill types and frequency (tabletop, evacuation, cyber, power). | GM + Security Officer | Quarterly tabletop, annual evacuation with local authority coordination, semi-annual cyber tabletop. |
+
+---
+
+## 20. Totals, decision register and canonical entities
+
+### 20.1 Counts
+
+| Measure | Count |
+|---|---|
+| Modules | 18 (M51–M68) |
+| Features | 37 (36 fixed by Section Q + 1 added: F55.3) |
+| Subfeatures fixed by Section Q (IDs verbatim) | 192 |
+| Subfeatures added (marked `# ADDED`) | 27 |
+| Total Section-L subfeature blocks | 219 |
+| Subfeatures `release: R1` | 214 |
+| Subfeatures `release: Later` (Phase 7) | 5 (SF53.2.7, SF55.3.1, SF55.3.2, SF64.1.7, SF66.2.6) |
+| Unit acceptance tests (`AC-<SF id>`) | 219 |
+| Open decisions | 61 (D-601–D-661) |
+
+First-phase distribution and the per-module add list are reproducible by counting `phase:` and `# ADDED` in this file.
+
+### 20.2 Open decision register (summary)
+
+| Range | Module | Decisions |
+|---|---|---|
+| D-601–D-604 | M51 | domain/hosting, search/metasearch partners, analytics tool, attribution precedence |
+| D-605–D-608 | M52 | guest profile SoR boundary, per-market consent, review sources, messaging providers |
+| D-609–D-612 | M53 | market data licence, guardrails/tiers, forecast method, overbooking policy |
+| D-613–D-616 | M54 | voucher liability/expiry, package allocation, comp upgrades, promotional permits |
+| D-617–D-620 | M55 | guest_request SoR, compensation caps, telephony/recording, key/kiosk vendors |
+| D-621–D-624 | M56 | M06/M56 boundary, laundry model, minibar model, linen par/RFID |
+| D-625–D-627 | M57 | food-safety rule packs, alcohol licensing/age, IRD confirmation |
+| D-628–D-630 | M58 | enabled amenities, spa intake legality, practitioner commission/tips |
+| D-631–D-633 | M59 | owned fleet, flight/ship status source, M45/M59 boundary |
+| D-634–D-636 | M60 | cash variance tolerance, employee-monitoring scope, safe/deposit process |
+| D-637–D-639 | M61 | inspection rules per market, release authority, water testing |
+| D-640–D-642 | M62 | LMS approach, certifications per role/market, quality sampling notice |
+| D-643–D-645 | M63 | workflow runtime, template edit rights, staff alert channels |
+| D-646–D-649 | M64 | site network, RPO/RTO, on-prem/offsite location, support model |
+| D-650–D-652 | M65 | analytics store, KPI dictionary ownership, retention schedule |
+| D-653–D-655 | M66 | ownership structure, fixed-asset register ownership, capex thresholds |
+| D-656–D-658 | M67 | emission factors, baseline, food-waste measurement |
+| D-659–D-661 | M68 | insurer data exchange, relocation partners, drill frequency |
+
+Cross-file alignment decisions that other catalogue authors must confirm: **D-605** (M18/M52 guest profile), **D-617** (M18/M55 `guest_request`), **D-621** (M06/M56), **D-633** (M45/M59), **D-651** (M32/M65 KPI dictionary), **D-654** (M19/M26/M66 fixed assets).
+
+### 20.3 Canonical entity names defined in this file (owned SoR)
+
+- **M51** `website_site`, `website_domain`, `website_takedown`, `site_page`, `site_page_version`, `redirect_rule`, `structured_data_snapshot`, `destination_content_item`, `web_search_session`, `quote_funnel_event`, `abandonment_reason`, `acquisition_source`, `campaign_tag`, `attribution_touch`, `attribution_assignment`, `bot_filter_rule`, `acquisition_cost_line`
+- **M52** `guest_merge_candidate`, `guest_merge_decision`, `guest_identity_link`, `send_eligibility_decision`, `segment_definition`, `segment_snapshot`, `frequency_cap_policy`, `message_template`, `campaign`, `campaign_send`, `message_delivery`, `guest_value_snapshot`, `survey_definition`, `survey_response`, `external_review`, `review_response`, `review_policy`, `subject_tag`
+- **M53** `demand_snapshot`, `pace_curve`, `forecast_run`, `forecast_value`, `market_input`, `demand_event_calendar`, `overbooking_recommendation`, `rate_recommendation`, `rate_action`, `guardrail_policy`, `rate_publication_ack`, `price_discrepancy_item`, `backtest_result`
+- **M54** `offer_definition`, `offer_eligibility_rule`, `offer_presentation`, `ancillary_order`, `offer_performance_snapshot`, `package_component`, `component_consumption`, `gift_voucher`, `voucher_ledger_entry`
+- **M55** `guest_conversation`, `conversation_message`, `inquiry_lead`, `journey_task`, `guest_request`, `guest_case`, `case_action`, `compensation_grant`, `guest_confirmation`, `key_credential_request` (Later), `kiosk_session` (Later)
+- **M56** `hk_task`, `hk_assignment`, `hk_inspection`, `hk_duration_standard`, `deep_clean_schedule`, `linen_par_policy`, `laundry_batch`, `laundry_batch_line`, `linen_damage_record`, `minibar_count`, `amenity_par_policy`
+- **M57** `dining_reservation`, `waitlist_entry`, `ird_delivery`, `kitchen_ticket_timing`, `allergen_acknowledgment`, `production_batch`, `production_batch_lot_link`, `food_check_record`, `substitution_review`, `portion_waste_record`, `outlet_service_rule`
+- **M58** `amenity_business_profile`, `amenity_service`, `amenity_booking`, `amenity_entitlement_use`, `practitioner_assignment`, `contraindication_intake`, `amenity_sanitation_record`, `amenity_closure`
+- **M59** `transport_trip`, `trip_leg`, `trip_manifest`, `trip_status_event`, `trip_handover`, `transport_tariff`, `fleet_vehicle_profile`, `driver_eligibility`, `trip_cost_line`
+- **M60** `control_limit_policy`, `till_session_control`, `cash_drop`, `safe_movement`, `audit_difference_item`, `control_approval`, `anomaly_rule`, `anomaly_alert`, `investigation_case`, `investigation_evidence`, `alert_feedback`
+- **M61** `inspection_template`, `inspection_schedule`, `inspection_record`, `inspection_finding`, `corrective_action`, `permit_record`, `responsible_person_assignment`, `service_stoppage`, `release_decision`
+- **M62** `sop_document`, `sop_version`, `role_training_matrix`, `training_course`, `training_assignment`, `training_attestation`, `assessment_result`, `certification_record`, `contractor_briefing`, `shift_handover`, `labor_demand_forecast`, `quality_sample`, `coaching_note`
+- **M63** `workflow_template`, `workflow_version`, `workflow_trigger`, `workflow_instance`, `work_item`, `sla_timer`, `escalation_step`, `approval_request`, `approval_decision`, `notification_rule`, `notification_delivery`, `on_call_schedule`, `workflow_change_audit`
+- **M64** `device`, `device_firmware_record`, `certificate_record`, `connector_profile`, `network_zone`, `device_health_sample`, `degraded_queue_item`, `maintenance_window`, `manual_fallback_procedure`, `fallback_test_record`, `backup_job`, `restore_test`, `recovery_objective`, `offline_action_log`, `cyber_containment_record`, `change_request`, `support_ticket`, `status_page_entry`, `dr_failover_test`
+- **M65** `canonical_entity_registry`, `master_data_issue`, `metric_definition`, `metric_version`, `lineage_edge`, `dataset_freshness_status`, `date_mapping_rule`, `report_definition`, `report_version`, `report_snapshot`, `scheduled_report`, `export_job`, `purpose_retention_map`, `attribution_model_version`
+- **M66** `ownership_relationship`, `management_agreement`, `fee_schedule`, `fee_calculation`, `owner_statement`, `external_obligation_input`, `capex_request`, `investment_case`, `renovation_project`, `capitalization_decision`, `brand_standard`, `brand_audit_evidence`, `reopening_checklist`
+- **M67** `resource_metric_series`, `metric_data_status`, `meter_quality_score`, `intensity_snapshot`, `emission_factor_set`, `sustainability_target`, `sustainability_baseline`, `savings_measurement`, `sustainability_export`, `claim_review`, `supplier_sustainability_evidence`
+- **M68** `insurance_policy`, `insured_item`, `premium_schedule`, `insurance_claim`, `claim_evidence_packet`, `claim_party_access`, `bia_scenario`, `crisis_role`, `crisis_contact_plan`, `continuity_plan`, `guest_relocation_record`, `drill_record`, `recovery_measurement`
+
+Entities written as `name (Mnn)` inside `data:` fields are **references** to the named owning module and are defined in that module's catalogue file, not here.
