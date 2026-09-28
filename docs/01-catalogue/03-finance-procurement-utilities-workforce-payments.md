@@ -3073,3 +3073,815 @@ Section K text (verbatim): *Reports aggregate employee cost by department and pe
 | D-340 | Payroll and HR record retention per jurisdiction | dpo + compliance_officer | Retain payroll registers 10 years unless verified rule differs; identity images shortest lawful period. |
 
 ---
+## 12. M28 — Payment orchestration
+
+| Header | Value |
+|---|---|
+| Purpose | Provider-neutral payment port for **collections** (intents, auth/capture/void, partial and multi-tender, pay-by-link/terminal, signed webhooks, refunds/chargebacks, PSP fees and settlement reconciliation) and **disbursements** (payable batches, dual approval, execution via an authorized bank/PSP channel, status/failure/inquiry, supplier confirmation and ledger close), with tokenization, idempotency, cash/bank-transfer/corporate-credit tenders and fraud controls. MetriStay orchestrates; licensed PSPs, acquirers and banks move money. |
+| Phases | Payment abstraction, cash/manual tenders, mock PSP and folio linkage Phase 2; one certified PSP gateway, settlement, refunds/chargebacks, payouts Phase 5; hardening Phase 6. |
+| Release | R1 |
+| Bounded context | `payments` |
+| System of record | `payment_intent`, `payment_attempt`, `payment_method_token`, `tender_record`, `psp_transaction`, `refund`, `chargeback`, `psp_settlement_batch`, `psp_settlement_line`, `psp_fee`, `payment_order`, `payout_batch`, `payment_approval`, `webhook_receipt`, `idempotency_record`, `payment_terminal`, `payment_provider_config`, `fraud_review` |
+| Dependencies | M08 (folio), M11/M20 (corporate AR), M13/M15/M16/M17/M54/M58 (charge sources via folio/POS), M30 (points tender reversal), M31 (referral payout policy), M20 (payables), M27 (salary batches), M29 (bill-pay funding when card-funded), M02 (step-up MFA), M41 (payment step in check-in), M60 (cash shifts), `docs/07` PCI boundary |
+
+### F28.1 Hotel collections
+Story: As front desk agent or guest I can pay by card, link, terminal, cash or bank transfer, exactly once, and finance can reconcile every capture, refund and fee to the bank.
+
+```yaml
+- id: M28.F28.1.SF28.1.1
+  name: payment intent and amount/currency
+  phase: 2
+  release: R1
+  actors: [front_desk_agent, cashier, guest, booker, payments_worker]
+  screens: [SCR-FD-folio-payment, SCR-GST-pay, SCR-CORP-invoices]
+  inputs: [target_type, target_id, amount, currency, capture_mode, customer_ref, return_url, idempotency_key]
+  states: [created, requires_action, processing, authorized, captured, partially_captured, cancelled, failed, expired]
+  api: POST /v1/properties/{pid}/payment-intents (Idempotency-Key)
+  events: [PaymentIntentCreated, PaymentIntentStatusChanged]
+  data: [payment_intent, payment_attempt]
+  rules: ["Every intent targets exactly one folio window, deposit, corporate invoice, POS check or other permitted receivable", "Amount in minor units with currency supported by the configured PSP; FX conversion only if PSP supports and discloses", "Same idempotency key and payload returns the same intent; different payload with same key is rejected", "Intent expiry releases any hold"]
+  security: property scope; guest can create intents only for own booking; amounts computed server-side
+  failure_cases: [currency_not_supported, amount_mismatch_with_folio, idempotency_conflict, intent_expired]
+  finance_report_effect: No posting until authorization/capture; deposit liability on capture of advance deposit.
+  i18n_a11y: Amount and currency read aloud; RTL layout; CAPTCHA-free.
+  acceptance: AC-SF28.1.1 — two identical create requests return one intent; the same key with a different amount returns IDEMPOTENCY_CONFLICT.
+  dependency: D-342 PSP; mock PSP adapter in Phase 2.
+- id: M28.F28.1.SF28.1.2
+  name: authorization/capture/void
+  phase: 2
+  release: R1
+  actors: [front_desk_agent, cashier, night_auditor, payments_worker]
+  screens: [SCR-FD-folio-payment, SCR-FIN-payments]
+  inputs: [payment_intent_id, capture_amount, void_reason]
+  states: [authorized, captured, partially_captured, voided, auth_expired]
+  api: POST /v1/properties/{pid}/payment-intents/{id}:capture (Idempotency-Key); POST /v1/properties/{pid}/payment-intents/{id}:void
+  events: [PaymentAuthorized, PaymentCaptured, PaymentVoided, AuthorizationExpiring]
+  data: [payment_intent, psp_transaction, folio_payment_ref]
+  rules: ["Capture only up to authorized amount; incremental auth only if PSP supports (capability flag)", "Void only before capture; after capture use refund", "Each capture posts exactly one folio payment line (AT-G03)", "Expiring pre-authorizations alert the front desk before checkout"]
+  security: capture/void by cashier roles; step-up for void above threshold
+  failure_cases: [capture_exceeds_auth, auth_expired, psp_timeout, capability_unsupported]
+  finance_report_effect: Debit PSP clearing, credit guest ledger; fees recognized at settlement.
+  i18n_a11y: Status text; confirmation dialogs accessible.
+  acceptance: AC-SF28.1.2 — capturing twice with the same key posts one folio payment; a capture after PSP timeout is resolved by status inquiry before any second attempt.
+  dependency: M08.
+- id: M28.F28.1.SF28.1.3
+  name: partial and multi-tender settlement
+  phase: 2
+  release: R1
+  actors: [cashier, front_desk_agent, guest, corporate_booker]
+  screens: [SCR-FD-folio-payment, SCR-FD-checkout]
+  inputs: [folio_window_id, tenders, amounts]
+  states: [open_balance, partially_settled, settled]
+  api: POST /v1/properties/{pid}/folios/{fid}/settlements (Idempotency-Key)
+  events: [FolioSettlementRecorded]
+  data: [tender_record, payment_intent, folio_payment_ref]
+  rules: ["A balance may be settled by card, cash, bank transfer, points (M30), voucher (M54) and corporate credit in any combination", "Sum of tenders cannot exceed balance except permitted tip or overpayment to be refunded", "Each tender is its own record with its own reversal path"]
+  security: tender types enabled per role and property
+  failure_cases: [overtender, one_tender_fails_midway]
+  finance_report_effect: Tender mix report; each tender posts to its clearing account.
+  i18n_a11y: Tender list accessible; totals announced.
+  acceptance: AC-SF28.1.3 — a checkout paid 60 percent card, 30 percent points and 10 percent cash leaves zero balance; failure of the card leg leaves points and cash posted and balance open.
+  dependency: M30.F30.1 SF30.1.6; M60.F60.1.
+- id: M28.F28.1.SF28.1.4
+  name: pay-by-link/terminal
+  phase: 5
+  release: R1
+  actors: [front_desk_agent, sales_manager, guest, corporate_booker, payments_worker]
+  screens: [SCR-FD-payment-link, SCR-GST-pay, SCR-FD-terminal]
+  inputs: [intent_id, channel, recipient_contact, expiry, terminal_id]
+  states: [link_sent, link_opened, paid, link_expired, terminal_pending, terminal_completed, terminal_failed]
+  api: POST /v1/properties/{pid}/payment-intents/{id}/links; POST /v1/properties/{pid}/payment-intents/{id}/terminal-requests
+  events: [PaymentLinkSent, PaymentLinkPaid, TerminalPaymentCompleted]
+  data: [payment_intent, payment_terminal]
+  rules: ["Link opens PSP hosted page; MetriStay never renders card fields itself", "Links single-use, expiring, bound to intent amount", "Semi-integrated terminals return tokens and results only; card data stays in terminal/PSP", "Messaging channel per consent (M41/M52)"]
+  security: link token unguessable; terminal paired via device identity (M64)
+  failure_cases: [link_forwarded_and_paid_twice, terminal_offline, link_expired]
+  finance_report_effect: Same as capture.
+  i18n_a11y: Hosted page language passed to PSP where supported; accessible link message.
+  acceptance: AC-SF28.1.4 — a link opened on two devices can be paid once only; terminal offline falls back to another approved tender.
+  dependency: D-342, D-345.
+- id: M28.F28.1.SF28.1.5
+  name: webhook verification/replay
+  phase: 5
+  release: R1
+  actors: [payments_worker, integration_admin]
+  screens: [SCR-ADM-integrations, SCR-OPS-exception-queue]
+  inputs: [provider_id, signature_header, event_id, payload, received_at]
+  states: [received, verified, processed, duplicate_ignored, rejected, dead_lettered]
+  api: POST /v1/webhooks/psp/{provider_id}
+  events: [PspWebhookProcessed, PspWebhookRejected]
+  data: [webhook_receipt, psp_transaction]
+  rules: ["Signature and timestamp tolerance verified before parsing business fields", "Inbox dedup on provider event id", "Out-of-order events resolved by provider status precedence; never regress a terminal state", "Unknown intents dead-lettered for review", "Replay from provider or dead-letter is idempotent"]
+  security: webhook secret in vault with rotation; endpoint rate-limited; IP allowlist where provider publishes
+  failure_cases: [invalid_signature, duplicate_webhook, out_of_order, unknown_reference]
+  finance_report_effect: Ensures one posting per provider event.
+  i18n_a11y: Admin screens accessible.
+  acceptance: AC-SF28.1.5 — a duplicated capture webhook posts once; a tampered signature is rejected and alerted (AT-G20.2).
+  dependency: M33 event replay tooling.
+- id: M28.F28.1.SF28.1.6
+  name: refund/chargeback
+  phase: 5
+  release: R1
+  actors: [cashier, front_office_manager, finance_approver, financial_controller]
+  screens: [SCR-FD-refund, SCR-FIN-chargebacks]
+  inputs: [original_transaction_id, refund_amount, reason, approval, chargeback_notice, evidence]
+  states: [refund_requested, refund_approved, refund_submitted, refunded, refund_failed, chargeback_received, representment_submitted, chargeback_won, chargeback_lost]
+  api: POST /v1/properties/{pid}/refunds (Idempotency-Key); POST /v1/properties/{pid}/chargebacks/{id}:respond
+  events: [RefundRequested, RefundCompleted, ChargebackReceived, ChargebackResolved]
+  data: [refund, chargeback, psp_transaction]
+  rules: ["Refund to original method up to captured minus refunded", "Refund above threshold requires dual approval (SF28.3.5)", "Refund reverses points earned once (M30 SF30.1.5) and adjusts folio once", "Chargeback debits clearing and opens evidence case within scheme deadline"]
+  security: refund rights by role; cannot refund to a different card without PSP support and approval
+  failure_cases: [refund_exceeds_capture, double_refund, chargeback_deadline_missed]
+  finance_report_effect: Revenue/deposit reversal; chargeback loss or recovery.
+  i18n_a11y: Refund receipt bilingual.
+  acceptance: AC-SF28.1.6 — refunding the same payment twice concurrently results in one refund; points reverse once (AT-G07.2).
+  dependency: SF20.3.5; M30.
+- id: M28.F28.1.SF28.1.7
+  name: PSP fees/bank reconciliation
+  phase: 5
+  release: R1
+  actors: [finance_clerk, recon_worker, financial_controller]
+  screens: [SCR-FIN-psp-reconciliation]
+  inputs: [settlement_file, settlement_date, provider_id, bank_statement_line_id]
+  states: [imported, matched, fee_variance, unmatched, closed]
+  api: POST /v1/properties/{pid}/psp-settlements:import (Idempotency-Key)
+  events: [PspSettlementImported, PspSettlementMatched, PspFeeVarianceDetected]
+  data: [psp_settlement_batch, psp_settlement_line, psp_fee, reconciliation_match]
+  rules: ["Each settlement line matches one captured, refunded or chargeback transaction", "Net payout matches one bank credit (SF20.3.2)", "Fees compared to contracted rates; variance flagged", "Clearing account zero or explained at close"]
+  security: finance roles
+  failure_cases: [missing_transaction, fee_above_contract, settlement_delay]
+  finance_report_effect: Payment fees expense by department (M32 SF32.2.6).
+  i18n_a11y: Table accessible.
+  acceptance: AC-SF28.1.7 — a settlement with one unknown transaction leaves that line unmatched and clearing non-zero with an exception.
+  dependency: SF20.3.2.
+```
+
+### F28.2 Hotel disbursement
+Story: As financial controller I approve payouts in batches, a different person releases them to an authorized bank or PSP channel, and I know when each one really arrived. Section K: *production payouts require an authorized partner, never arbitrary bank API calls.*
+
+```yaml
+- id: M28.F28.2.SF28.2.1
+  name: payable batch
+  phase: 4
+  release: R1
+  actors: [ap_clerk, payroll_officer, finance_clerk]
+  screens: [SCR-FIN-payment-batch]
+  inputs: [payable_ids_or_payroll_batch_id, value_date, source_bank_account_id, channel_id]
+  states: [draft, proposed]
+  api: POST /v1/properties/{pid}/payout-batches (Idempotency-Key)
+  events: [PayoutBatchProposed]
+  data: [payout_batch, payment_order]
+  rules: ["One payment_order per payee per payable (or grouped per payee if channel supports)", "Only payables passing the evidence-to-payout gate (SF21.3.6) and outstanding amount checks are included", "Payroll batches carry totals and encrypted line file references, not visible pay lines to finance"]
+  security: batch creators cannot release
+  failure_cases: [payable_already_in_batch, gate_failure]
+  finance_report_effect: Approved-in-flight in dashboard.
+  i18n_a11y: Batch summary accessible.
+  acceptance: AC-SF28.2.1 — a payable already in an open batch cannot be added to another.
+  dependency: SF20.1.6; SF27.3.6.
+- id: M28.F28.2.SF28.2.2
+  name: dual approval
+  phase: 4
+  release: R1
+  actors: [finance_approver, payment_releaser, owner]
+  screens: [SCR-FIN-payout-approval]
+  inputs: [payout_batch_id, approvals, mfa_assertions]
+  states: [proposed, first_approved, fully_approved, released, rejected]
+  api: POST /v1/properties/{pid}/payout-batches/{id}:approve; POST /v1/properties/{pid}/payout-batches/{id}:release
+  events: [PayoutBatchApproved, PayoutBatchReleased]
+  data: [payment_approval, payout_batch]
+  rules: ["Two distinct approvers above threshold, one of whom is a payment_releaser who releases", "Content hash frozen at first approval; any change resets", "Payee bank details frozen with verification timestamp"]
+  security: step-up MFA; hardware-key recommended; anomaly alerts on new payees
+  failure_cases: [same_user_twice, content_changed, mfa_failed]
+  finance_report_effect: None until confirmation.
+  i18n_a11y: Accessible confirm dialogs with totals.
+  acceptance: AC-SF28.2.2 — a batch over threshold with one approval cannot be released; editing after approval resets approvals.
+  dependency: D-306.
+- id: M28.F28.2.SF28.2.3
+  name: external bank/PSP execution
+  phase: 4
+  release: R1
+  actors: [payment_releaser, payout_worker, integration_admin]
+  screens: [SCR-FIN-payment-batch]
+  inputs: [payout_batch_id, channel_adapter, file_format]
+  states: [released, file_generated, submitted, accepted_by_channel, rejected_by_channel]
+  api: POST /v1/properties/{pid}/payout-batches/{id}:execute (internal worker)
+  events: [PayoutBatchSubmitted, PayoutBatchAcceptedByChannel]
+  data: [payment_order, payout_batch, channel_submission]
+  rules: ["Channels are authorized bank host-to-host/file upload, bank portal manual upload with evidence, or contracted PSP payout API", "No arbitrary bank API calls or screen scraping", "Channel status label shown; mock channel only in sandbox", "Payment files signed/encrypted per bank spec"]
+  security: channel credentials in vault; files never emailed
+  failure_cases: [channel_unavailable, file_rejected, cutoff_missed]
+  finance_report_effect: None until confirmation; submitted shown in flight.
+  i18n_a11y: Status text.
+  acceptance: AC-SF28.2.3 — with channel status unverified, production execution is blocked and the manual bank-portal path with evidence is offered.
+  dependency: D-341.
+- id: M28.F28.2.SF28.2.4
+  name: status/failure/retry
+  phase: 4
+  release: R1
+  actors: [payout_worker, finance_clerk, payment_releaser]
+  screens: [SCR-FIN-payment-batch, SCR-OPS-exception-queue]
+  inputs: [payment_order_id, channel_status, inquiry_result]
+  states: [submitted, pending, confirmed, failed, returned, unknown_inquiry]
+  api: POST /v1/properties/{pid}/payment-orders/{id}:inquire; POST /v1/properties/{pid}/payment-orders/{id}:retry (Idempotency-Key)
+  events: [PaymentOrderConfirmed, PaymentOrderFailed, PaymentOrderReturned, PaymentOrderInquiryRequired]
+  data: [payment_order, provider_status_log]
+  rules: ["Timeout or missing response sets pending; retry is blocked until inquiry or bank statement proves failure", "Retry creates a new attempt linked to the same payment_order and requires fresh release", "Returned funds after confirmation reopen the payable"]
+  security: retry requires releaser role and MFA
+  failure_cases: [timeout, duplicate_submission, returned_after_confirmed]
+  finance_report_effect: Payable remains approved until confirmed.
+  i18n_a11y: Pending explanation with next action.
+  acceptance: AC-SF28.2.4 — after a channel timeout, retry is rejected until inquiry returns failed; then one retry results in exactly one confirmed payment (AT-G20.7).
+  dependency: F22.3 pattern.
+- id: M28.F28.2.SF28.2.5
+  name: supplier confirmation and ledger close
+  phase: 4
+  release: R1
+  actors: [finance_clerk, vendor_user, recon_worker]
+  screens: [SCR-FIN-payment-batch, SCR-VEN-payments]
+  inputs: [payment_order_id, bank_reference, remittance_advice, statement_line_id]
+  states: [confirmed, remittance_sent, settled]
+  api: POST /v1/properties/{pid}/payment-orders/{id}/remittance
+  events: [RemittanceAdviceSent, PaymentOrderSettled]
+  data: [payment_order, reconciliation_match, journal_entry]
+  rules: ["Remittance advice sent to vendor with invoice references", "Settled when bank statement line matched", "GL - debit AP, credit bank clearing on confirmation; clear to bank on statement match"]
+  security: vendor sees own remittance only
+  failure_cases: [vendor_claims_non_receipt]
+  finance_report_effect: Paid to settled; AP control reconciles.
+  i18n_a11y: Remittance email/app notice bilingual.
+  acceptance: AC-SF28.2.5 — vendor sees paid with bank reference; settlement after statement import closes the payable (AT-G04.4).
+  dependency: SF20.3.2.
+```
+
+### F28.3 Tender breadth, tokenization and fraud controls (added — Sections C, E, P)
+
+```yaml
+- id: M28.F28.3.SF28.3.1
+  name: tokenization and PCI boundary
+  phase: 2
+  release: R1
+  actors: [guest, front_desk_agent, it_admin, compliance_officer]
+  screens: [SCR-GST-pay, SCR-FD-folio-payment]
+  inputs: [psp_token, brand, last4, expiry_month_year, fingerprint]
+  states: [token_active, token_expired, token_revoked]
+  api: POST /v1/properties/{pid}/payment-method-tokens
+  events: [PaymentTokenStored, PaymentTokenRevoked]
+  data: [payment_method_token]
+  rules: ["Card entry only via PSP hosted fields, redirect or terminal; raw PAN and CVV never reach MetriStay services, logs, analytics, AI prompts or databases", "Stored fields limited to PSP token, brand, last4, expiry month/year, fingerprint", "Channel-manager virtual cards handled via PSP/vault token service, never stored raw", "Log scrubbing tests for PAN patterns"]
+  security: PCI scope minimized (target SAQ A / A-EP per D-343); CSP on payment pages; DLP scan in CI and logs
+  failure_cases: [pan_in_free_text_field, ota_card_payload, log_leak]
+  finance_report_effect: None.
+  i18n_a11y: Hosted fields accessibility validated with PSP.
+  acceptance: AC-SF28.3.1 — automated scan of databases, logs and event payloads finds no 13–19 digit Luhn-valid numbers after the full payment test suite; a PAN typed into a notes field is blocked.
+  dependency: D-343; docs/07 PCI boundary.
+- id: M28.F28.3.SF28.3.2
+  name: idempotency and duplicate-payment guard
+  phase: 2
+  release: R1
+  actors: [payments_worker]
+  screens: [SCR-OPS-exception-queue]
+  inputs: [idempotency_key, request_hash, target_id]
+  states: [first_seen, replayed, conflict]
+  api: Idempotency-Key header on all mutating payment endpoints
+  events: [DuplicatePaymentBlocked]
+  data: [idempotency_record]
+  rules: ["Keys stored with request hash and response for retention window", "Guard also blocks a second successful capture for the same target and amount within window unless explicitly split", "Client retries reuse the key"]
+  security: key scoped per tenant/property
+  failure_cases: [key_reuse_different_payload, concurrent_same_key]
+  finance_report_effect: Prevents double capture/refund/payout (Section P).
+  i18n_a11y: Duplicate warning text for staff.
+  acceptance: AC-SF28.3.2 — 20 concurrent identical capture requests produce one capture.
+  dependency: docs/03 idempotency ADR.
+- id: M28.F28.3.SF28.3.3
+  name: cash and bank-transfer tender
+  phase: 2
+  release: R1
+  actors: [cashier, front_desk_agent, ar_clerk]
+  screens: [SCR-FD-folio-payment, SCR-FIN-receipt-allocation]
+  inputs: [amount, currency, cash_drawer_id, bank_transfer_reference, expected_date]
+  states: [cash_received, transfer_expected, transfer_received, transfer_unmatched]
+  api: POST /v1/properties/{pid}/tenders (Idempotency-Key)
+  events: [CashTenderRecorded, BankTransferExpected, BankTransferMatched]
+  data: [tender_record, ar_receipt]
+  rules: ["Cash tied to open cashier shift (M60)", "Bank transfer recorded as expected until matched to statement (SF20.2.4); booking confirmation policy decides whether expected transfer guarantees", "Foreign cash per exchange policy"]
+  security: cashier role; shift reconciliation
+  failure_cases: [shift_closed, transfer_never_arrives]
+  finance_report_effect: Cash to drawer/safe; transfers to bank clearing.
+  i18n_a11y: Standard.
+  acceptance: AC-SF28.3.3 — an expected transfer unmatched after 5 days alerts AR; cash without open shift is rejected.
+  dependency: M60.F60.1.
+- id: M28.F28.3.SF28.3.4
+  name: corporate credit tender
+  phase: 3
+  release: R1
+  actors: [front_desk_agent, ar_clerk, corporate_approver]
+  screens: [SCR-FD-checkout, SCR-CORP-approvals]
+  inputs: [folio_window_id, corporate_credit_account_id, customer_po]
+  states: [requested, approved, transferred_to_city_ledger, rejected]
+  api: POST /v1/properties/{pid}/folios/{fid}:transfer-to-ar
+  events: [FolioTransferredToAr]
+  data: [tender_record, ar_invoice]
+  rules: ["Allowed only within available credit and PO rules (SF20.2.1)", "Transfer is a tender, not a payment; AR collects later"]
+  security: role-scoped
+  failure_cases: [credit_exceeded]
+  finance_report_effect: Guest ledger to city ledger.
+  i18n_a11y: Standard.
+  acceptance: AC-SF28.3.4 — transfer over available credit is blocked pending approval.
+  dependency: SF20.2.1.
+- id: M28.F28.3.SF28.3.5
+  name: fraud screening and dual approval
+  phase: 5
+  release: R1
+  actors: [finance_approver, front_office_manager, fraud_worker]
+  screens: [SCR-FIN-fraud-review]
+  inputs: [velocity_counts, psp_risk_score, refund_amount, new_payee_flag]
+  states: [clear, review, approved, declined]
+  api: GET /v1/properties/{pid}/fraud-reviews; POST /v1/properties/{pid}/fraud-reviews/{id}:decide
+  events: [FraudReviewOpened, FraudReviewDecided]
+  data: [fraud_review]
+  rules: ["Rules for refund above threshold, refund to different method, many links to one card, first payout to new payee", "Dual approval for flagged refunds and payouts", "PSP risk score used where provided; no automated discriminatory decision on guest characteristics"]
+  security: reviewer distinct from requester
+  failure_cases: [false_positive_blocking_checkout]
+  finance_report_effect: Loss prevention KPIs (M60).
+  i18n_a11y: Review queue accessible.
+  acceptance: AC-SF28.3.5 — a refund above threshold requires a second approver; the requester cannot approve.
+  dependency: D-344; M60.F60.2.
+- id: M28.F28.3.SF28.3.6
+  name: saved method consent
+  phase: 5
+  release: R1
+  actors: [guest, corporate_booker]
+  screens: [SCR-GST-payment-methods]
+  inputs: [consent_text_version, purpose, token_id]
+  states: [consented, withdrawn]
+  api: POST /v1/me/payment-methods/{token}:consent; DELETE /v1/me/payment-methods/{token}
+  events: [PaymentMethodConsentRecorded, PaymentMethodRemoved]
+  data: [payment_method_token, consent_record]
+  rules: ["Tokens saved for reuse only with explicit consent per purpose", "Withdrawal deletes token at PSP where supported", "Merchant-initiated charges (no-show) follow disclosed policy"]
+  security: M02 consent service
+  failure_cases: [psp_delete_failed]
+  finance_report_effect: None.
+  i18n_a11y: Consent text bilingual and plain.
+  acceptance: AC-SF28.3.6 — removing a saved card deletes the token at PSP and it cannot be charged afterwards.
+  dependency: M02 consent.
+```
+
+**M28 key invariants:** no raw PAN/CVV anywhere; one posting per provider event; capture ≤ authorized; refunds ≤ captured − refunded; timeouts are pending and require inquiry before retry; payouts only through authorized channels with dual approval; approval never equals transfer.
+
+**M28 module acceptance (Section G):** AT-G06.1 guest and corporate payments use one certified gateway; AT-G03.2 room and parking charges post once; AT-G07.2 refund reverses charge and points exactly once; AT-G20.2 duplicate payment/provider webhook; AT-G20.7 payout failure/retry once.
+
+**M28 open decisions**
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-341 | Disbursement channel per legal entity (bank H2H, bank portal upload, PSP payouts) and whether any money-transfer model needs licensing | financial_controller + compliance_officer (CBO/PSP review in `docs/07`) | Bank portal upload of payment files with evidence (`unverified-assumption`); no MetriStay-held funds. |
+| D-342 | Pilot PSP/acquirer per market and supported currencies/capabilities | financial_controller | One PSP with hosted fields, links, webhooks and settlement files; mock adapter until contract. |
+| D-343 | PCI DSS scope and SAQ type | compliance_officer + it_admin | Hosted fields/redirect targeting SAQ A (web) and P2PE/semi-integrated terminals. |
+| D-344 | Refund and payout dual-approval thresholds | financial_controller | Refund > 200 and any first payout to a new payee require dual approval (base currency). |
+| D-345 | Terminal integration model and hardware | it_admin + financial_controller | Semi-integrated PSP terminals via cloud API. |
+
+---
+
+## 13. M29 — Bill-provider gateway
+
+| Header | Value |
+|---|---|
+| Purpose | Provider-neutral bill-pay port: `inquire bill -> quote -> authorize -> pay -> status -> reverse if supported -> receipt -> settlement`, with provider onboarding and allowed billers, account validation, secure confirmation, pending/timeout inquiry, receipts, settlement, disputes, and adapter certification. **Khedmah and ONEIC are candidate partners, not presumed APIs.** Until a contract, private API specification, sandbox, credentials and data-sharing agreement exist, only the **mock adapter** and the **approved manual/bank path** operate, and automatic provider payment is marked `blocked`. |
+| Phases | Port, mock adapter and manual/bank path Phase 5 (utility bills already payable by bank from Phase 4 via M28); Khedmah/ONEIC pilots Phase 5–6 only if contracted. |
+| Release | R1 (port + mock + manual path). Automatic Khedmah/ONEIC payment: R1 **blocked** until contract (release blocker only for hotels that require it). |
+| Bounded context | `payments.billpay` |
+| System of record | `bill_provider`, `bill_provider_capability`, `biller`, `provider_biller_permission`, `bill_account`, `bill_inquiry`, `bill_quote`, `bill_payment_order`, `provider_status_log`, `provider_receipt`, `provider_settlement`, `bill_dispute`, `adapter_certification`, `provider_credential_ref` |
+| Dependencies | M22–M24 (utility bills/payables), M20 (payable, reconciliation), M28 (funding by bank/PSP where provider requires; payout controls), M46 (provider as vendor), M33 (adapter/webhook platform), M44 (jurisdiction gating), `docs/05` INT-khedmah, INT-oneic, INT-billpay-mock, `docs/07` CBO/PSP review |
+
+### F29.1 Bill aggregation
+Story: As finance approver I inquire a hotel utility bill, confirm amount and fees, authorize payment through an authorized provider and never pay the same bill twice.
+
+```yaml
+- id: M29.F29.1.SF29.1.1
+  name: provider onboarding/allowed billers
+  phase: 5
+  release: R1
+  actors: [integration_admin, financial_controller, compliance_officer]
+  screens: [SCR-ADM-bill-providers]
+  inputs: [provider_code, legal_entity, contract_ref, honesty_status, capabilities, biller_list, settlement_terms, fee_schedule]
+  states: [candidate, contract_pending, sandbox, certified, suspended, blocked]
+  api: POST /v1/admin/bill-providers; PUT /v1/admin/bill-providers/{id}/billers
+  events: [BillProviderStatusChanged, AllowedBillersUpdated]
+  data: [bill_provider, bill_provider_capability, biller, provider_biller_permission]
+  rules: ["Khedmah and ONEIC seeded as candidate with status blocked and no production credentials", "Capabilities (inquiry, quote, pay, status, reverse, receipt, settlement file, webhook) flagged per provider; unsupported operations unavailable", "Allowed billers per property and purpose (hotel operating bill vs guest bill) configured explicitly", "Production enablement requires certified status from F29.2"]
+  security: admin with maker-checker; provider contacts and contract stored in restricted register
+  failure_cases: [activation_without_contract, biller_not_allowed]
+  finance_report_effect: Determines available payment channels on utility payables.
+  i18n_a11y: Admin UI bilingual.
+  acceptance: AC-SF29.1.1 — attempting to set Khedmah to certified without contract and sandbox evidence is rejected; its pay capability shows blocked.
+  dependency: D-346, D-347; SF29.2.1.
+- id: M29.F29.1.SF29.1.2
+  name: utility account registration/validation
+  phase: 5
+  release: R1
+  actors: [finance_clerk, finance_approver, billpay_worker]
+  screens: [SCR-FIN-bill-accounts]
+  inputs: [provider_id, biller_id, account_reference, utility_account_id, account_holder_name, purpose]
+  states: [draft, validation_pending, validated, validation_failed, disabled]
+  api: POST /v1/properties/{pid}/bill-accounts; POST /v1/properties/{pid}/bill-accounts/{id}:validate
+  events: [BillAccountValidated, BillAccountValidationFailed]
+  data: [bill_account, utility_account]
+  rules: ["Hotel operating bill accounts link to a utility_account (M22–M24)", "Account-holder validation where the provider supports it; otherwise manual verification with bill evidence", "Registration requires approval; changes re-validate"]
+  security: finance scope; guest bill accounts separated (SF29.3.1)
+  failure_cases: [account_not_found, holder_mismatch, provider_validation_unsupported]
+  finance_report_effect: None direct.
+  i18n_a11y: Standard.
+  acceptance: AC-SF29.1.2 — in mock mode an invalid account returns validation_failed; a validated account links to the electricity utility_account.
+  dependency: F22.1 SF22.1.1.
+- id: M29.F29.1.SF29.1.3
+  name: bill inquiry
+  phase: 5
+  release: R1
+  actors: [finance_clerk, billpay_worker]
+  screens: [SCR-FIN-bill-payment-detail]
+  inputs: [bill_account_id, provider_id]
+  states: [requested, returned, no_bill_due, provider_error]
+  api: POST /v1/properties/{pid}/bill-inquiries (Idempotency-Key)
+  events: [BillInquiryCompleted, BillInquiryFailed]
+  data: [bill_inquiry]
+  rules: ["Inquiry result stored with provider reference and timestamp", "Inquiry amount compared to captured utility_bill; difference opens reconciliation"]
+  security: rate-limited per provider limits (SF29.2.4)
+  failure_cases: [provider_outage, account_suspended_by_biller]
+  finance_report_effect: None.
+  i18n_a11y: Result readable.
+  acceptance: AC-SF29.1.3 — mock inquiry returns outstanding amount; a mismatch with the imported bill raises a reconciliation item.
+  dependency: INT-billpay-mock.
+- id: M29.F29.1.SF29.1.4
+  name: current bill/fees/expiry
+  phase: 5
+  release: R1
+  actors: [finance_clerk, finance_approver]
+  screens: [SCR-FIN-bill-payment-detail]
+  inputs: [bill_inquiry_id]
+  states: [quoted, quote_expired]
+  api: POST /v1/properties/{pid}/bill-quotes
+  events: [BillQuoted, BillQuoteExpired]
+  data: [bill_quote]
+  rules: ["Quote shows bill amount, convenience fee, total, currency and expiry", "Expired quote cannot be paid; re-inquiry required", "Convenience fee accounted separately (D-350)"]
+  security: finance scope
+  failure_cases: [quote_expired, fee_changed]
+  finance_report_effect: Fee expense line.
+  i18n_a11y: Fee disclosed clearly in text.
+  acceptance: AC-SF29.1.4 — paying after quote expiry is rejected with BILL_QUOTE_EXPIRED.
+  dependency: SF29.1.3.
+- id: M29.F29.1.SF29.1.5
+  name: secure customer confirmation
+  phase: 5
+  release: R1
+  actors: [finance_approver, payment_releaser]
+  screens: [SCR-FIN-bill-payment-confirm]
+  inputs: [bill_quote_id, payable_id, mfa_assertion]
+  states: [awaiting_confirmation, confirmed, declined]
+  api: POST /v1/properties/{pid}/bill-quotes/{id}:confirm
+  events: [BillPaymentConfirmedByUser]
+  data: [bill_quote, payable, payment_approval]
+  rules: ["Confirmation shows biller, account (masked), amount, fee, total and funding source", "Requires approved payable and payment_releaser distinct from approver", "Step-up MFA"]
+  security: step-up MFA; SoD
+  failure_cases: [payable_not_approved, sod_violation]
+  finance_report_effect: None until paid.
+  i18n_a11y: Confirmation accessible, no time pressure beyond quote expiry notice.
+  acceptance: AC-SF29.1.5 — confirming a bill payment for an unapproved payable is rejected.
+  dependency: SF20.1.5.
+- id: M29.F29.1.SF29.1.6
+  name: payment attempt
+  phase: 5
+  release: R1
+  actors: [billpay_worker]
+  screens: [SCR-FIN-bill-payment-detail]
+  inputs: [bill_quote_id, order_id, idempotency_key, funding_ref]
+  states: [created, submitted, pending, confirmed, failed]
+  api: POST /v1/properties/{pid}/bill-payments (Idempotency-Key)
+  events: [BillPaymentSubmitted]
+  data: [bill_payment_order, provider_status_log]
+  rules: ["One active bill_payment_order per bill and quote", "Provider idempotency key or order reference sent where supported", "Funding source per provider settlement model (prefunded account, PSP charge, bank debit) as contracted"]
+  security: provider credentials in vault; signed requests
+  failure_cases: [timeout, duplicate_submit, insufficient_prefund]
+  finance_report_effect: Approved-in-flight.
+  i18n_a11y: Status text.
+  acceptance: AC-SF29.1.6 — a second submission for the same bill while one is pending is rejected.
+  dependency: SF29.2.5.
+- id: M29.F29.1.SF29.1.7
+  name: pending/success/failure inquiry
+  phase: 5
+  release: R1
+  actors: [finance_approver, billpay_worker]
+  screens: [SCR-FIN-bill-payment-detail, SCR-OPS-exception-queue]
+  inputs: [provider_id, biller_id, account_reference, order_id, idempotency_key]
+  states: [submitted, pending, confirmed, failed, disputed]
+  api: GET /v1/properties/{pid}/bill-payments/{order_id}/status
+  events: [BillPaymentStatusChanged, BillPaymentReconciliationNeeded]
+  data: [bill_payment_order, provider_status_log]
+  rules: ["Never submit a second payment merely because the first call timed out", "Reconcile provider order and bill account before finalizing AP/GL", "Require provider confirmation or approved manual evidence to mark paid", "Status log append-only; terminal states never regress"]
+  security: provider secrets in vault; signed webhook; property and finance role scope
+  failure_cases: [lost_callback, ambiguous_status, duplicate_status, provider_outage]
+  finance_report_effect: Paid only on confirmation.
+  i18n_a11y: Pending explanation with next inquiry time.
+  acceptance: AC-SF29.1.7 — after a simulated timeout and duplicate callback, exactly one payable is settled (Section L example; AT-G06.4).
+  dependency: Actual Khedmah/ONEIC API contract and sandbox, or provider-neutral mock.
+- id: M29.F29.1.SF29.1.8
+  name: provider receipt and settlement
+  phase: 5
+  release: R1
+  actors: [finance_clerk, recon_worker]
+  screens: [SCR-FIN-utility-reconciliation]
+  inputs: [receipt_number, provider_settlement_file, bank_statement_line_id]
+  states: [receipt_received, settlement_matched, settlement_exception]
+  api: POST /v1/properties/{pid}/provider-settlements:import (Idempotency-Key)
+  events: [ProviderReceiptRecorded, ProviderSettlementMatched]
+  data: [provider_receipt, provider_settlement, reconciliation_match]
+  rules: ["Receipt number stored on bill_payment_order and utility_bill", "Daily settlement file lines match orders; net funding matches bank", "Unmatched lines to exception queue"]
+  security: finance roles
+  failure_cases: [settlement_missing_order, receipt_missing]
+  finance_report_effect: Settled measure.
+  i18n_a11y: Standard.
+  acceptance: AC-SF29.1.8 — settlement file with one extra line leaves an exception; matched orders settle their payables.
+  dependency: SF22.3.4.
+- id: M29.F29.1.SF29.1.9
+  name: dispute/reversal if supported
+  phase: 5
+  release: R1
+  actors: [finance_approver, financial_controller]
+  screens: [SCR-FIN-bill-disputes]
+  inputs: [bill_payment_order_id, reason, evidence]
+  states: [opened, submitted_to_provider, reversed, rejected, closed]
+  api: POST /v1/properties/{pid}/bill-disputes
+  events: [BillDisputeOpened, BillPaymentReversed]
+  data: [bill_dispute, bill_payment_order]
+  rules: ["Reverse available only if provider capability flag supports it; otherwise dispute case with manual provider contact", "Reversal reopens payable once"]
+  security: finance roles
+  failure_cases: [reverse_unsupported, reversal_after_settlement]
+  finance_report_effect: Payable reopened or credit expected.
+  i18n_a11y: Standard.
+  acceptance: AC-SF29.1.9 — with reverse unsupported the UI offers dispute case only; a reversal in mock reopens the payable exactly once.
+  dependency: SF29.1.1 capabilities.
+```
+
+### F29.2 Adapter certification
+Section K: *treat unsupported operations as unavailable instead of pretending a consumer webpage is an API.*
+
+```yaml
+- id: M29.F29.2.SF29.2.1
+  name: Khedmah/ONEIC API and commercial approval
+  phase: 5
+  release: R1
+  actors: [financial_controller, integration_admin, compliance_officer]
+  screens: [SCR-ADM-bill-providers]
+  inputs: [technical_contact, commercial_contact, contract, api_spec_version, sandbox_access, credentials_issued, data_sharing_agreement, approved_biller_list]
+  states: [candidate, contacted, contract_pending, contracted, sandbox_access, certified, blocked]
+  api: PUT /v1/admin/bill-providers/{id}/certification
+  events: [AdapterCertificationStatusChanged]
+  data: [adapter_certification, bill_provider]
+  rules: ["Phase 1 records contacts, biller list, API contract, sandbox, credentials and DSA per Section E", "Public consumer sites are not evidence of a merchant API", "Status remains blocked until contract plus private API spec plus sandbox exist", "Legal/PSP licensing review of the funding model recorded (CBO policy)"]
+  security: contract documents restricted
+  failure_cases: [no_response_from_partner, contract_rejected]
+  finance_report_effect: None.
+  i18n_a11y: Admin UI.
+  acceptance: AC-SF29.2.1 — the partner register shows Khedmah and ONEIC as blocked with missing items listed; the release checklist flags them as external blockers for hotels requiring e-bill-pay.
+  dependency: D-346, D-347; docs/05 INT-khedmah, INT-oneic.
+- id: M29.F29.2.SF29.2.2
+  name: sandbox fixtures
+  phase: 5
+  release: R1
+  actors: [integration_admin, qa_worker]
+  screens: [SCR-ADM-integrations]
+  inputs: [fixture_set, scenarios]
+  states: [defined, passing, failing]
+  api: POST /v1/admin/bill-providers/{id}/certification-runs
+  events: [CertificationRunCompleted]
+  data: [adapter_certification]
+  rules: ["Mock adapter implements the port with scenarios - success, decline, timeout, late callback, duplicate callback, provider outage, reversal unsupported", "Partner sandbox runs the same suite once available", "Certification requires all mandatory scenarios passing"]
+  security: sandbox credentials separate from production
+  failure_cases: [sandbox_behavior_differs]
+  finance_report_effect: None.
+  i18n_a11y: Not user-facing.
+  acceptance: AC-SF29.2.2 — mock suite passes all scenarios in CI; production toggle is disabled while partner suite not run.
+  dependency: INT-billpay-mock.
+- id: M29.F29.2.SF29.2.3
+  name: signature/key rotation
+  phase: 5
+  release: R1
+  actors: [integration_admin, it_admin]
+  screens: [SCR-ADM-integrations]
+  inputs: [key_id, algorithm, rotation_date]
+  states: [active, rotating, retired]
+  api: POST /v1/admin/bill-providers/{id}/keys:rotate
+  events: [ProviderKeyRotated]
+  data: [provider_credential_ref]
+  rules: ["Request signing and webhook verification keys per provider spec", "Dual-key overlap during rotation", "Keys in vault; never in config files"]
+  security: vault; audit
+  failure_cases: [rotation_mismatch]
+  finance_report_effect: None.
+  i18n_a11y: Not user-facing.
+  acceptance: AC-SF29.2.3 — during overlap, webhooks signed by old or new key verify; after retirement old key fails.
+  dependency: M33.
+- id: M29.F29.2.SF29.2.4
+  name: rate limits
+  phase: 5
+  release: R1
+  actors: [billpay_worker]
+  screens: [SCR-ADM-integrations]
+  inputs: [provider_limits, queue_policy]
+  states: [within_limit, throttled]
+  api: internal adapter policy
+  events: [ProviderThrottled]
+  data: [bill_provider_capability]
+  rules: ["Client-side throttling to provider limits", "Inquiries queued and retried with backoff; payments never auto-retried"]
+  security: none beyond adapter
+  failure_cases: [429_from_provider]
+  finance_report_effect: None.
+  i18n_a11y: Not user-facing.
+  acceptance: AC-SF29.2.4 — exceeding the mock rate limit queues inquiries and does not resubmit payments.
+  dependency: SF29.2.2.
+- id: M29.F29.2.SF29.2.5
+  name: idempotency
+  phase: 5
+  release: R1
+  actors: [billpay_worker]
+  screens: [SCR-FIN-bill-payment-detail]
+  inputs: [idempotency_key, provider_order_ref]
+  states: [first_seen, replayed]
+  api: Idempotency-Key header on bill-payment endpoints
+  events: [DuplicateBillPaymentBlocked]
+  data: [idempotency_record, bill_payment_order]
+  rules: ["Internal idempotency always; provider idempotency used where supported", "Where provider lacks idempotency, inquiry by order reference mandatory before any retry"]
+  security: none beyond API
+  failure_cases: [provider_without_idempotency]
+  finance_report_effect: Prevents double payment.
+  i18n_a11y: Not user-facing.
+  acceptance: AC-SF29.2.5 — replaying the pay request returns the original order.
+  dependency: SF28.3.2.
+- id: M29.F29.2.SF29.2.6
+  name: timeout and missing callback
+  phase: 5
+  release: R1
+  actors: [billpay_worker, finance_approver]
+  screens: [SCR-OPS-exception-queue]
+  inputs: [order_id, timeout_at, inquiry_schedule]
+  states: [pending, inquiry_scheduled, resolved, manual_review]
+  api: POST /v1/properties/{pid}/bill-payments/{order_id}:inquire
+  events: [BillPaymentPendingAged]
+  data: [bill_payment_order, provider_status_log]
+  rules: ["Scheduled inquiries after timeout at increasing intervals", "Missing callback beyond SLA escalates to manual review with provider contact", "Retry path only after affirmative failure"]
+  security: none beyond adapter
+  failure_cases: [provider_status_unknown_for_days]
+  finance_report_effect: Payable stays approved-in-flight.
+  i18n_a11y: Queue accessible.
+  acceptance: AC-SF29.2.6 — with no callback, scheduled inquiries resolve status; after SLA the order enters manual review without a second payment.
+  dependency: F22.3 SF22.3.2.
+- id: M29.F29.2.SF29.2.7
+  name: reconciliation/biller outage
+  phase: 5
+  release: R1
+  actors: [finance_clerk, integration_admin]
+  screens: [SCR-ADM-integrations, SCR-FIN-utility-reconciliation]
+  inputs: [biller_status, outage_window]
+  states: [biller_up, biller_degraded, biller_down]
+  api: GET /v1/admin/bill-providers/{id}/health
+  events: [BillerOutageDetected, BillerRecovered]
+  data: [bill_provider, biller]
+  rules: ["Biller outage disables new payments for that biller and offers manual/bank path", "Reconciliation after outage re-inquires all pending orders"]
+  security: none beyond adapter
+  failure_cases: [partial_outage]
+  finance_report_effect: None.
+  i18n_a11y: Banner text.
+  acceptance: AC-SF29.2.7 — marking a biller down hides pay and shows bank path; recovery triggers re-inquiry of pending orders.
+  dependency: SF29.3.2.
+```
+
+### F29.3 Bill scope, alternate path and reconciliation (added — Section E "bill-account permissions differ for guest bills and hotel's operating bills", "mock adapter plus approved manual/bank workflow", "reconciliation across provider, gateway, bank and GL")
+
+```yaml
+- id: M29.F29.3.SF29.3.1
+  name: hotel operating bills vs guest bills scope
+  phase: 5
+  release: R1
+  actors: [financial_controller, compliance_officer, guest]
+  screens: [SCR-ADM-bill-providers, SCR-FIN-bill-accounts]
+  inputs: [purpose, allowed_roles, allowed_billers, guest_feature_flag]
+  states: [hotel_only, guest_enabled_gated, guest_disabled]
+  api: PUT /v1/admin/bill-providers/{id}/purpose-scopes
+  events: [BillPayScopeChanged]
+  data: [provider_biller_permission]
+  rules: ["Hotel operating bills payable only by finance roles against hotel bill accounts", "Guest bill payment is a separate, disabled-by-default feature requiring legal/PSP review and its own consent; never mixed with hotel accounts", "No stored-value wallet created by this feature"]
+  security: separate permission sets and audit
+  failure_cases: [guest_pays_hotel_account, feature_enabled_without_review]
+  finance_report_effect: Hotel bills to expense; guest bill-pay (if ever enabled) is pass-through.
+  i18n_a11y: Standard.
+  acceptance: AC-SF29.3.1 — a guest identity cannot access hotel bill accounts (403); enabling guest bill-pay without compliance approval is rejected.
+  dependency: D-348; docs/07 CBO/PSP gate.
+- id: M29.F29.3.SF29.3.2
+  name: manual/bank alternate path and blocked labelling
+  phase: 4
+  release: R1
+  actors: [finance_approver, payment_releaser, gm]
+  screens: [SCR-FIN-bill-payment-detail, SCR-GM-home]
+  inputs: [utility_bill_id, provider_status, bank_payment_order_id, evidence]
+  states: [provider_blocked, bank_path_used, evidence_approved]
+  api: POST /v1/properties/{pid}/payables/{id}:pay (channel=bank)
+  events: [BillPayProviderBlockedShown, ManualUtilityPaymentEvidenceApproved]
+  data: [payment_order, utility_payment_link, adapter_certification]
+  rules: ["When provider status is not certified, UI and API show automatic provider payment blocked with named external dependency", "Bank transfer via M28.F28.2 or approved manual evidence (SF22.3.3) is the operating path", "Release checklist lists the blocker for hotels that require e-bill-pay"]
+  security: SoD as in backbone
+  failure_cases: [user_attempts_blocked_channel]
+  finance_report_effect: Paid/settled via bank.
+  i18n_a11y: Blocked label text explicit, not an icon only.
+  acceptance: AC-SF29.3.2 — Section G step 6 without contract - bill paid by bank, reconciled, and Khedmah/ONEIC shown blocked (AT-G06.3).
+  dependency: D-349.
+- id: M29.F29.3.SF29.3.3
+  name: provider/gateway/bank/GL reconciliation
+  phase: 5
+  release: R1
+  actors: [finance_clerk, recon_worker, financial_controller]
+  screens: [SCR-FIN-utility-reconciliation]
+  inputs: [period, provider_settlements, psp_settlements, bank_lines, gl_clearing]
+  states: [open, reconciled, exception]
+  api: POST /v1/properties/{pid}/billpay-reconciliations?period=
+  events: [BillPayReconciliationCompleted]
+  data: [provider_settlement, psp_settlement_batch, reconciliation_match, journal_line]
+  rules: ["Each bill_payment_order ties to provider receipt, funding transaction (PSP or bank) and GL clearing", "Convenience fees reconciled to fee schedule", "Clearing zero at close"]
+  security: finance roles
+  failure_cases: [funding_without_order, order_without_funding]
+  finance_report_effect: Close checklist item.
+  i18n_a11y: Standard.
+  acceptance: AC-SF29.3.3 — a gateway-funded bill payment without provider receipt appears as exception, not paid.
+  dependency: SF22.3.4.
+```
+
+**M29 key invariants:** consumer web pages are never treated as APIs; unsupported operations unavailable; Khedmah/ONEIC blocked until contracted and certified; one active order per bill; no blind retry after timeout; paid only on provider confirmation or approved manual evidence; guest and hotel bill scopes never mix; MetriStay holds no customer funds.
+
+**M29 module acceptance (Section G):** AT-G06.3 hotel utility bill inquired/paid through an authorized adapter if contract exists, otherwise alternate payment reconciled and partner API marked blocked; AT-G06.4 timeout plus duplicate callback settles exactly one payable; AT-G20.2 duplicate provider webhook.
+
+**M29 open decisions**
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-346 | Khedmah commercial access: contract, private API spec, sandbox, credentials, DSA, approved billers, settlement/funding model | financial_controller + integration_admin | `blocked`; mock adapter only; bank path in production. |
+| D-347 | ONEIC commercial access (same items as D-346) | financial_controller + integration_admin | `blocked`; mock adapter only; bank path in production. |
+| D-348 | Whether guest bill-pay is in product scope at all | Product Owner + compliance_officer | Out of Release 1 scope; hotel operating bills only. |
+| D-349 | Manual/bank alternate path procedure and evidence standard per utility | financial_controller | Bank transfer with biller reference; receipt or bank advice uploaded and approved by second person. |
+| D-350 | Accounting for provider convenience fees and funding model (prefunded vs per-transaction) | financial_controller | Fees expensed to bank/payment charges in A&G; per-transaction funding. |
+
+---
+
+## 14. Cross-module summary
+
+### 14.1 Section G acceptance map (proposed IDs for `docs/09`)
+
+| Section G step | Test IDs in this file | Modules |
+|---|---|---|
+| 2 composite booking deposit/PO | AT-G02.3 | M20, M28 |
+| 3 charges post once | AT-G03.2 | M28 |
+| 4 cylinder exchange, maintenance, utility bills | AT-G04.1, AT-G04.2, AT-G04.3, AT-G04.4 | M20, M21, M22, M23, M24, M25, M26 |
+| 5 payroll, WPS/bank, confidentiality | AT-G05.1, AT-G05.2, AT-G05.3, AT-G05.4 | M27 |
+| 6 gateway payments and bill-pay | AT-G06.1, AT-G06.3, AT-G06.4 | M28, M29, M22 |
+| 7 refund reverses points and charges once | AT-G07.2 | M28 |
+| 8 month-end, allocation, drill, incomplete estimate | AT-G08.1, AT-G08.2, AT-G08.3, AT-G08.4 | M19, M20, M22, M26 |
+| 9 five-market payroll gating | AT-G09.3 | M27 |
+| 10 vendor restricted to own jobs, invoice reconciled | AT-G10.4, AT-G10.5 | M21, M26 |
+| 12 Canadian payroll | AT-G12.2 (executed with M38) | M27 |
+| 14 gas incident chronology | AT-G14.3 (executed with M42) | M24 |
+| 17 minimum quotes | AT-G17.1 (executed with M49) | M21 |
+| 18 three-way match once | AT-G18.4 (executed with M50) | M20, M21 |
+| 20 exceptions: duplicate webhook, meter gap, bill mismatch, short delivery, repeated invoice, payroll rejection, payout failure | AT-G20.1, AT-G20.2, AT-G20.3, AT-G20.4, AT-G20.5, AT-G20.7, AT-G20.8 | M19, M20, M21, M22, M27, M28, M29 |
+
+### 14.2 References out of this file (do not duplicate)
+- Canadian SIN, CPP/QPP, EI/QPIP, T4/RL, remittance: **M38.F38.2** (SF38.2.1–SF38.2.6). M27 calls it (SF27.5.5).
+- Tax codes, invoice numbering, filing calendar: **M38.F38.1**; rule-pack status: **M44.F44.2**.
+- RFQ, sample retention, weighted award, PO: **M49.F49.1–F49.3**. Receiving, stock ledger, returns, waste: **M50.F50.2–F50.3**.
+- Vendor legal identity, credentials, bank-change review, conflict of interest: **M46.F46.1**.
+- Room OOO/OOS sellability: **M03**. Incidents: **M42.F42.2**. Inspections: **M61**. Depreciation/capex: **M66.F66.2**. Sustainability intensity: **M67.F67.1**. Cash shifts/night audit: **M60.F60.1**. Report catalogue: **M32.F32.2–F32.4**.
+
+### 14.3 Counts
+| Module | Features | Subfeatures | of which Section K fixed | added |
+|---|---|---|---|---|
+| M19 | 3 | 16 | 10 | 6 |
+| M20 | 5 | 26 | 16 | 10 |
+| M21 | 3 | 17 | 11 | 6 |
+| M22 | 4 | 18 | 12 | 6 (F22.3 = Section K cross-utility guard) |
+| M23 | 1 | 6 | 6 | 0 |
+| M24 | 2 | 8 | 6 | 2 |
+| M25 | 2 | 8 | 6 | 2 |
+| M26 | 3 | 17 | 13 | 4 |
+| M27 | 5 | 29 | 23 (F27.4 subfeatures derived from Section K F27.4 text) | 6 |
+| M28 | 3 | 18 | 12 | 6 |
+| M29 | 3 | 19 | 16 | 3 |
+| **Total** | **34** | **182** | **131** | **51** |
+
+Open decisions in this file: **D-301 … D-350** (50).
+
+### 14.4 Canonical entity names (for `docs/03` ERD)
+- **Ledger (M19):** `legal_entity_book`, `ledger_account`, `cost_center`, `cost_center_hierarchy_version`, `account_mapping_rule`, `accounting_period`, `journal_entry`, `journal_line`, `journal_source_link`, `ledger_hash_chain`, `accrual_schedule`, `prepayment_schedule`, `fx_rate`, `allocation_policy`, `allocation_driver`, `allocation_run`, `period_close_checklist`, `trial_balance_snapshot`, `financial_statement_export`, `gl_export_batch`, `source_coverage_status`.
+- **AP/AR/treasury (M20):** `supplier_payment_profile`, `supplier_invoice`, `supplier_invoice_line`, `supplier_credit_note`, `duplicate_check_result`, `invoice_match`, `tolerance_profile`, `payable`, `payable_hold`, `payable_approval_step`, `recurring_payable_template`, `corporate_credit_account`, `customer_purchase_order`, `ar_invoice`, `ar_adjustment`, `ar_receipt`, `receipt_allocation`, `collection_case`, `write_off_request`, `bank_account`, `bank_statement`, `bank_statement_line`, `reconciliation_match`, `unmatched_item`, `cash_forecast`, `budget_version`, `budget_line`, `encumbrance`, `expense_forecast`, `delegation_of_authority`, `cost_status_snapshot`.
+- **Procurement policy (M21):** `purchase_requisition`, `purchase_requisition_line`, `procurement_policy`, `approval_threshold`, `blanket_agreement`, `blanket_call_off`, `replenishment_rule`, `sod_rule`, `sod_violation`, `emergency_purchase`, `service_acceptance`, `receipt_acceptance_policy`, `procurement_dispute`, `capitalization_decision`. *(References, owned elsewhere: `purchase_order` M49, `goods_receipt` M50, `vendor` M46.)*
+- **Utilities (M22–M25):** `utility_account`, `service_connection`, `meter`, `meter_register`, `meter_reading`, `meter_interval`, `meter_event`, `ingest_batch`, `tariff_version`, `tariff_component`, `utility_bill`, `utility_bill_line`, `usage_reconciliation`, `utility_allocation`, `utility_payment_link`, `consumption_baseline`, `consumption_anomaly`, `leak_case`, `gas_safety_reference`, `gas_connection_certificate`, `cylinder_type`, `cylinder`, `cylinder_location`, `cylinder_custody_entry`, `cylinder_deposit_entry`, `cylinder_stocktake`, `cylinder_storage_rule`.
+- **Engineering (M26):** `asset`, `asset_class`, `asset_location`, `pm_schedule`, `work_order`, `work_order_task`, `sla_policy`, `maintenance_block`, `inspection`, `vendor_assignment`, `site_visit`, `work_evidence`, `warranty`, `warranty_claim`, `vendor_scorecard`, `asset_cost_entry`.
+- **Workforce/payroll (M27):** `employee`, `employment_contract`, `position`, `compensation_record`, `employee_bank_account`, `employee_identity_document`, `final_settlement`, `roster`, `shift`, `shift_swap`, `time_punch`, `timesheet`, `leave_type`, `leave_request`, `leave_balance`, `overtime_approval`, `labor_allocation`, `labor_cost_aggregate`, `payroll_calendar`, `payroll_run`, `payroll_result`, `pay_element`, `salary_advance`, `statutory_rule_binding`, `payslip`, `wps_profile`, `wps_format_version`, `wps_file`, `wps_submission`, `payroll_payment_batch`, `payroll_export`, `payroll_key_ref`, `break_glass_grant`, `salary_access_log`.
+- **Payments (M28):** `payment_intent`, `payment_attempt`, `payment_method_token`, `tender_record`, `psp_transaction`, `refund`, `chargeback`, `psp_settlement_batch`, `psp_settlement_line`, `psp_fee`, `payment_order`, `payout_batch`, `payment_approval`, `channel_submission`, `webhook_receipt`, `idempotency_record`, `payment_terminal`, `payment_provider_config`, `fraud_review`.
+- **Bill-pay (M29):** `bill_provider`, `bill_provider_capability`, `biller`, `provider_biller_permission`, `bill_account`, `bill_inquiry`, `bill_quote`, `bill_payment_order`, `provider_status_log`, `provider_receipt`, `provider_settlement`, `bill_dispute`, `adapter_certification`, `provider_credential_ref`.
+
+### 14.5 State machines contributed to `docs/02`
+`SM-payable` (§1 / SF20.5.1), `SM-supplier-invoice`, `SM-payment-intent` (SF28.1.1), `SM-payment-order` (SF28.2.4), `SM-bill-payment-order` (SF29.1.7), `SM-utility-bill` (F22.2), `SM-meter-gap` (SF22.1.4), `SM-cylinder-custody` (SF25.1.2), `SM-work-order` (SF26.1.4), `SM-payroll-run` (F27.3), `SM-wps-submission` (SF27.5.3), `SM-accounting-period` (SF19.1.3), `SM-requisition` (SF21.1.3).

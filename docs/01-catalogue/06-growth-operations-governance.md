@@ -2949,3 +2949,509 @@ Additional actor used in this module: `driver` (a hotel `employee` role speciali
 | D-634 | Cash variance tolerance and blind-count policy. | Financial Controller | Any non-zero variance requires manager review. |
 | D-635 | Lawful employee-monitoring scope per market (anomaly analytics). | DPO + HR + counsel | Transaction-level analytics only; no behavioural monitoring; notices in staff policy. |
 | D-636 | Safe custody and bank deposit process. | Financial Controller | Dual-control safe; daily deposit with bag ID. |
+
+---
+
+## M61 — Hygiene, safety and inspections
+
+| Field | Value |
+|---|---|
+| Purpose | Jurisdiction-specific planned checks (food, pool, room, pest, fire, water) by credentialed people, with evidence, permit calendar, nonconformance and corrective action through retest and independent release, linked to guest safety incidents and vendors. |
+| Phases | 3 food/room checks; 4 risk workflows (permits, corrective action, recall/room block, vendor corrective action). |
+| Release flag | R1. |
+| Bounded context | `safety-inspection` |
+| SoR entities (owned) | `inspection_template`, `inspection_schedule`, `inspection_record`, `inspection_finding`, `corrective_action`, `permit_record`, `responsible_person_assignment`, `service_stoppage`, `release_decision`. |
+| Referenced (not owned) | M44 rule packs; M62 certifications; M03 room block (OOO/OOS); M50 quarantine/recall hold; M26 work orders/assets/sensors; M46 vendors (pest control, water testing); M42 incidents; M63 tasks; M57 food checks and M56 room inspections use these templates. |
+| Dependencies | M03, M26, M42, M44, M46, M50, M62, M63. |
+
+### F61.1 Planned checks
+
+```yaml
+- id: M61.F61.1.SF61.1.1
+  name: Jurisdiction-specific food, pool, room, pest, fire and water checklist
+  phase: 3
+  release: R1
+  actors: [compliance_officer, chief_engineer, executive_chef, housekeeping_supervisor]
+  screens: [SCR-ADM-inspection-templates]
+  inputs: [template_type, rule_pack_ref, items, critical_limits, evidence_required, version]
+  states: [draft, pending_verification, active_verified, active_hotel_policy, retired]
+  api: ["POST /v1/properties/{pid}/inspection-templates", "POST /v1/properties/{pid}/inspection-templates/{tid}/activate"]
+  events: [InspectionTemplateActivated]
+  data: [inspection_template, rule_pack (M44)]
+  rules: ["Each template cites its M44 rule pack and status; without a verified pack it activates as 'hotel policy (unverified)' and is labelled so on every export.", "Templates versioned; records keep the version used.", "Fire/life-safety equipment checks do not replace statutory inspections by licensed parties."]
+  security: "compliance_officer publishes."
+  failure_cases: [rule_pack_expired, template_without_owner]
+  finance_report_effect: "None."
+  i18n_a11y: "Bilingual checklist items."
+  acceptance: "AC-SF61.1.1: A template without a verified pack shows the unverified label in UI and export."
+  dependency: "M44, D-637."
+
+- id: M61.F61.1.SF61.1.2
+  name: Credentialed assessor/owner and schedule
+  phase: 3
+  release: R1
+  actors: [compliance_officer, chief_engineer, hr_officer]
+  screens: [SCR-OPS-inspection-calendar]
+  inputs: [template_id, area_or_asset, frequency, assessor_role, required_certification]
+  states: [scheduled, due, in_progress, completed, overdue]
+  api: ["POST /v1/properties/{pid}/inspection-schedules"]
+  events: [InspectionDue, InspectionOverdue]
+  data: [inspection_schedule, certification_record (M62)]
+  rules: ["Only users with current required certification can record the inspection.", "Overdue escalates via M63."]
+  security: "Scoped by department."
+  failure_cases: [no_certified_assessor]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible calendar."
+  acceptance: "AC-SF61.1.2: A user with a lapsed certificate cannot complete a pool inspection."
+  dependency: "M62."
+
+- id: M61.F61.1.SF61.1.3
+  name: Sensor or manual evidence and exception
+  phase: 3
+  release: R1
+  actors: [engineer, shift_chef, housekeeping_supervisor]
+  screens: [SCR-STF-inspection-run]
+  inputs: [inspection_schedule_id, item_results, sensor_readings, photos, notes]
+  states: [recorded, exception_raised]
+  api: ["POST /v1/properties/{pid}/inspection-records"]
+  events: [InspectionRecorded, InspectionExceptionRaised]
+  data: [inspection_record, inspection_finding, device (M64)]
+  rules: ["Sensor readings stored with device ID and quality flag; manual entries marked manual.", "Out-of-limit results create a finding automatically.", "Records immutable; corrections appended."]
+  security: "Device identity per M64."
+  failure_cases: [sensor_offline_manual, photo_offline_queue]
+  finance_report_effect: "None."
+  i18n_a11y: "Offline-capable mobile."
+  acceptance: "AC-SF61.1.3: A chlorine reading out of range creates a finding linked to the record."
+  dependency: "M26 sensors, M64."
+
+- id: M61.F61.1.SF61.1.4
+  name: Expired permit/task escalation
+  phase: 4
+  release: R1
+  actors: [compliance_officer, gm]
+  screens: [SCR-OPS-permit-calendar]
+  inputs: [permit_type, authority, number, issue_date, expiry_date, document_ref]
+  states: [valid, expiring, expired, renewed]
+  api: ["POST /v1/properties/{pid}/permits"]
+  events: [PermitExpiring, PermitExpired]
+  data: [permit_record]
+  rules: ["Alerts at configured lead times; expiry of a permit that gates an operation (pool, kitchen, alcohol) triggers the gate in the owning module.", "Renewal requires document upload."]
+  security: "compliance_officer."
+  failure_cases: [authority_delay]
+  finance_report_effect: "Permit fees via AP."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF61.1.4: Pool operating permit expiry blocks M58 pool sales."
+  dependency: "M58, M57, M44."
+
+- id: M61.F61.1.SF61.1.5
+  name: Inspector-ready evidence/export
+  phase: 4
+  release: R1
+  actors: [compliance_officer, auditor]
+  screens: [SCR-OPS-inspection-export]
+  inputs: [period, areas, template_types]
+  states: [generated]
+  api: ["POST /v1/properties/{pid}/inspection-exports"]
+  events: [InspectionExportGenerated]
+  data: [inspection_record, corrective_action]
+  rules: ["Export includes records, template version, assessor credentials, findings and closures with hashes.", "Export is read-only and logged."]
+  security: "Export access logged."
+  failure_cases: [large_export_async]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible PDF; bilingual."
+  acceptance: "AC-SF61.1.5: Export for a month reproduces all records with verifiable hashes."
+  dependency: "M65 SF65.2.2."
+
+- id: M61.F61.1.SF61.1.6  # ADDED — Section C 'responsible-person record'
+  name: Responsible-person register
+  phase: 3
+  release: R1
+  actors: [gm, compliance_officer]
+  screens: [SCR-ADM-responsible-persons]
+  inputs: [safety_domain, person_id, deputy_id, certification_ref, effective_from]
+  states: [assigned, vacant, expired]
+  api: ["PUT /v1/properties/{pid}/responsible-persons/{domain}"]
+  events: [ResponsiblePersonVacant]
+  data: [responsible_person_assignment]
+  rules: ["safety_domain is one of food_safety, fire, pool, water, health_safety.", "Each regulated domain has a named responsible person and deputy; vacancy escalates to gm.", "Certification expiry makes the assignment expired."]
+  security: "gm."
+  failure_cases: [person_left]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF61.1.6: Terminating the responsible person in M27 marks the domain vacant and alerts gm."
+  dependency: "M27, M62."
+```
+
+### F61.2 Corrective action
+
+```yaml
+- id: M61.F61.2.SF61.2.1
+  name: Severity and service stoppage
+  phase: 4
+  release: R1
+  actors: [compliance_officer, duty_manager, gm]
+  screens: [SCR-OPS-findings]
+  inputs: [finding_id, severity, stoppage_scope_type, stoppage_scope_ref]
+  states: [open, stoppage_active, contained]
+  api: ["POST /v1/properties/{pid}/findings/{fid}/stoppage"]
+  events: [ServiceStoppageActivated]
+  data: [inspection_finding, service_stoppage]
+  rules: ["stoppage_scope_type is area, outlet, room or amenity.", "Critical severity requires a stoppage decision within minutes; stoppage propagates to owning modules (M03 OOS, M58 closure, M13 outlet closed).", "Stoppage cannot be lifted without SF61.2.4 release."]
+  security: "duty_manager or above."
+  failure_cases: [propagation_failure_manual_notice]
+  finance_report_effect: "Lost revenue visible via closures."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF61.2.1: Stoppage of the pool closes M58 sales and cannot be lifted without release."
+  dependency: "M03, M13, M58."
+
+- id: M61.F61.2.SF61.2.2
+  name: Quarantine/room block/food recall
+  phase: 4
+  release: R1
+  actors: [storekeeper, executive_chef, housekeeping_supervisor]
+  screens: [SCR-OPS-containment]
+  inputs: [finding_id, lot_ids, room_ids, containment_type]
+  states: [requested, applied, verified]
+  api: ["POST /v1/properties/{pid}/findings/{fid}/containment"]
+  events: [ContainmentApplied]
+  data: [corrective_action, recall_hold (M50), room_block (M03)]
+  rules: ["Food quarantine/recall via M50 holds; room blocks via M03; M61 records the link only.", "Containment verified by a second person."]
+  security: "Role scoped."
+  failure_cases: [lot_unknown_broad_hold]
+  finance_report_effect: "Quarantine value tracked in M50."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF61.2.2: A pest finding blocks affected rooms in M03 and the room cannot be sold."
+  dependency: "M50, M03."
+
+- id: M61.F61.2.SF61.2.3
+  name: Responsible manager/vendor assignment
+  phase: 4
+  release: R1
+  actors: [compliance_officer, chief_engineer, vendor_user]
+  screens: [SCR-OPS-corrective-actions, SCR-VND-corrective-action]
+  inputs: [finding_id, owner_id, vendor_id, due_date, work_order_id]
+  states: [assigned, in_progress, completed, overdue]
+  api: ["POST /v1/properties/{pid}/corrective-actions"]
+  events: [CorrectiveActionAssigned, CorrectiveActionOverdue]
+  data: [corrective_action, vendor (M46), work_order (M26)]
+  rules: ["Vendor corrective action requires an eligible M46 vendor for that category; vendor sees only own actions.", "Overdue escalates."]
+  security: "Vendor scope."
+  failure_cases: [vendor_unavailable]
+  finance_report_effect: "Vendor cost via M26/M49/M20."
+  i18n_a11y: "Vendor app bilingual."
+  acceptance: "AC-SF61.2.3: The pest vendor sees only its corrective action, not other findings."
+  dependency: "M46, M26."
+
+- id: M61.F61.2.SF61.2.4
+  name: Retest/independent release
+  phase: 4
+  release: R1
+  actors: [compliance_officer, gm]
+  screens: [SCR-OPS-release]
+  inputs: [finding_id, retest_record_id, releaser_id]
+  states: [retest_pending, retest_passed, retest_failed, released]
+  api: ["POST /v1/properties/{pid}/findings/{fid}/release"]
+  events: [ServiceReleased]
+  data: [release_decision]
+  rules: ["Releaser must differ from the corrective-action owner.", "Critical findings require a passing retest record before release."]
+  security: "Step-up MFA."
+  failure_cases: [retest_failed_loop]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF61.2.4: The engineer who fixed the issue cannot release it; release without passing retest is rejected."
+  dependency: "SF61.1.3, D-638."
+
+- id: M61.F61.2.SF61.2.5
+  name: Guest safety incident link and audit
+  phase: 4
+  release: R1
+  actors: [duty_manager, compliance_officer, auditor]
+  screens: [SCR-OPS-incident, SCR-OPS-findings]
+  inputs: [incident_id, finding_ids]
+  states: [linked]
+  api: ["POST /v1/properties/{pid}/findings/{fid}/incident-link"]
+  events: [FindingIncidentLinked]
+  data: [inspection_finding, incident (M42)]
+  rules: ["Guest injury/illness incidents link to related findings and inspection history for claim evidence (M68).", "Audit trail complete and exportable."]
+  security: "Restricted."
+  failure_cases: [incident_location_ambiguous]
+  finance_report_effect: "Claims via M68."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF61.2.5: A slip incident at the pool links to the last pool inspection and appears in the M68 evidence packet."
+  dependency: "M42, M68."
+```
+
+### M61 key invariants
+
+1. Templates show whether they are verified law or hotel policy.
+2. Stoppages propagate to owning modules and lift only by independent release after retest.
+3. Containment actions execute in M50/M03 ledgers, never duplicated.
+
+### M61 module acceptance
+
+| AC | Section G | Section O question answered |
+|---|---|---|
+| AC-SF61.1.1, AC-SF61.1.3 | AT-G09 (unverified rules labelled), AT-G18 | Technology/compliance: "Where are... unverified tax rules?" (and unverified safety rules) |
+| AC-SF61.2.1, AC-SF61.2.2, AC-SF61.2.4 | AT-G18 (quarantine/recall), AT-G14 | Maintenance/security: "Which room must be removed from sale?" |
+| AC-SF61.2.5 | AT-G14 | Maintenance/security: "What evidence preserves an incident or insurance claim?" |
+
+### M61 open decisions
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-637 | Per-market mandatory inspection types, frequencies and records. | Compliance Officer + counsel | Hotel-policy templates labelled unverified. |
+| D-638 | Independent release authority by domain. | GM | compliance_officer or gm, never the fixer. |
+| D-639 | Water/legionella testing vendor and frequency. | Chief Engineer | Quarterly external test via an M46 vendor. |
+
+---
+
+## M62 — Staff enablement and quality
+
+| Field | Value |
+|---|---|
+| Purpose | Role-based SOPs and multilingual training with attestation, certification expiry and automatic revocation of gated permissions, contractor site briefings, shift handover, labor demand vs roster, and privacy-bounded service-quality sampling and coaching. |
+| Phases | 3 shift handover and SOPs, contractor briefing; 4 learning, certifications, workforce and quality; 5 outcome measures. |
+| Release flag | R1. |
+| Bounded context | `workforce-enablement` |
+| SoR entities (owned) | `sop_document`, `sop_version`, `role_training_matrix`, `training_course`, `training_assignment`, `training_attestation`, `assessment_result`, `certification_record`, `contractor_briefing`, `shift_handover`, `labor_demand_forecast`, `quality_sample`, `coaching_note`. |
+| Referenced (not owned) | M27 employee master, roster, time, overtime; M02 roles/permissions (revocation executes there); M46 contractor/vendor users; M47 chef credentials (reads `certification_record`); M53 occupancy forecast; M55 guest cases; M52 surveys; M32 labor cost; M44 labor/privacy rules. |
+| Dependencies | M02, M27, M44, M46, M47, M53, M55, M63. |
+
+### F62.1 Learning
+
+```yaml
+- id: M62.F62.1.SF62.1.1
+  name: Role/SOP and language matrix
+  phase: 3
+  release: R1
+  actors: [hr_officer, gm, fnb_manager, housekeeping_supervisor, front_office_manager]
+  screens: [SCR-ADM-role-training-matrix]
+  inputs: [role, department, required_sops, required_courses, required_certifications, languages_available]
+  states: [draft, active]
+  api: ["PUT /v1/properties/{pid}/role-training-matrix/{role}"]
+  events: [RoleTrainingMatrixUpdated]
+  data: [role_training_matrix]
+  rules: ["Each role lists required SOPs/courses/certs and which gate a permission (e.g. food_handler gates kitchen production actions).", "Content must exist in at least one language each assignee reads; gaps flagged."]
+  security: "hr_officer and department heads."
+  failure_cases: [language_gap]
+  finance_report_effect: "None."
+  i18n_a11y: "English/Arabic plus property-configured staff languages."
+  acceptance: "AC-SF62.1.1: A role requiring a course only in English flags a gap for an Urdu-only reader in the assignee language profile."
+  dependency: "M27 employee languages, M02 permissions."
+
+- id: M62.F62.1.SF62.1.2
+  name: Onboarding and certification expiry
+  phase: 4
+  release: R1
+  actors: [hr_officer, employee]
+  screens: [SCR-ADM-certifications, SCR-STF-my-learning]
+  inputs: [employee_id, certification_type, issuer, number, issue_date, expiry_date, document_ref]
+  states: [pending_verification, valid, expiring, expired, rejected]
+  api: ["POST /v1/properties/{pid}/certifications", "POST /v1/properties/{pid}/certifications/{cid}/verify"]
+  events: [CertificationVerified, CertificationExpiring, CertificationExpired]
+  data: [certification_record, training_assignment]
+  rules: ["New hires get onboarding assignments from the matrix.", "Uploaded certificates verified by hr_officer before counting.", "Expiry alerts to employee and manager at lead times."]
+  security: "Documents visible to hr_officer and the employee."
+  failure_cases: [unverifiable_certificate]
+  finance_report_effect: "Training costs via AP/payroll."
+  i18n_a11y: "Accessible mobile."
+  acceptance: "AC-SF62.1.2: An unverified certificate does not satisfy a gate; expiry alerts fire at 30 and 7 days."
+  dependency: "M27."
+
+- id: M62.F62.1.SF62.1.3
+  name: Training attestation and assessment
+  phase: 4
+  release: R1
+  actors: [employee, hr_officer]
+  screens: [SCR-STF-course-player, SCR-STF-attestation]
+  inputs: [course_id, sop_version_id, completion, assessment_answers, attestation_signature]
+  states: [assigned, in_progress, completed, assessed_pass, assessed_fail, attested]
+  api: ["POST /v1/properties/{pid}/training-assignments/{aid}/complete", "POST /v1/properties/{pid}/training-assignments/{aid}/attest"]
+  events: [TrainingCompleted, TrainingAttested]
+  data: [training_attestation, assessment_result]
+  rules: ["Attestation binds to the exact SOP version; new major versions require re-attestation.", "Assessment pass mark configurable; retries logged."]
+  security: "Employee sees own results; managers see team completion, not answers."
+  failure_cases: [offline_completion_sync]
+  finance_report_effect: "Training hours may be paid time via M27."
+  i18n_a11y: "Accessible course player with captions and screen-reader support."
+  acceptance: "AC-SF62.1.3: Publishing a major SOP version reopens attestation for affected roles."
+  dependency: "SF62.1.6."
+
+- id: M62.F62.1.SF62.1.4
+  name: Contractor site briefing
+  phase: 3
+  release: R1
+  actors: [chief_engineer, security_officer, vendor_user]
+  screens: [SCR-VND-site-briefing, SCR-ENG-contractor-access]
+  inputs: [vendor_id, worker_names, work_order_id, briefing_version, acknowledgment, site_hazards]
+  states: [required, acknowledged, expired]
+  api: ["POST /v1/properties/{pid}/contractor-briefings"]
+  events: [ContractorBriefingAcknowledged]
+  data: [contractor_briefing]
+  rules: ["Contractor site access for an M26 job requires a current briefing acknowledgment per worker.", "Briefing covers hazards, permits-to-work, emergency procedures, guest privacy."]
+  security: "Vendor sees only own briefings."
+  failure_cases: [unbriefed_worker_at_gate]
+  finance_report_effect: "None."
+  i18n_a11y: "Bilingual briefing."
+  acceptance: "AC-SF62.1.4: An unbriefed contractor worker cannot be checked in to site for the job."
+  dependency: "M26 SF26.2.3, M46."
+
+- id: M62.F62.1.SF62.1.5
+  name: Revocation on lapse
+  phase: 4
+  release: R1
+  actors: [hr_officer, it_admin, enablement_worker]
+  screens: [SCR-ADM-gated-permissions]
+  inputs: [certification_record_id, gated_permission, grace_policy]
+  states: [active, grace, revoked, restored]
+  api: ["GET /v1/properties/{pid}/gated-permissions"]
+  events: [GatedPermissionRevoked, GatedPermissionRestored]
+  data: [certification_record, role_training_matrix]
+  rules: ["When a gating certification expires, M02 removes the gated permission (e.g. food production, pool lifeguard duty, driving) at expiry unless a grace policy approved by gm applies.", "Restoration automatic on renewal verification.", "Roster (M27) and assignment engines (M47, M58, M59, M61) exclude revoked staff."]
+  security: "Revocation audit."
+  failure_cases: [revocation_mid_shift_notify_manager]
+  finance_report_effect: "None."
+  i18n_a11y: "Notifications bilingual."
+  acceptance: "AC-SF62.1.5: A chef whose food-handler certificate expires cannot be assigned by M47 the next day (AT-G15.2)."
+  dependency: "M02, M27, M47."
+
+- id: M62.F62.1.SF62.1.6  # ADDED — Section C 'Department SOPs'
+  name: SOP authoring, versioning and publication
+  phase: 3
+  release: R1
+  actors: [gm, fnb_manager, housekeeping_supervisor, front_office_manager, content_approver]
+  screens: [SCR-ADM-sop-library, SCR-STF-sop-viewer]
+  inputs: [sop_title, department, body, attachments, version_type, approver_id]
+  states: [draft, in_review, published, superseded, retired]
+  api: ["POST /v1/properties/{pid}/sops", "POST /v1/properties/{pid}/sops/{sid}/versions/{v}/publish"]
+  events: [SopPublished]
+  data: [sop_document, sop_version]
+  rules: ["Maker-checker publish; minor vs major version determines re-attestation.", "Staff app shows current version offline."]
+  security: "Department scope."
+  failure_cases: [translation_missing]
+  finance_report_effect: "None."
+  i18n_a11y: "Bilingual SOPs with accessible formatting."
+  acceptance: "AC-SF62.1.6: A published SOP is readable offline on the staff app and a superseded version shows a banner."
+  dependency: "M64 offline cache."
+```
+
+### F62.2 Service quality
+
+```yaml
+- id: M62.F62.2.SF62.2.1
+  name: Shift handover/coverage
+  phase: 3
+  release: R1
+  actors: [front_office_manager, duty_manager, housekeeping_supervisor, shift_chef]
+  screens: [SCR-STF-shift-handover, SCR-OPS-coverage]
+  inputs: [department, shift_id, open_items, notes, incoming_owner, coverage_gaps]
+  states: [drafted, handed_over, acknowledged, unacknowledged_escalated]
+  api: ["POST /v1/properties/{pid}/shift-handovers", "POST /v1/properties/{pid}/shift-handovers/{hid}/acknowledge"]
+  events: [ShiftHandedOver, ShiftHandoverUnacknowledged]
+  data: [shift_handover, work_item (M63)]
+  rules: ["Open work items auto-listed; incoming owner must acknowledge; unacknowledged escalates.", "Coverage gaps from M27 roster and M47 chef coverage shown."]
+  security: "Department scope."
+  failure_cases: [incoming_absent]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF62.2.1: Open guest cases transfer ownership on acknowledgment; an unacknowledged handover escalates after 15 minutes."
+  dependency: "M63, M27, M47."
+
+- id: M62.F62.2.SF62.2.2
+  name: Labor forecast versus roster and overtime
+  phase: 4
+  release: R1
+  actors: [gm, front_office_manager, housekeeping_supervisor, fnb_manager, hr_officer]
+  screens: [SCR-OPS-labor-demand]
+  inputs: [occupancy_forecast (M53), covers_forecast, productivity_standards, roster (M27)]
+  states: [computed, gap_flagged]
+  api: ["GET /v1/properties/{pid}/labor-demand?from&to"]
+  events: [LaborGapFlagged]
+  data: [labor_demand_forecast]
+  rules: ["Demand hours = drivers x standards per department; compared with rostered hours; gaps and projected overtime flagged.", "Recommendations only; roster changes in M27."]
+  security: "Aggregate hours; no individual pay."
+  failure_cases: [forecast_low_confidence]
+  finance_report_effect: "Projected labor cost (estimate) per department."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF62.2.2: A forecast of 90% occupancy with a housekeeping roster covering 70% of required hours flags a gap."
+  dependency: "M53, M27."
+
+- id: M62.F62.2.SF62.2.3
+  name: Sampled quality review and coaching
+  phase: 4
+  release: R1
+  actors: [front_office_manager, housekeeping_supervisor, fnb_manager, employee]
+  screens: [SCR-OPS-quality-samples, SCR-STF-my-coaching]
+  inputs: [sample_type, sampled_record_ref, rubric_version, score, coaching_note]
+  states: [sampled, reviewed, coached, acknowledged]
+  api: ["POST /v1/properties/{pid}/quality-samples"]
+  events: [QualitySampleReviewed, CoachingNoteShared]
+  data: [quality_sample, coaching_note]
+  rules: ["Random sampling from completed work (inspections, conversations, checks) with published rubric; staff are informed of the program.", "No covert audio/video recording; call recordings only if D-619 permits.", "Coaching notes shared with the employee."]
+  security: "Individual results visible to the employee, direct manager and HR only."
+  failure_cases: [sample_bias_review]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF62.2.3: An employee can view own samples and notes; a peer cannot (403)."
+  dependency: "M44 labor/privacy, D-642."
+
+- id: M62.F62.2.SF62.2.4
+  name: Dispute/correction and confidentiality
+  phase: 4
+  release: R1
+  actors: [employee, hr_officer]
+  screens: [SCR-STF-my-coaching]
+  inputs: [quality_sample_id, dispute_text, outcome]
+  states: [disputed, upheld, amended]
+  api: ["POST /v1/properties/{pid}/quality-samples/{qid}/dispute"]
+  events: [QualityDisputeResolved]
+  data: [quality_sample]
+  rules: ["Employee may dispute a score; HR decides; amended scores keep history.", "Quality data retained per M65 and not used as sole basis for dismissal."]
+  security: "Confidential."
+  failure_cases: [reviewer_conflict]
+  finance_report_effect: "None."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF62.2.4: An upheld dispute amends the score with history visible to HR."
+  dependency: "M65."
+
+- id: M62.F62.2.SF62.2.5
+  name: Guest outcome and staff-cost measure
+  phase: 5
+  release: R1
+  actors: [gm, owner]
+  screens: [SCR-OWN-service-quality]
+  inputs: [period, department]
+  states: [computed]
+  api: ["GET /v1/properties/{pid}/service-quality/outcomes?period"]
+  events: [ServiceOutcomeComputed]
+  data: [quality_sample, guest_case (M55), survey_response (M52)]
+  rules: ["Report department-level labor cost per occupied room/cover alongside complaint rate, recovery time and survey scores; correlation not causation language.", "No individual salaries (M27 confidentiality)."]
+  security: "Aggregates only."
+  failure_cases: [small_sample]
+  finance_report_effect: "Uses M32 labor cost."
+  i18n_a11y: "Accessible."
+  acceptance: "AC-SF62.2.5: Report shows department aggregates only; no individual pay appears."
+  dependency: "M32, M55, M52."
+```
+
+### M62 key invariants
+
+1. Gated permissions are revoked at certificate lapse and excluded from all assignment engines.
+2. Attestations bind to exact SOP versions.
+3. Quality sampling is transparent, confidential and disputable; no covert monitoring; no individual pay in reports.
+
+### M62 module acceptance
+
+| AC | Section G | Section O question answered |
+|---|---|---|
+| AC-SF62.1.5 | AT-G15 (emergency chef food-safety qualification) | Chef: "Which chef and backup will work?"; Maintenance: "Which contractor can work safely?" (with AC-SF62.1.4) |
+| AC-SF62.2.1, AC-SF62.2.2 | AT-G05 (shifts), AT-G15 | GM: "Which shift/team/chef coverage is missing?" |
+| AC-SF62.2.5 | AT-G08 | Owner: "Is this property profitable after payroll...?" |
+
+### M62 open decisions
+
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-640 | Build in-product learning vs integrate an external LMS. | HR + Product Owner | In-product lightweight courses and attestations; SCORM import deferred. |
+| D-641 | Required certifications per role per market (food handler, lifeguard, first aid, fire warden, driver). | HR + Compliance Officer | Hotel-defined list labelled unverified until rule pack verified. |
+| D-642 | Quality sampling program scope and staff notice. | HR + DPO | Record-based sampling only; written notice to staff; no recordings. |
