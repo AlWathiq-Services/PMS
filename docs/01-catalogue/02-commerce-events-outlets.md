@@ -4027,3 +4027,421 @@ Each subfeature is one Section-L YAML block. For density, blocks use YAML flow s
 | D-236 | Guest permit grace after checkout | front_office_manager | 2 h |
 | D-237 | Debounce window and lane review SLA | security_officer | 10 s debounce; 20 s review SLA then manual |
 | D-238 | Pilot camera/LPR server and gate controller models | it_admin / gm | None selected; `unverified-assumption`; mock adapter for development only |
+
+---
+
+## M18 — Guest engagement
+
+| Item | Value |
+|---|---|
+| Purpose | The guest-facing web/app channel during the stay lifecycle: secure access bound to a reservation, stay dashboard, profile and preferences, service requests routed to owning teams, messaging, in-stay feedback feeding recovery, communication consent by purpose/channel and loyalty linkage. |
+| Build phases | 3 (app/web, requests, messaging, consent capture) • 5 (loyalty linkage, advanced messaging adapters) |
+| Release | R1 |
+| Bounded context | `guest-engagement` (schema `gx`) |
+| Systems of record owned | `guest_app_session`, `service_request_type`, `service_request`, `message_thread`, `message`, `feedback_response`, `guest_device_registration` |
+| Upstream | M02 (guest identity, `consent_record` SoR), M05 (reservation/stay), M41 (OTP/QR handoff), M52 (`guest_profile` preferences), M13/M57 (in-room dining menu), M17 (vehicle registration), M30 (points), M40 (AI assistant embedded) |
+| Downstream | M63 (tasks), M06/M56 (housekeeping requests), M26 (maintenance faults), M55 (complaints/recovery), M52 (surveys, CRM), M08 (chargeable requests), M32 (service KPIs) |
+
+### F18.1 Guest app and web access
+
+```yaml
+- id: M18.F18.1.SF18.1.1
+  name: Reservation-bound guest access
+  phase: 3
+  release: R1
+  actors: [guest, booker]
+  screens: [SCR-GST-sign-in, SCR-GST-find-booking]
+  inputs: [confirmation_number, last_name, email_or_phone, otp_code]
+  states: [unauthenticated, challenge_sent, authenticated, locked]
+  api: POST /v1/guest/sessions ; POST /v1/guest/sessions/verify
+  events: [GuestSessionStarted, GuestSessionLocked]
+  data: [guest_app_session, reservation, identity]
+  rules: ["access requires confirmation + name + OTP to contact on reservation (M41 SF41.2.5); a QR/deep link alone is a handoff that must complete the same challenge", "occupants invited by booker get scoped access to their own stay", "rate-limit and lockout after 5 failures"]
+  security: short-lived tokens; device-bound refresh; no enumeration of reservations
+  failure_cases: ["OTP delivery failure -> alternative channel or front desk assist", "wrong name -> generic error"]
+  finance_report_effect: none.
+  i18n_a11y: WCAG 2.2 AA; no CAPTCHA; EN/AR RTL.
+  acceptance: "Scanning a QR from a check-in email without OTP shows only a sign-in challenge, never stay data."
+  dependency: M41, M02.
+
+- id: M18.F18.1.SF18.1.2
+  name: Stay dashboard
+  phase: 3
+  release: R1
+  actors: [guest]
+  screens: [SCR-GST-stay-home]
+  inputs: [stay_id]
+  states: [pre_arrival, in_house, departed]
+  api: GET /v1/guest/stays/{sid}
+  events: [none]
+  data: [stay, folio, service_request, parking_permit, club_pass]
+  rules: ["shows room status/ready ETA when released by front desk, requests, folio summary, parking, passes, points", "amounts from folio with as-of time"]
+  security: occupants see only their folio windows unless payer
+  failure_cases: ["backend partial outage -> cached last view with timestamp"]
+  finance_report_effect: none.
+  i18n_a11y: Low-bandwidth mode under 200 KB initial load target.
+  acceptance: "Occupant not paying sees no master-account charges."
+  dependency: M05, M08.
+
+- id: M18.F18.1.SF18.1.3
+  name: Signed guest app builds and PWA
+  phase: 3
+  release: R1
+  actors: [it_admin]
+  screens: [SCR-ADM-app-releases]
+  inputs: [build, platform, channel]
+  states: [built, signed, released, blocked]
+  api: POST /v1/admin/app-releases
+  events: [AppReleasePublished]
+  data: [app_release]
+  rules: ["same release controls as SF11.1.2", "web/PWA is the always-available path; native app optional"]
+  security: signing keys in KMS
+  failure_cases: ["store approval pending -> web path"]
+  finance_report_effect: none.
+  i18n_a11y: Standard.
+  acceptance: "Guest journey fully usable on web when the native app is not yet published."
+  dependency: D-212.
+
+- id: M18.F18.1.SF18.1.4
+  name: Guest device notifications
+  phase: 3
+  release: R1
+  actors: [guest]
+  screens: [SCR-GST-settings]
+  inputs: [push_token, channel_prefs(push|email|sms|whatsapp_approved)]
+  states: [enabled, disabled]
+  api: PUT /v1/guest/me/notification-preferences
+  events: [GuestNotificationPrefsChanged]
+  data: [guest_device_registration, consent_record]
+  rules: ["transactional notifications (request status, room ready) allowed under service purpose; marketing only with consent (M02)", "WhatsApp only via approved templates/provider (M41/M52)"]
+  security: standard
+  failure_cases: ["push failure -> fallback channel"]
+  finance_report_effect: Messaging cost metered.
+  i18n_a11y: Standard.
+  acceptance: "Disabling marketing consent does not stop 'room ready' transactional push."
+  dependency: M02.
+```
+
+### F18.2 Profile and preferences
+
+```yaml
+- id: M18.F18.2.SF18.2.1
+  name: Self-service profile
+  phase: 3
+  release: R1
+  actors: [guest]
+  screens: [SCR-GST-profile]
+  inputs: [name, contact, language, address, arrival_time, accessibility_needs]
+  states: [viewed, updated]
+  api: PATCH /v1/guest/me/profile
+  events: [GuestProfileUpdated]
+  data: [guest_profile]
+  rules: ["writes through M52 profile API; M18 stores no separate profile copy", "legal registration fields (ID) handled by M41 not here"]
+  security: guest scope; audit
+  failure_cases: ["validation errors inline"]
+  finance_report_effect: none.
+  i18n_a11y: Arabic and Latin names; RTL.
+  acceptance: "Profile update is visible to front desk within 30 s with 'guest-updated' marker."
+  dependency: M52.
+
+- id: M18.F18.2.SF18.2.2
+  name: Stay preferences and accessibility needs
+  phase: 3
+  release: R1
+  actors: [guest, guest_relations]
+  screens: [SCR-GST-preferences, SCR-FD-guest-profile]
+  inputs: [pillow, floor, bed, dietary_notes, accessibility_requirements, celebration]
+  states: [requested, acknowledged, fulfilled, not_possible]
+  api: POST /v1/guest/stays/{sid}/preferences
+  events: [StayPreferenceRequested]
+  data: [guest_profile, service_request]
+  rules: ["stay-specific preferences become tasks for owning team (M55 SF55.1.3)", "health-related data (allergy, mobility) stored only with explicit purpose consent and restricted access", "'not possible' requires reason to guest"]
+  security: sensitive fields restricted
+  failure_cases: ["unacknowledged before arrival -> escalation"]
+  finance_report_effect: none.
+  i18n_a11y: Standard.
+  acceptance: "An accessible-room request creates a front-office task acknowledged before arrival."
+  dependency: M55, M02.
+```
+
+### F18.3 Service requests
+
+```yaml
+- id: M18.F18.3.SF18.3.1
+  name: Service request catalogue
+  phase: 3
+  release: R1
+  actors: [guest_relations, property_admin]
+  screens: [SCR-ADM-request-catalogue]
+  inputs: [request_type, name_en_ar, owning_department, sla_minutes, chargeable, price_item, requires_time_slot, available_hours, icon]
+  states: [active, hidden]
+  api: POST /v1/properties/{pid}/service-request-types
+  events: [ServiceRequestTypeChanged]
+  data: [service_request_type]
+  rules: ["only departments/outlets enabled for the property appear", "chargeable types map to a price/tax item"]
+  security: admin
+  failure_cases: ["type without owner -> cannot activate"]
+  finance_report_effect: Chargeable request revenue mapping.
+  i18n_a11y: Bilingual names; icons with labels.
+  acceptance: "A 'Towels' request routed to housekeeping with 20 min SLA appears in the guest app."
+  dependency: M63.
+
+- id: M18.F18.3.SF18.3.2
+  name: Create and route service request
+  phase: 3
+  release: R1
+  actors: [guest, front_desk_agent, ai_assistant]
+  screens: [SCR-GST-request-new, SCR-FD-requests]
+  inputs: [stay_id, request_type, quantity, preferred_time, note, photo_optional, channel(app|web|phone|chat)]
+  states: [submitted, accepted, in_progress, completed, cancelled, escalated]
+  api: POST /v1/guest/stays/{sid}/service-requests
+  events: [ServiceRequestCreated, ServiceRequestStatusChanged]
+  data: [service_request, task]
+  rules: ["creates M63 task for owning department with SLA", "dedupe identical open request within 10 min", "AI assistant may draft but guest confirms (M40)", "maintenance faults create M26 work order; urgent safety reports route to M42"]
+  security: guest sees own requests only
+  failure_cases: ["department offline -> duty_manager queue"]
+  finance_report_effect: none unless chargeable.
+  i18n_a11y: Accessible form; voice-over labels.
+  acceptance: "AT-G19.3 - an in-room dining complaint and a towel request each reach the correct team with SLA timers."
+  dependency: M63, M26, M42.
+
+- id: M18.F18.3.SF18.3.3
+  name: Status tracking and SLA escalation
+  phase: 3
+  release: R1
+  actors: [guest, housekeeping_supervisor, duty_manager]
+  screens: [SCR-GST-requests, SCR-STF-task-inbox]
+  inputs: [service_request_id]
+  states: [on_time, at_risk, breached]
+  api: GET /v1/guest/stays/{sid}/service-requests
+  events: [ServiceRequestSlaBreached]
+  data: [service_request, task]
+  rules: ["guest sees honest status and ETA", "breach escalates and may open M55 recovery case", "completion may ask a one-tap confirmation"]
+  security: standard
+  failure_cases: ["staff completes without doing -> guest reopen creates case"]
+  finance_report_effect: Service KPIs.
+  i18n_a11y: Status text not colour-only.
+  acceptance: "Breached request escalates to duty_manager and the guest sees 'delayed' with new ETA."
+  dependency: M55.
+
+- id: M18.F18.3.SF18.3.4
+  name: Chargeable requests posting
+  phase: 3
+  release: R1
+  actors: [guest, housekeeper, cashier]
+  screens: [SCR-GST-request-new]
+  inputs: [service_request_id, price_item, quantity]
+  states: [quoted, accepted, delivered, posted]
+  api: POST /v1/properties/{pid}/folios/{fid}/charges
+  events: [FolioChargePosted]
+  data: [folio_charge, service_request]
+  rules: ["guest sees price and tax before confirming", "charge posts on delivery confirmation, once (INV-FOL-1)"]
+  security: guest charge privilege respected
+  failure_cases: ["delivery disputed -> charge held"]
+  finance_report_effect: Ancillary revenue.
+  i18n_a11y: Standard.
+  acceptance: "Extra bed request posts one charge after delivery confirmation."
+  dependency: M08, M54.
+
+- id: M18.F18.3.SF18.3.5
+  name: Vehicle registration and valet request
+  phase: 3
+  release: R1
+  actors: [guest, parking_attendant]
+  screens: [SCR-GST-vehicle, SCR-PARK-valet-queue]
+  inputs: [plate, vehicle_desc, valet_request_time]
+  states: [registered, requested, ready, delivered]
+  api: POST /v1/guest/stays/{sid}/vehicle
+  events: [PlateRegistered, ValetRequested]
+  data: [plate_registration, parking_permit, service_request]
+  rules: ["plate registration via M17 SF17.1.3 with privacy notice", "valet request is a service request to parking"]
+  security: standard
+  failure_cases: ["plate conflict -> front desk review"]
+  finance_report_effect: Parking tariff via M17.
+  i18n_a11y: Arabic plate input.
+  acceptance: "Guest registers a plate; LPR recognizes it at the gate under the guest permit."
+  dependency: M17.
+```
+
+### F18.4 Messaging and feedback
+
+```yaml
+- id: M18.F18.4.SF18.4.1
+  name: Guest messaging threads
+  phase: 3
+  release: R1
+  actors: [guest, guest_relations, front_desk_agent, ai_assistant]
+  screens: [SCR-GST-chat, SCR-FD-inbox]
+  inputs: [thread_context(stay|request|event), body, attachments, channel]
+  states: [open, awaiting_staff, awaiting_guest, closed]
+  api: POST /v1/guest/threads/{tid}/messages
+  events: [GuestMessageReceived, GuestMessageSent]
+  data: [message_thread, message]
+  rules: ["single thread per stay across app/web/approved SMS/WhatsApp (M55 SF55.1.1 inbox)", "AI assistant identity disclosed; handoff to human per M40", "staff replies templated EN/AR"]
+  security: attachments scanned; retention per M02
+  failure_cases: ["provider outage -> in-app only and banner"]
+  finance_report_effect: Messaging cost metered.
+  i18n_a11y: Chat accessible with live region; RTL bubbles.
+  acceptance: "Guest message via WhatsApp and reply in app appear in the same thread."
+  dependency: M40, M55, M41 messaging adapters (Phase 5).
+
+- id: M18.F18.4.SF18.4.2
+  name: In-stay feedback pulse and recovery trigger
+  phase: 3
+  release: R1
+  actors: [guest, guest_relations]
+  screens: [SCR-GST-feedback-pulse]
+  inputs: [stay_id, score(1-5), comment, topic]
+  states: [submitted, case_opened, closed]
+  api: POST /v1/guest/stays/{sid}/feedback
+  events: [InStayFeedbackReceived]
+  data: [feedback_response, guest_case]
+  rules: ["score <= 2 or negative topic opens M55 recovery case", "no incentives tied to positive scores"]
+  security: standard
+  failure_cases: ["duplicate submission -> latest kept, history retained"]
+  finance_report_effect: Recovery KPI inputs.
+  i18n_a11y: Accessible rating (not stars only).
+  acceptance: "AT-G19.4 - a score of 2 opens a recovery case with owner and SLA."
+  dependency: M55.
+
+- id: M18.F18.4.SF18.4.3
+  name: Post-stay survey handoff
+  phase: 3
+  release: R1
+  actors: [guest, marketing_manager]
+  screens: [SCR-GST-survey]
+  inputs: [stay_id]
+  states: [sent, completed, expired]
+  api: POST /v1/properties/{pid}/stays/{sid}/survey-invitations
+  events: [SurveyInvitationSent]
+  data: [feedback_response, consent_record]
+  rules: ["survey under service/feedback purpose per consent rules", "review requests only via approved channels; no gating of reviews (M52 SF52.2.6)"]
+  security: standard
+  failure_cases: ["no consent/contact -> no send"]
+  finance_report_effect: none.
+  i18n_a11y: Standard.
+  acceptance: "Guest without feedback consent receives no survey."
+  dependency: M52.
+```
+
+### F18.5 Consent and loyalty linkage
+
+```yaml
+- id: M18.F18.5.SF18.5.1
+  name: Consent capture by purpose and channel
+  phase: 3
+  release: R1
+  actors: [guest]
+  screens: [SCR-GST-privacy-settings]
+  inputs: [purpose(marketing|profile_sharing_corporate|preferences_health|analytics|feedback), channel(email|sms|whatsapp|push), granted, notice_version]
+  states: [granted, withdrawn]
+  api: PUT /v1/guest/me/consents
+  events: [ConsentGranted, ConsentWithdrawn]
+  data: [consent_record]
+  rules: ["M02 is SoR; M18 is capture UI", "per-purpose, per-channel, unticked by default", "jurisdiction notice text from M44 rule pack"]
+  security: audit with notice version and timestamp
+  failure_cases: ["M02 unavailable -> capture blocked, not assumed"]
+  finance_report_effect: none.
+  i18n_a11y: Plain-language bilingual notices.
+  acceptance: "Withdrawing WhatsApp marketing consent suppresses campaigns on that channel within 5 minutes."
+  dependency: M02, M52.
+
+- id: M18.F18.5.SF18.5.2
+  name: Data access, export and deletion requests
+  phase: 3
+  release: R1
+  actors: [guest, dpo]
+  screens: [SCR-GST-privacy-settings]
+  inputs: [request_type(access|export|deletion|correction), identity_verification]
+  states: [submitted, verified, in_progress, completed, partially_refused]
+  api: POST /v1/guest/me/privacy-requests
+  events: [PrivacyRequestSubmitted]
+  data: [consent_record]
+  rules: ["handled by M02 workflow; accounting/safety records retained per law with explanation", "identity re-verified"]
+  security: dpo scope
+  failure_cases: ["legal hold -> partial refusal with reason"]
+  finance_report_effect: none.
+  i18n_a11y: Standard.
+  acceptance: "Deletion request removes marketing profile data but retains invoices, with explanation to guest."
+  dependency: M02.
+
+- id: M18.F18.5.SF18.5.3
+  name: Loyalty linkage view
+  phase: 5
+  release: R1
+  actors: [guest]
+  screens: [SCR-GST-points]
+  inputs: [guest_profile_id]
+  states: [not_enrolled, enrolled]
+  api: GET /v1/guest/me/points
+  events: [none]
+  data: [points_ledger_entry]
+  rules: ["M30 is SoR; view shows available/pending/expired and history", "enrollment opt-in; no referral recruitment features (M31 separate)"]
+  security: guest scope
+  failure_cases: ["M30 unavailable -> hide balance with message"]
+  finance_report_effect: none.
+  i18n_a11y: Standard.
+  acceptance: "AT-G07.1 - after checkout the pending points for eligible charges appear; refund reverses them once."
+  dependency: M30.
+
+- id: M18.F18.5.SF18.5.4
+  name: In-app purchases and receipts view
+  phase: 3
+  release: R1
+  actors: [guest]
+  screens: [SCR-GST-receipts]
+  inputs: [stay_id]
+  states: [none]
+  api: GET /v1/guest/stays/{sid}/receipts
+  events: [none]
+  data: [invoice, pos_check, folio]
+  rules: ["receipts and invoices from M08/M13; guest downloads own documents"]
+  security: standard
+  failure_cases: ["invoice not yet issued -> pro-forma with label"]
+  finance_report_effect: none.
+  i18n_a11y: Bilingual PDF.
+  acceptance: "Guest downloads final invoice after checkout."
+  dependency: M08.
+```
+
+**M18 key invariants:** access requires reservation-bound verification (QR alone insufficient); M18 does not duplicate the guest profile or consent SoR; transactional vs marketing messages governed separately; each chargeable request posts once.
+
+**M18 module acceptance:** AT-G19.3–G19.4 (service requests and recovery), AT-G07.1 (points view), AT-G13.4 (bound OTP verification, jointly with M41).
+
+**M18 open decisions**
+| ID | Decision | Owner | Interim assumption |
+|---|---|---|---|
+| D-239 | Native guest app in R1 or web/PWA only | product_owner / marketing_manager | Web/PWA mandatory; native app as signed build, store listing `blocked` until accounts |
+| D-240 | Default service-request SLAs per department | guest_relations / department heads | Housekeeping 20 min, maintenance 30 min, F&B 45 min |
+| D-241 | Approved WhatsApp/SMS provider for guest messaging | it_admin / marketing_manager | Email + in-app only until provider contracted (Phase 5) |
+
+---
+
+## Summary
+
+### Counts
+| Module | Features | Subfeatures |
+|---|---|---|
+| M09 | 4 | 21 |
+| M10 | 4 | 19 |
+| M11 | 5 | 21 |
+| M12 | 5 | 21 |
+| M13 | 5 | 24 |
+| M14 | 5 | 25 |
+| M15 | 4 | 16 |
+| M16 | 5 | 19 |
+| M17 | 4 | 20 |
+| M18 | 5 | 18 |
+
+### Section G scenario coverage in this file
+| Scenario | Subfeatures |
+|---|---|
+| G1 (search 80 attendees, classroom, 10 rooms, lunch, hosted bar, club, 20 parking, AV) | SF09.2.1, SF10.2.1, SF10.4.2, SF11.2.1 |
+| G2 (approval/deposit/PO composite, no double sale, BEO propagation) | SF09.3.1, SF09.3.3, SF10.3.2, SF11.3.4, SF12.3.3, SF12.5.3, SF16.5.2, SF17.1.2 |
+| G3 (check-in, LPR gate, charges once, stock depletion, club capacity) | SF17.3.2, SF17.2.4, SF13.3.2, SF17.4.2, SF14.5.1, SF12.4.2, SF15.3.3 |
+| G7 (points earn/refund) | SF13.4.4, SF18.5.3 |
+| G8 (night audit and outlet cost) | SF13.5.4, SF14.5.5 |
+| G15 (chef coverage) | SF16.3.4 |
+| G17/G18 (requisition, receiving, issue, return, waste, recall) | SF16.3.3, SF14.3.1–SF14.3.6, SF14.4.3 |
+| G19 (guest journey, complaint, recovery) | SF18.3.2, SF18.4.2 |
+| G20 (concurrency, outage, corporate cancellation) | SF09.4.1, SF09.3.5, SF13.5.3, SF17.4.5 |
