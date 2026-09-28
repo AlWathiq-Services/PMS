@@ -288,7 +288,7 @@ Nothing in this pack is `counsel-reviewed`, `partner-contracted`, `sandbox-teste
 | G-05 | Every user request has explicit traceability | §3.1 (T-01…T-54) | **met** (blueprints pending D-001) |
 | G-06 | Every Section O scenario has a traceability row | `docs/10` (86 rows, 68/68 modules) | **met** |
 | G-07 | Phase plan, catalogue, detailed breakdown consistent | §4.2 | **met** with 3 recorded deviations |
-| G-08 | Catalogue vs UI companion consistent | §4.3 crosswalk | **met** when `docs/04a` verification passes |
+| G-08 | Catalogue vs UI companion consistent | §4.3 crosswalk (1,039 aliases + 37 new canonical screens; 0 unresolved) | **met** |
 | G-09 | Catalogue vs acceptance suite consistent | §4.4 | **met** |
 | G-10 | Unresolved decisions have owner, interim assumption and fallback | `13a` (427) | **met** |
 | G-11 | Partner/counsel proof gaps stated with gate and manual path | §5, `docs/05`, `docs/07`, `docs/08` | **met** |
